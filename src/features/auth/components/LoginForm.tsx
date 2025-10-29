@@ -2,22 +2,47 @@ import React, { useState } from 'react';
 import { Button, Input, Checkbox, Form, message } from 'antd';
 import { GoogleOutlined, LinkedinOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { loginJobSeeker } from '../services';
+import { setAccessToken } from '../../../services/baseService';
+import { loginSuccess } from '../slice';
+import { ROLES } from '../../../constants/roles';
 
 const LoginForm: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   // Hàm xử lý khi submit form đăng nhập
-  const onLoginFinish = (values: any) => {
+  const onLoginFinish = async (values: any) => {
     setLoading(true);
-    console.log('Đăng nhập với thông tin:', values);
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const response = await loginJobSeeker(values);
+      const { accessToken, user } = response;
+
+      // Gán vai trò người tìm việc. Lý tưởng là vai trò nên được trả về từ backend.
+      // Tuy nhiên, theo yêu cầu, chúng ta sẽ gán cứng ở đây.
+      user.roles = [ROLES.JOB_SEEKER];
+      
+      // 1. Lưu access token vào session storage
+      setAccessToken(accessToken);
+
+      // 2. Dispatch action để lưu thông tin user vào Redux
+      dispatch(loginSuccess({ user, token: accessToken }));
+
       message.success('Đăng nhập thành công!');
-      // TODO: Chuyển hướng người dùng đến trang dashboard sau khi đăng nhập thành công
-      // navigate('/dashboard');
-    }, 1500);
+
+      // 3. Chuyển hướng về trang chủ
+      navigate('/');
+
+    } catch (error: any) {
+      console.error('Lỗi đăng nhập:', error);
+      const errorMessage = error.response?.data?.message || 'Đã có lỗi xảy ra. Vui lòng thử lại.';
+      message.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Hàm xử lý khi submit form thất bại

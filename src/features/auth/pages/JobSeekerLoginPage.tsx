@@ -4,11 +4,8 @@ import loginImage from '../../../assets/ImageFormLoginJobSeeker.jpg';
 import LoginForm from '../components/LoginForm';
 import RegisterForm from '../components/RegisterForm';
 
-// --- Component Trang Xác thực chính ---
 const JobSeekerAuthPage: React.FC = () => {
   const location = useLocation();
-  // Kiểm tra URL để quyết định trạng thái "lật" của form.
-  // Ví dụ: /login -> isRegisterView = false, /register -> isRegisterView = true
   const isRegisterView = location.pathname.includes('register');
 
   return (
@@ -29,7 +26,6 @@ const JobSeekerAuthPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Phần bên phải chứa form lật */}
       <div className="w-full lg:w-1/2 bg-blue-600 flex flex-col justify-center items-center p-8">
         <div className="w-full max-w-md" style={{ perspective: '1000px' }}>
           <div

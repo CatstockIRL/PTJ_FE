@@ -8,7 +8,9 @@ export const MainLayout: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
       {/* HEADER */}
-      <Header />
+      <Header onToggleSidebar={function (): void {
+        throw new Error('Function not implemented.');
+      } } />
 
       {/* NỘI DUNG TRANG */}
       <main className="flex-grow">

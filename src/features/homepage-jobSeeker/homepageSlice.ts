@@ -263,18 +263,17 @@ const mockTopEmployers: Employer[] = [
 const initialState: DataHomepage = {
   featuredJobs: mockFeaturedJobs,
   jobCategories: mockJobCategories,
-  topEmployers: mockTopEmployers, // Thêm topEmployers vào initialState
+  topEmployers: mockTopEmployers,
 };
 
 const homepageSlice = createSlice({
   name: 'homepage',
   initialState,
   reducers: {
-    // Có thể thêm các reducer để cập nhật state nếu cần
     setHomepageData: (state, action: PayloadAction<DataHomepage>) => {
       state.featuredJobs = action.payload.featuredJobs;
       state.jobCategories = action.payload.jobCategories;
-      state.topEmployers = action.payload.topEmployers; // Cập nhật topEmployers
+      state.topEmployers = action.payload.topEmployers;
     },
   },
 });
