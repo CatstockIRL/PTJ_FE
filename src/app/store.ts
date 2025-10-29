@@ -3,7 +3,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import { combineReducers } from 'redux';
 
 import authReducer from '../features/auth/slice';
-import homepageReducer from '../features/homepage/homepageSlice';
+import homepageReducer from '../features/homepage-jobSeeker/homepageSlice';
 
 const rootReducer = combineReducers({
   auth: authReducer,

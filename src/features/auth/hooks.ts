@@ -11,7 +11,7 @@ const mockUser: User = {
 };
 
 export const useAuth = () => {
-  const [user] = useState<User | null>(mockUser);
+  const [user] = useState<User | null>();
 
   return {
     user,

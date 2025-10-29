@@ -1,6 +1,7 @@
 import React from 'react';
-import type { Job } from '../types'; // Cập nhật đường dẫn import Job
+
 import { formatTimeAgo } from '../../../utils/date';
+import type { Job } from '../../../types';
 
 interface JobCardProps {
   job: Job;

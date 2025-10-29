@@ -1,6 +1,6 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-
+import JobSeekerLoginPage from '../features/auth/pages/JobSeekerLoginPage';
 import { MainLayout } from '../layouts/MainLayout';
 import { DashboardLayout } from '../layouts/DashboardLayout';
 import JobSeekerHomePage from '../pages/JobSeekerHomePage'; 
@@ -20,7 +20,8 @@ export const AppRoutes: React.FC = () => {
       <Route path="/" element={<MainLayout />}>
         <Route index element={<JobSeekerHomePage />} />
         <Route path="jobs" element={<JobPage />} />
-        
+        <Route path="login" element={<JobSeekerLoginPage />} />
+        <Route path="register" element={<JobSeekerLoginPage />} />
         <Route path="nha-tuyen-dung" element={<EmployerPage />} /> 
         <Route path="unauthorized" element={<UnauthorizedPage />} />
         <Route path="*" element={<NotFoundPage />} />

@@ -1,6 +1,5 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type { DataHomepage, JobCategory, Employer } from '../../types'; // Thêm Employer
-import type { Job } from './types'; // Import Job interface
+import type { DataHomepage, JobCategory, Employer, Job } from '../../types'; // Thêm Employer
  // Import Job interface
  // Import Job interface
 
