@@ -1,20 +1,11 @@
-// Custom hooks for auth feature
-import { useState } from "react";
-import type { User } from "./types";
-import { ROLES } from "../../constants/roles";
-
-const mockUser: User = {
-  id: "1",
-  name: "Test User",
-  email: "test@example.com",
-  role: ROLES.EMPLOYER,
-};
+import { useSelector } from 'react-redux';
+import type { RootState } from '../../app/store';
 
 export const useAuth = () => {
-  const [user] = useState<User | null>(mockUser);
+  const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
 
   return {
     user,
-    isAuthenticated: !!user,
+    isAuthenticated,
   };
 };

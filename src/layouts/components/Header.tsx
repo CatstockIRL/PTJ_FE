@@ -1,14 +1,19 @@
 import React from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../features/auth/hooks';
-import { Button, Dropdown, Avatar, Badge } from 'antd';
-import { 
-  UserOutlined, 
-  BellOutlined, 
+import { Button, Dropdown, Avatar, Badge, message } from 'antd';
+import {
+  UserOutlined,
+  BellOutlined,
   DownOutlined,
   LogoutOutlined,
   MenuOutlined
 } from '@ant-design/icons';
+import { ROLES } from '../../constants/roles'; // Import ROLES
+
+import { useDispatch } from 'react-redux';
+import { logout } from '../../features/auth/slice';
+import { removeAccessToken } from '../../services/baseService';
 
 const LogoWhite = '/vite.svg';
 const LogoColor = '/vite.svg';
@@ -17,26 +22,18 @@ interface HeaderProps {
   onToggleSidebar: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {  const { user } = useAuth();
+export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
+  const { user } = useAuth();
   const location = useLocation();
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
-  const userMenuItems = [
-    {
-      key: '1',
-      label: (
-        <NavLink to="/nha-tuyen-dung/ho-so">Hồ sơ công ty</NavLink>
-      )
-    },
-    {
-      key: '2',
-      label: 'Đăng xuất',
-      icon: <LogoutOutlined />,
-      danger: true,
-      onClick: () => { 
-        console.log('Logging out...');
-      }
-    }
-  ];
+  const handleLogout = () => {
+    dispatch(logout());
+    removeAccessToken();
+    navigate('/');
+    message.success('Đăng xuất thành công!');
+  };
 
   const guestMenuItems = [
     { key: '1', label: <NavLink to="/login">Đăng nhập</NavLink> },
@@ -44,38 +41,81 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {  const {
   ];
 
   if (user) {
-    return (
-      <header className="bg-blue-900 text-white shadow-md py-4 px-6 flex items-center justify-between sticky top-0 z-10" style={{ height: '68px' }}>
-        <div className="flex items-center">
-          <Button
-            type="text"
-            icon={<MenuOutlined className="text-white text-lg" />}
-            onClick={onToggleSidebar}
-            className="mr-3"
-          />
-          <img src={LogoWhite} alt="Logo" className="h-8 mr-4" />
-        </div>
-        <div className="flex items-center space-x-5">
-          <Badge count={0} size="small">
-            <BellOutlined className="text-xl text-white" />
-          </Badge>
+    const isEmployerOrAdmin = user.roles.includes(ROLES.EMPLOYER) || user.roles.includes(ROLES.ADMIN);
+    const isJobSeeker = user.roles.includes(ROLES.JOB_SEEKER);
 
-          <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" arrow>
-            <a onClick={(e) => e.preventDefault()} className="flex items-center space-x-2 text-white hover:text-gray-200">
-              <Avatar size="small" icon={<UserOutlined />} className="bg-blue-600" />
-              <span className="font-medium">{user.name}</span>
-              <DownOutlined style={{ fontSize: '10px' }} />
-            </a>
-          </Dropdown>
+    const userDropdownItems = [
+      {
+        key: '1',
+        label: (
+          <NavLink to={isEmployerOrAdmin ? "/nha-tuyen-dung/ho-so" : "/ho-so"}>Hồ sơ của tôi</NavLink>
+        )
+      },
+      {
+        key: '2',
+        label: 'Đăng xuất',
+        icon: <LogoutOutlined />,
+        danger: true,
+        onClick: handleLogout
+      }
+    ];
 
-          <div className="border-l border-blue-700 h-6"></div>
+    if (isEmployerOrAdmin) {
+      return (
+        <header className="bg-blue-900 text-white shadow-md py-4 px-6 flex items-center justify-between sticky top-0 z-10" style={{ height: '68px' }}>
+          <div className="flex items-center">
+            <Button
+              type="text"
+              icon={<MenuOutlined className="text-white text-lg" />}onClick={onToggleSidebar}
+              className="mr-3"
+            />
+            <img src={LogoWhite} alt="Logo" className="h-8 mr-4" />
+          </div>
+          <div className="flex items-center space-x-5">
+            <Badge count={0} size="small">
+              <BellOutlined className="text-xl text-white" />
+            </Badge>
 
-          <NavLink to="/" className="text-white hover:text-gray-200 text-sm font-medium">
-            Cho Người tìm việc
-          </NavLink>
-        </div>
-      </header>
-    );
+            <Dropdown menu={{ items: userDropdownItems }} placement="bottomRight" arrow>
+              <a onClick={(e) => e.preventDefault()} className="flex items-center space-x-2 text-white hover:text-gray-200">
+                <Avatar size="small" icon={<UserOutlined />} className="bg-blue-600" />
+                <span className="font-medium">{user.username}</span>
+                <DownOutlined style={{ fontSize: '10px' }} />
+              </a>
+            </Dropdown>
+
+            <div className="border-l border-blue-700 h-6"></div>
+
+            <NavLink to="/nha-tuyen-dung" className="text-white hover:text-gray-200 text-sm font-medium">
+              Cho Người tìm việc
+            </NavLink>
+          </div>
+        </header>
+      );
+    } else if (isJobSeeker) {
+      return (
+        <header className="bg-white shadow-md py-4 px-6 flex items-center justify-between sticky top-0 z-10" style={{ height: '68px' }}>
+          <div className="flex items-center">
+            <img src={LogoColor} alt="Logo" className="h-8 mr-4" />
+          </div>
+          <div className="flex items-center space-x-5">
+            <NavLink to="/" className="text-gray-600 hover:text-blue-600 text-sm font-medium">Trang chủ</NavLink>
+            <NavLink to="/viec-lam" className="text-gray-600 hover:text-blue-600 text-sm font-medium">Việc làm</NavLink>
+            <NavLink to="/ho-so" className="text-gray-600 hover:text-blue-600 text-sm font-medium">Hồ sơ của tôi</NavLink>
+
+            <div className="border-l border-gray-300 h-6"></div>
+
+            <Dropdown menu={{ items: userDropdownItems }} placement="bottomRight" arrow>
+              <a onClick={(e) => e.preventDefault()} className="flex items-center space-x-2 text-gray-600 hover:text-blue-600">
+                <Avatar size="small" icon={<UserOutlined />} className="bg-blue-600" />
+                <span className="font-medium">{user.username}</span>
+                <DownOutlined style={{ fontSize: '10px' }} />
+              </a>
+            </Dropdown>
+          </div>
+        </header>
+      );
+    }
   }
 
   return (

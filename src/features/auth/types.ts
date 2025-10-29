@@ -1,6 +1,13 @@
 export interface User {
-  id: string;
-  name: string;
+  id: number;
+  username: string;
   email: string;
-  role: string;
+  roles: string[];
+  verified: boolean;
+}
+
+export interface LoginResponse {
+  accessToken: string;
+  expiresIn: number;
+  user: User;
 }
