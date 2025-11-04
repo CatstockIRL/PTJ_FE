@@ -6,7 +6,7 @@ import authReducer from '../features/auth/slice';
 import homepageReducer from '../features/homepage-jobSeeker/homepageSlice';
 import findJobReducer from '../features/findJob-jobSeeker/slice';
 import jobSeekerPostingReducer from '../features/jobSeekerPosting/slice';
-import savedJobsReducer from '../features/savedJob/slice';
+import savedJobsReducer from '../features/savedJob-jobSeeker/slice';
 
 const rootReducer = combineReducers({
   auth: authReducer,

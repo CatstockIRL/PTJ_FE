@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { formatTimeAgo } from '../../../utils/date';
 import type { Job } from '../../../types';
+import { saveJob, unsaveJob } from '../../savedJob-jobSeeker/services';
 
 interface JobCardProps {
   job: Job;
@@ -15,6 +16,25 @@ const JobCard: React.FC<JobCardProps> = ({ job, isSaved, onSaveToggle }) => {
 
   const handleClick = () => {
     navigate(`/viec-lam/chi-tiet/${job.id}`);
+  };
+
+  // Xử lý khi người dùng nhấn nút lưu/bỏ lưu
+  const handleSaveToggle = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Ngăn không cho sự kiện click lan ra thẻ div bên ngoài
+    try {
+      if (isSaved) {
+        await unsaveJob(job.id); // Nếu đã lưu, gọi hàm bỏ lưu
+      } else {
+        await saveJob(job.id); // Nếu chưa lưu, gọi hàm lưu
+      }
+      // Thông báo cho component cha rằng trạng thái đã thay đổi
+      if (onSaveToggle) {
+        onSaveToggle(job.id);
+      }
+    } catch (error) {
+      console.error('Lỗi khi lưu/bỏ lưu công việc:', error);
+      // Tùy chọn: Hiển thị thông báo lỗi cho người dùng
+    }
   };
 
   return (
@@ -32,12 +52,7 @@ const JobCard: React.FC<JobCardProps> = ({ job, isSaved, onSaveToggle }) => {
           </h3>
           <button
             className={`absolute top-4 right-4 text-gray-400 hover:text-red-500 ${isSaved ? 'text-red-500' : ''}`}
-            onClick={(e) => {
-              e.stopPropagation(); // Ngăn sự kiện click của card
-              if (onSaveToggle) {
-                onSaveToggle(job.id);
-              }
-            }}
+            onClick={handleSaveToggle} // Sử dụng hàm xử lý mới
           >
             <i className={`${isSaved ? 'fas' : 'far'} fa-heart`}></i>
           </button>
