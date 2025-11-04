@@ -2,12 +2,12 @@ export interface Job {
   id: string;
   title: string;
   description: string;
-  company: string;
-  location: string;
-  salary: string;
+  company: string | null;
+  location: string | null;
+  salary: string | null;
   updatedAt: string;
-  companyLogo: string;
-  isHot: boolean;
+  companyLogo: string | null;
+  isHot: boolean | null;
 }
 
 export interface JobCategory {

@@ -21,7 +21,7 @@ import ManagePostingsPage from '../features/jobSeekerPosting/pages/ManagePosting
 import CreatePostingPage from '../features/jobSeekerPosting/pages/CreatePostingPage';
 import EmployerRegisterPage from '../features/employer-auth/pages/EmployerRegisterPage';
 import EmployerLayout from '../pages/employer/EmployerLayout';
-import SavedJobsPage from '../features/savedJob/pages/SavedJobsPage';
+import SavedJobsPage from '../features/savedJob-jobSeeker/pages/SavedJobsPage';
 
 export const AppRoutes: React.FC = () => {
   return (

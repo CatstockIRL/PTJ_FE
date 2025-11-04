@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button, Card } from 'antd';
 import { useDispatch, useSelector } from 'react-redux';
-import { saveJob, unsaveJob } from '../../savedJob/services';
+import { saveJob, unsaveJob } from '../../savedJob-jobSeeker/services';
 import type { AppDispatch, RootState } from '../../../app/store';
 import { mockJobs } from '../mockData'; // Assuming similar jobs are in mockData
 import JobCard from '../../homepage-jobSeeker/components/JobCard';

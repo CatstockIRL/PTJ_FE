@@ -5,7 +5,7 @@ import type { SavedJob } from '../types';
 
 interface SavedJobCardProps {
   job: SavedJob;
-  onDelete: (jobId: string) => void; // Hàm xử lý xóa
+  onDelete: (jobId: string) => void;
 }
 
 const SavedJobCard: React.FC<SavedJobCardProps> = ({ job, onDelete }) => {
@@ -16,7 +16,7 @@ const SavedJobCard: React.FC<SavedJobCardProps> = ({ job, onDelete }) => {
   };
 
   const handleDelete = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Ngăn chặn sự kiện click của card
+    e.stopPropagation();
     onDelete(job.id);
   };
 
@@ -25,10 +25,6 @@ const SavedJobCard: React.FC<SavedJobCardProps> = ({ job, onDelete }) => {
       className="bg-white p-4 rounded-lg shadow-md flex items-start space-x-4 relative w-full border border-gray-200 h-40 cursor-pointer"
       onClick={handleClick}
     >
-      {/* Icon trái tim cho biết đã lưu */}
-      <div className="absolute top-4 left-4 text-blue-600">
-        <i className="fas fa-heart"></i>
-      </div>
 
       <img src={job.companyLogo || "/src/assets/no-logo.png"} alt="company logo" className="w-16 h-16 object-contain ml-8" />
       

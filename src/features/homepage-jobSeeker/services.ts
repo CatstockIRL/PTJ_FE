@@ -54,26 +54,20 @@ const mapBackendJobToFrontendJob = (backendJob: BackendJob): Job => {
  */
 export const getFeaturedJobs = async (): Promise<Job[]> => {
   try {
-    // Gọi API bằng baseService
     const response = await baseService.get<ApiResponse>('/EmployerPost/all');
 
-    // Kiểm tra nếu API trả về thành công và có dữ liệu
     if (response && response.success && Array.isArray(response.data)) {
-      // Ánh xạ từng công việc trong danh sách trả về
       const featuredJobs = response.data.map(mapBackendJobToFrontendJob);
       return featuredJobs;
     }
 
-    // Trả về mảng rỗng nếu không có dữ liệu hoặc có lỗi
     return [];
   } catch (error) {
     console.error('Lỗi khi lấy dữ liệu featured jobs:', error);
-    // Ném lỗi để slice hoặc component có thể xử lý
     throw error;
   }
 };
 
-// Tập hợp các service của feature homepage-jobSeeker
 const homepageJobSeekerService = {
   getFeaturedJobs,
 };
