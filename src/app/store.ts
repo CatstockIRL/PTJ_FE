@@ -11,6 +11,7 @@ import jobDetailReducer from '../features/findJob-jobSeeker/jobDetailSlice';
 import employerJobPostingReducer from '../features/job/jobPostingSlice';
 import categoryReducer from '../features/category/slice';
 import adminJobsReducer from '../features/admin-js-post/slice';
+import appliedJobsReducer from '../features/applyJob-jobSeeker/slices/appliedJobsSlice';
 
 const rootReducer = combineReducers({
   auth: authReducer,
@@ -21,6 +22,7 @@ const rootReducer = combineReducers({
   jobDetail: jobDetailReducer,
   employerPosting: employerJobPostingReducer, 
   category: categoryReducer,
+  appliedJobs: appliedJobsReducer,
   adminJobs: adminJobsReducer,
 });
 

@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Button, Card, message } from 'antd';
+import { Button, Card, message, Modal, Form, Input, Upload } from 'antd';
+import { UploadOutlined } from '@ant-design/icons';
 import DOMPurify from 'dompurify';
 import { useAppDispatch, useAppSelector } from '../../../app/hooks';
 import type { RootState } from '../../../app/store';
@@ -8,11 +9,15 @@ import { mockJobs } from '../mockData';
 import JobCard from '../../homepage-jobSeeker/components/JobCard';
 import { fetchJobDetail } from '../jobDetailSlice';
 import { addSavedJob, fetchSavedJobs, removeSavedJob } from '../../savedJob-jobSeeker/slice';
+import applyJobService from '../../applyJob-jobSeeker/services';
+
+const { TextArea } = Input;
 
 const JobDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const [form] = Form.useForm();
 
   const { job, status, error } = useAppSelector((state: RootState) => state.jobDetail);
   const { jobs: savedJobs } = useAppSelector((state: RootState) => state.savedJobs);
@@ -20,6 +25,8 @@ const JobDetailPage: React.FC = () => {
 
   const [isSticky, setIsSticky] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [isApplyModalVisible, setIsApplyModalVisible] = useState(false);
+  const [applying, setApplying] = useState(false);
 
   const navRef = useRef<HTMLDivElement>(null);
 
@@ -44,7 +51,10 @@ const JobDetailPage: React.FC = () => {
   }, [job, savedJobs]);
 
   const handleSaveToggle = async () => {
-    if (!job || !jobSeekerId) return;
+    if (!job || !jobSeekerId) {
+      message.warning('Vui lòng đăng nhập để thực hiện chức năng này.');
+      return;
+    }
     const jobId = String(job.employerPostId);
 
     try {
@@ -70,6 +80,36 @@ const JobDetailPage: React.FC = () => {
       dispatch(removeSavedJob({ jobSeekerId, jobId }));
     } else {
       dispatch(addSavedJob({ jobSeekerId, jobId }));
+    }
+  };
+
+  const handleApplyNow = () => {
+    if (!jobSeekerId) {
+      message.warning('Vui lòng đăng nhập để ứng tuyển.');
+      navigate('/login'); // Redirect to login page
+      return;
+    }
+    setIsApplyModalVisible(true);
+  };
+
+  const handleApplySubmit = async (values: { note: string; cv?: any }) => {
+    if (!job || !jobSeekerId) return;
+
+    setApplying(true);
+    try {
+      await applyJobService.applyJob({
+        jobSeekerId,
+        employerPostId: job.employerPostId,
+        note: values.note,
+      });
+      message.success('Nộp đơn ứng tuyển thành công!');
+      setIsApplyModalVisible(false);
+      form.resetFields();
+    } catch (error) {
+      console.error('Apply failed:', error);
+      message.error('Nộp đơn thất bại. Có thể bạn đã ứng tuyển công việc này rồi.');
+    } finally {
+      setApplying(false);
     }
   };
 
@@ -130,7 +170,7 @@ const JobDetailPage: React.FC = () => {
           </div>
 
           <div className="flex space-x-4 mb-6">
-            <Button type="primary" size="large" className="bg-blue-600">Nộp đơn ngay</Button>
+            <Button type="primary" size="large" className="bg-blue-600" onClick={handleApplyNow}>Nộp đơn ngay</Button>
             <Button size="large" onClick={handleSaveToggle} icon={isSaved ? <i className="fas fa-heart text-red-500"></i> : <i className="far fa-heart"></i>}>
               {isSaved ? 'Đã lưu' : 'Lưu'}
             </Button>
@@ -212,11 +252,56 @@ const JobDetailPage: React.FC = () => {
               <Button size="large" onClick={handleSaveToggle} icon={isSaved ? <i className="fas fa-heart text-red-500"></i> : <i className="far fa-heart"></i>}>
                 {isSaved ? 'Đã lưu' : 'Lưu'}
               </Button>
-              <Button type="primary" size="large" className="bg-blue-600">Nộp đơn ngay</Button>
+              <Button type="primary" size="large" className="bg-blue-600" onClick={handleApplyNow}>Nộp đơn ngay</Button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Apply Job Modal */}
+      <Modal
+        title={`Ứng tuyển: ${job.title}`}
+        visible={isApplyModalVisible}
+        onCancel={() => setIsApplyModalVisible(false)}
+        footer={null}
+        destroyOnClose
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleApplySubmit}
+          initialValues={{ note: '' }}
+        >
+          <Form.Item
+            name="note"
+            label="Lời nhắn đến nhà tuyển dụng"
+          >
+            <TextArea rows={4} placeholder="Viết một vài điều về bản thân hoặc tại sao bạn nghĩ mình phù hợp với vị trí này." />
+          </Form.Item>
+
+          <Form.Item
+            name="cv"
+            label="Tải lên CV của bạn"
+            valuePropName="fileList"
+            getValueFromEvent={(e) => (Array.isArray(e) ? e : e && e.fileList)}
+            extra="Tải lên CV mới nhất của bạn (tùy chọn). API hiện tại chưa hỗ trợ upload file."
+          >
+            <Upload
+              name="cv"
+              beforeUpload={() => false} // Prevent auto-upload
+              maxCount={1}
+            >
+              <Button icon={<UploadOutlined />}>Chọn File</Button>
+            </Upload>
+          </Form.Item>
+
+          <Form.Item>
+            <Button type="primary" htmlType="submit" loading={applying} block>
+              Xác nhận ứng tuyển
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };
