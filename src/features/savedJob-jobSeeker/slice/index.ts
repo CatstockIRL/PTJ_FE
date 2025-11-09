@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
 import type { SavedJob } from '../types';
-import { getSavedJobs, unsaveJob } from '../services';
+import { getSavedJobs, saveJob, unsaveJob } from '../services';
 
 interface SavedJobsState {
   jobs: SavedJob[];
@@ -9,7 +9,6 @@ interface SavedJobsState {
   total: number;
 }
 
-
 const initialState: SavedJobsState = {
   jobs: [],
   status: 'idle',
@@ -17,21 +16,41 @@ const initialState: SavedJobsState = {
   total: 0,
 };
 
-
-export const fetchSavedJobs = createAsyncThunk('savedJobs/fetchSavedJobs', async () => {
-  const response = await getSavedJobs();
-  return response;
-});
-
-
-export const removeSavedJob = createAsyncThunk('savedJobs/removeSavedJob', async (jobId: string, { rejectWithValue }) => {
-  try {
-    await unsaveJob(jobId);
-    return jobId;
-  } catch (error) {
-    return rejectWithValue('Failed to unsave job.');
+export const fetchSavedJobs = createAsyncThunk(
+  'savedJobs/fetchSavedJobs',
+  async (jobSeekerId: string, { rejectWithValue }) => {
+    try {
+      const response = await getSavedJobs(jobSeekerId);
+      return response;
+    } catch (error) {
+      return rejectWithValue('Failed to fetch saved jobs.');
+    }
   }
-});
+);
+
+export const addSavedJob = createAsyncThunk(
+  'savedJobs/addSavedJob',
+  async ({ jobSeekerId, jobId }: { jobSeekerId: string; jobId: string }, { rejectWithValue }) => {
+    try {
+      await saveJob(jobSeekerId, jobId);
+      return jobId;
+    } catch (error) {
+      return rejectWithValue('Failed to save job.');
+    }
+  }
+);
+
+export const removeSavedJob = createAsyncThunk(
+  'savedJobs/removeSavedJob',
+  async ({ jobSeekerId, jobId }: { jobSeekerId: string; jobId: string }, { rejectWithValue }) => {
+    try {
+      await unsaveJob(jobSeekerId, jobId);
+      return jobId;
+    } catch (error) {
+      return rejectWithValue('Failed to unsave job.');
+    }
+  }
+);
 
 const savedJobsSlice = createSlice({
   name: 'savedJobs',
@@ -49,10 +68,16 @@ const savedJobsSlice = createSlice({
       })
       .addCase(fetchSavedJobs.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = action.error.message || 'Failed to fetch saved jobs.';
+        state.error = action.payload as string;
       })
       .addCase(removeSavedJob.fulfilled, (state, action: PayloadAction<string>) => {
         state.jobs = state.jobs.filter((job) => job.id !== action.payload);
+      })
+      .addCase(addSavedJob.rejected, (state, action) => {
+        state.error = action.payload as string;
+      })
+      .addCase(removeSavedJob.rejected, (state, action) => {
+        state.error = action.payload as string;
       });
   },
 });

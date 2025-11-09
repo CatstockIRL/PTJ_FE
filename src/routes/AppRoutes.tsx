@@ -25,6 +25,7 @@ import EditJobPage from '../features/job/pages/EditJobPage';
 import JobSeekerPostPage from '../features/candidate/pages/JobSeekerPostPage';
 import SavedTalentPage from '../features/candidate/pages/SavedTalentPage';
 import SavedJobsPage from '../features/savedJob-jobSeeker/pages/SavedJobsPage';
+import AppliedJobsPage from '../features/applyJob-jobSeeker/pages/AppliedJobsPage';
 import AdminJSPostPage from '../features/admin-js-post/pages/AdminJSPostPage';
 
 export const AppRoutes: React.FC = () => {
@@ -46,6 +47,7 @@ export const AppRoutes: React.FC = () => {
           <Route path="quan-ly-bai-dang" element={<ManagePostingsPage />} />
           <Route path="tao-bai-dang-tim-viec" element={<CreatePostingPage />} />
           <Route path="viec-lam-da-luu" element={<SavedJobsPage />} />
+          <Route path="viec-da-ung-tuyen" element={<AppliedJobsPage />} />
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />
