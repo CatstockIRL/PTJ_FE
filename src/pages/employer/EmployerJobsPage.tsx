@@ -135,7 +135,7 @@ const EmployerJobsPage: React.FC = () => {
       render: (text, record) => (
         <div>
           <a
-            onClick={() => handleViewDetails(record.employerPostId)} // Chỗ này vẫn giữ nguyên
+            onClick={() => handleViewDetails(record.employerPostId)}
             className="font-semibold text-blue-600 hover:underline cursor-pointer"
           >
             {text}

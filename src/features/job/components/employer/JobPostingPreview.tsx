@@ -57,7 +57,7 @@ const JobPostingPreview: React.FC<JobPostingPreviewProps> = ({ data }) => {
             Mức lương
           </h3>
           <p className="text-gray-700">
-              {data.salaryValue.toLocaleString() || "Chưa nhập"} VNĐ
+              {data.salaryValue || "Chưa nhập"} VNĐ
           </p>
         </div>
 
