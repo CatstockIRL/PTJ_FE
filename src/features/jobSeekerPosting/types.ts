@@ -1,26 +1,24 @@
-/**
- * Đây là kiểu dữ liệu (payload) được sử dụng khi gửi yêu cầu tạo một bài đăng tìm việc mới.
- */
 export interface CreateJobSeekerPostPayload {
   userID: number;
   title: string;
   description: string;
   age: number;
   gender: string;
-  preferredWorkHours: string;
+  preferredWorkHourStart: string;
+  preferredWorkHourEnd: string;
+  provinceId: number;
+  districtId: number;
+  wardId: number;
   preferredLocation: string;
   categoryID: number;
   phoneContact: string;
+  selectedCvId?: number;
 }
 
 export interface UpdateJobSeekerPostPayload extends CreateJobSeekerPostPayload {
   jobSeekerPostId: number;
 }
 
-
-/**
- * Định nghĩa kiểu dữ liệu cho một tỉnh/thành phố từ API public.
- */
 export interface Province {
   name: string;
   code: number;
@@ -29,9 +27,6 @@ export interface Province {
   phone_code: number;
 }
 
-/**
- * Định nghĩa kiểu dữ liệu cho một bài đăng tìm việc của Job Seeker từ API.
- */
 export interface JobSeekerPost {
   jobSeekerPostId: number;
   userID: number;
@@ -39,14 +34,21 @@ export interface JobSeekerPost {
   description: string;
   age: number;
   gender: string;
-  preferredWorkHours: string;
-  preferredLocation: string;
+  preferredWorkHours?: string | null;
+  preferredWorkHourStart?: string | null;
+  preferredWorkHourEnd?: string | null;
+  preferredLocation?: string | null;
+  provinceId?: number | null;
+  districtId?: number | null;
+  wardId?: number | null;
   phoneContact: string;
-  categoryName: string;
-  seekerName: string;
+  categoryID?: number | null;
+  categoryName?: string;
+  seekerName?: string;
   createdAt: string;
   status: string;
-  
+  selectedCvId?: number | null;
+  cvId?: number | null;
 }
 
 export interface GetJobByIdResponse {

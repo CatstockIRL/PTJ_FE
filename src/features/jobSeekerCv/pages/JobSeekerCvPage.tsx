@@ -36,6 +36,7 @@ const JobSeekerCvPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [editingCv, setEditingCv] = useState<JobSeekerCv | null>(null);
+  const [isFormVisible, setIsFormVisible] = useState(false);
 
   const [provinces, setProvinces] = useState<LocationOption[]>([]);
   const [districts, setDistricts] = useState<LocationOption[]>([]);
@@ -65,7 +66,7 @@ const JobSeekerCvPage: React.FC = () => {
       try {
         const data = await locationService.getProvinces();
         setProvinces(data);
-      } catch (error) {
+      } catch {
         message.error("Không thể tải danh sách tỉnh/thành.");
       } finally {
         setLocationLoading((prev) => ({ ...prev, provinces: false }));
@@ -83,7 +84,7 @@ const JobSeekerCvPage: React.FC = () => {
     try {
       const data = await locationService.getDistricts(provinceId);
       setDistricts(data);
-    } catch (error) {
+    } catch {
       message.error("Không thể tải danh sách quận/huyện.");
     } finally {
       setLocationLoading((prev) => ({ ...prev, districts: false }));
@@ -98,7 +99,7 @@ const JobSeekerCvPage: React.FC = () => {
     try {
       const data = await locationService.getWards(districtId);
       setWards(data);
-    } catch (error) {
+    } catch {
       message.error("Không thể tải danh sách phường/xã.");
     } finally {
       setLocationLoading((prev) => ({ ...prev, wards: false }));
@@ -110,6 +111,16 @@ const JobSeekerCvPage: React.FC = () => {
     setEditingCv(null);
     setDistricts([]);
     setWards([]);
+  };
+
+  const openCreateForm = () => {
+    resetForm();
+    setIsFormVisible(true);
+  };
+
+  const handleCancelForm = () => {
+    resetForm();
+    setIsFormVisible(false);
   };
 
   const handleSubmit = async (values: any) => {
@@ -135,7 +146,7 @@ const JobSeekerCvPage: React.FC = () => {
       }
 
       await fetchCvs();
-      resetForm();
+      handleCancelForm();
     } catch (error: any) {
       message.error(error?.response?.data?.message || "Không thể lưu CV.");
     } finally {
@@ -145,6 +156,7 @@ const JobSeekerCvPage: React.FC = () => {
 
   const handleEdit = async (cv: JobSeekerCv) => {
     setEditingCv(cv);
+    setIsFormVisible(true);
     form.setFieldsValue({
       cvTitle: cv.cvTitle,
       skillSummary: cv.skillSummary,
@@ -167,10 +179,10 @@ const JobSeekerCvPage: React.FC = () => {
     try {
       await jobSeekerCvService.deleteCv(cvId);
       message.success("Đã xóa CV.");
-      if (editingCv?.cvid === cvId) {
-        resetForm();
-      }
       await fetchCvs();
+      if (editingCv?.cvid === cvId) {
+        handleCancelForm();
+      }
     } catch (error: any) {
       message.error(error?.response?.data?.message || "Không thể xóa CV.");
     }
@@ -192,67 +204,67 @@ const JobSeekerCvPage: React.FC = () => {
       <List
         dataSource={cvs}
         loading={loading}
+        grid={{ gutter: 16, column: 2 }}
         renderItem={(cv) => (
-          <List.Item className="bg-white rounded-xl shadow-sm p-4 mb-3">
-            <div className="flex flex-col gap-3 w-full">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <Space size="small">
-                  <FileTextOutlined className="text-blue-500" />
-                  <Text strong>{cv.cvTitle}</Text>
-                </Space>
-                <Space size="small">
-                  <Text type="secondary">
-                    Cập nhật: {new Date(cv.updatedAt).toLocaleDateString("vi-VN")}
-                  </Text>
-                  <Button
-                    icon={<EditOutlined />}
-                    onClick={() => handleEdit(cv)}
-                    type="link"
-                  >
-                    Chỉnh sửa
-                  </Button>
-                  <Popconfirm
-                    title="Xóa CV này?"
-                    okText="Xóa"
-                    cancelText="Hủy"
-                    okButtonProps={{ danger: true }}
-                    onConfirm={() => handleDelete(cv.cvid)}
-                  >
-                    <Button icon={<DeleteOutlined />} danger type="link">
-                      Xóa
+          <List.Item>
+            <Card className="rounded-xl shadow-sm h-full">
+              <div className="flex flex-col gap-3">
+                <div className="flex items-start justify-between flex-wrap gap-2">
+                  <Space size="small">
+                    <FileTextOutlined className="text-blue-500" />
+                    <Text strong>{cv.cvTitle}</Text>
+                  </Space>
+                  <Space size="small">
+                    <Text type="secondary">
+                      Cập nhật: {new Date(cv.updatedAt).toLocaleDateString("vi-VN")}
+                    </Text>
+                    <Button
+                      icon={<EditOutlined />}
+                      onClick={() => handleEdit(cv)}
+                      type="link"
+                    >
+                      Chỉnh sửa
                     </Button>
-                  </Popconfirm>
+                    <Popconfirm
+                      title="Xóa CV này?"
+                      okText="Xóa"
+                      cancelText="Hủy"
+                      okButtonProps={{ danger: true }}
+                      onConfirm={() => handleDelete(cv.cvid)}
+                    >
+                      <Button icon={<DeleteOutlined />} danger type="link">
+                        Xóa
+                      </Button>
+                    </Popconfirm>
+                  </Space>
+                </div>
+                <Paragraph ellipsis={{ rows: 2 }} className="mb-0 text-gray-600">
+                  {cv.skillSummary || "Chưa có tóm tắt kỹ năng"}
+                </Paragraph>
+                <Space direction="vertical" size={2}>
+                  <Space>
+                    <PhoneOutlined className="text-gray-500" />
+                    <Text>{cv.contactPhone || "Chưa cập nhật"}</Text>
+                  </Space>
+                  <Space>
+                    <EnvironmentOutlined className="text-gray-500" />
+                    <Text>{cv.preferredLocationName || "Chưa cập nhật"}</Text>
+                  </Space>
                 </Space>
+                <div>
+                  {cv.preferredJobType && (
+                    <Tag color="blue">{cv.preferredJobType}</Tag>
+                  )}
+                  {cv.skills &&
+                    cv.skills
+                      .split(",")
+                      .slice(0, 3)
+                      .map((skill) => (
+                        <Tag key={skill.trim()}>{skill.trim()}</Tag>
+                      ))}
+                </div>
               </div>
-              <Paragraph
-                ellipsis={{ rows: 2 }}
-                className="mb-0 text-gray-600"
-              >
-                {cv.skillSummary || "Chưa có tóm tắt kỹ năng"}
-              </Paragraph>
-              <Space direction="vertical" size={2}>
-                <Space>
-                  <PhoneOutlined className="text-gray-500" />
-                  <Text>{cv.contactPhone || "Chưa cập nhật"}</Text>
-                </Space>
-                <Space>
-                  <EnvironmentOutlined className="text-gray-500" />
-                  <Text>{cv.preferredLocationName || "Chưa cập nhật"}</Text>
-                </Space>
-              </Space>
-              <div>
-                {cv.preferredJobType && (
-                  <Tag color="blue">{cv.preferredJobType}</Tag>
-                )}
-                {cv.skills &&
-                  cv.skills
-                    .split(",")
-                    .slice(0, 3)
-                    .map((skill) => (
-                      <Tag key={skill.trim()}>{skill.trim()}</Tag>
-                    ))}
-              </div>
-            </div>
+            </Card>
           </List.Item>
         )}
       />
@@ -264,141 +276,130 @@ const JobSeekerCvPage: React.FC = () => {
       <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500">
         <div className="max-w-5xl mx-auto px-6 h-48 flex flex-col justify-end pb-6 text-white text-center">
           <p className="uppercase text-base tracking-widest">CV của tôi</p>
-          <h1 className="text-4xl font-semibold mt-2">
-            Quản lý và tạo CV nổi bật
-          </h1>
-          <p className="text-sm text-white/70">
-            Lưu lại thông tin quan trọng để ứng tuyển nhanh chóng
-          </p>
+          <h1 className="text-4xl font-semibold mt-2">Quản lý và tạo CV nổi bật</h1>
+        
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 -mt-16 pb-12 flex flex-col lg:flex-row gap-6 items-start">
-        <div className="lg:w-1/2 space-y-4">
-          <Card
-            className="shadow-md"
-            title={
-              <div className="flex items-center justify-between">
-                <Title level={4} className="mb-0">
-                  CV của bạn
-                </Title>
-                <Button
-                  type="text"
-                  icon={<PlusOutlined />}
-                  onClick={resetForm}
-                >
-                  Tạo mới
-                </Button>
-              </div>
-            }
+      <div className="max-w-5xl mx-auto px-6 -mt-10 pb-12">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-6 mt-6">
+    
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={openCreateForm}
           >
-            {cvList}
-          </Card>
+            Tạo CV
+          </Button>
         </div>
 
-        <div className="lg:flex-1 w-full">
-          <Card className="shadow-md" title={formTitle}>
-            <Form
-              layout="vertical"
-              form={form}
-              onFinish={handleSubmit}
-              initialValues={{
-                cvTitle: "",
-                preferredJobType: "",
-                skills: "",
-                skillSummary: "",
-                contactPhone: "",
-              }}
-            >
-              <Form.Item
-                name="contactPhone"
-                label="Số điện thoại liên hệ"
-                rules={[
-                  { required: true, message: "Vui lòng nhập số điện thoại" },
-                  {
-                    pattern: /^(0|\+84)([0-9]{9})$/,
-                    message: "Số điện thoại không hợp lệ",
-                  },
-                ]}
+        <div className="grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-6 items-start">
+          {isFormVisible ? (
+            <Card className="shadow-md" title={formTitle}>
+              <Form
+                layout="vertical"
+                form={form}
+                onFinish={handleSubmit}
+                initialValues={{
+                  cvTitle: "",
+                  preferredJobType: "",
+                  skills: "",
+                  skillSummary: "",
+                  contactPhone: "",
+                }}
               >
-                <Input placeholder="VD: 090xxxxxxx" />
-              </Form.Item>
+                <Form.Item
+                  name="contactPhone"
+                  label="Số điện thoại liên hệ"
+                  rules={[
+                    { required: true, message: "Vui lòng nhập số điện thoại" },
+                    {
+                      pattern: /^(0|\+84)([0-9]{9})$/,
+                      message: "Số điện thoại không hợp lệ",
+                    },
+                  ]}
+                >
+                  <Input placeholder="VD: 090xxxxxxx" />
+                </Form.Item>
 
-              <Form.Item
-                name="cvTitle"
-                label="Tiêu đề CV"
-                rules={[{ required: true, message: "Vui lòng nhập tiêu đề" }]}
-              >
-                <Input placeholder="VD: Lập trình viên .NET 3 năm kinh nghiệm" />
-              </Form.Item>
+                <Form.Item
+                  name="cvTitle"
+                  label="Tiêu đề CV"
+                  rules={[{ required: true, message: "Vui lòng nhập tiêu đề" }]}
+                >
+                  <Input placeholder="VD: Lập trình viên .NET 3 năm kinh nghiệm" />
+                </Form.Item>
 
-              <Form.Item name="skillSummary" label="Tóm tắt kỹ năng nổi bật">
-                <Input.TextArea rows={3} placeholder="Nội dung tóm tắt..." />
-              </Form.Item>
+                <Form.Item name="skillSummary" label="Tóm tắt kỹ năng nổi bật">
+                  <Input.TextArea rows={3} placeholder="Nội dung tóm tắt..." />
+                </Form.Item>
 
-              <Form.Item name="skills" label="Kỹ năng">
-                <Input.TextArea placeholder="VD: .NET, SQL Server, REST API..." />
-              </Form.Item>
+                <Form.Item name="skills" label="Kỹ năng">
+                  <Input.TextArea placeholder="VD: .NET, SQL Server, REST API..." />
+                </Form.Item>
 
-              <Form.Item name="preferredJobType" label="Loại hình công việc mong muốn">
-                <Input placeholder="VD: Fulltime, Part-time, Remote..." />
-              </Form.Item>
+                <Form.Item name="preferredJobType" label="Loại hình công việc mong muốn">
+                  <Input placeholder="VD: Fulltime, Part-time, Remote..." />
+                </Form.Item>
 
-              <Divider />
+                <Divider />
 
-              <Title level={5}>Địa điểm làm việc mong muốn</Title>
-              <Form.Item
-                name="provinceId"
-                label="Tỉnh / Thành phố"
-                rules={[{ required: true, message: "Vui lòng chọn tỉnh/thành" }]}
-              >
-                <Select
-                  placeholder="Chọn tỉnh / thành"
-                  loading={locationLoading.provinces}
-                  options={provinces.map((p) => ({ label: p.name, value: p.code }))}
-                  onChange={handleProvinceChange}
-                  allowClear
-                />
-              </Form.Item>
+                <Title level={5}>Địa điểm làm việc mong muốn</Title>
+                <Form.Item
+                  name="provinceId"
+                  label="Tỉnh / Thành phố"
+                  rules={[{ required: true, message: "Vui lòng chọn tỉnh/thành" }]}
+                >
+                  <Select
+                    placeholder="Chọn tỉnh / thành"
+                    loading={locationLoading.provinces}
+                    options={provinces.map((p) => ({ label: p.name, value: p.code }))}
+                    onChange={handleProvinceChange}
+                    allowClear
+                  />
+                </Form.Item>
 
-              <Form.Item
-                name="districtId"
-                label="Quận / Huyện"
-                rules={[{ required: true, message: "Vui lòng chọn quận/huyện" }]}
-              >
-                <Select
-                  placeholder="Chọn quận / huyện"
-                  loading={locationLoading.districts}
-                  options={districts.map((d) => ({ label: d.name, value: d.code }))}
-                  onChange={handleDistrictChange}
-                  disabled={!form.getFieldValue("provinceId")}
-                  allowClear
-                />
-              </Form.Item>
+                <Form.Item
+                  name="districtId"
+                  label="Quận / Huyện"
+                  rules={[{ required: true, message: "Vui lòng chọn quận/huyện" }]}
+                >
+                  <Select
+                    placeholder="Chọn quận / huyện"
+                    loading={locationLoading.districts}
+                    options={districts.map((d) => ({ label: d.name, value: d.code }))}
+                    onChange={handleDistrictChange}
+                    disabled={!form.getFieldValue("provinceId")}
+                    allowClear
+                  />
+                </Form.Item>
 
-              <Form.Item
-                name="wardId"
-                label="Phường / Xã"
-                rules={[{ required: true, message: "Vui lòng chọn phường/xã" }]}
-              >
-                <Select
-                  placeholder="Chọn phường / xã"
-                  loading={locationLoading.wards}
-                  options={wards.map((w) => ({ label: w.name, value: w.code }))}
-                  disabled={!form.getFieldValue("districtId")}
-                  allowClear
-                />
-              </Form.Item>
+                <Form.Item
+                  name="wardId"
+                  label="Phường / Xã"
+                  rules={[{ required: true, message: "Vui lòng chọn phường/xã" }]}
+                >
+                  <Select
+                    placeholder="Chọn phường / xã"
+                    loading={locationLoading.wards}
+                    options={wards.map((w) => ({ label: w.name, value: w.code }))}
+                    disabled={!form.getFieldValue("districtId")}
+                    allowClear
+                  />
+                </Form.Item>
 
-              <Space className="w-full justify-end mt-4">
-                {editingCv && (
-                  <Button onClick={resetForm}>Hủy</Button>
-                )}
-                <Button type="primary" htmlType="submit" loading={submitting}>
-                  {editingCv ? "Lưu thay đổi" : "Đăng"}
-                </Button>
-              </Space>
-            </Form>
+                <Space className="w-full justify-end mt-4">
+                  <Button onClick={handleCancelForm}>Hủy</Button>
+                  <Button type="primary" htmlType="submit" loading={submitting}>
+                    {editingCv ? "Lưu thay đổi" : "Đăng"}
+                  </Button>
+                </Space>
+              </Form>
+            </Card>
+          ) : null}
+
+          <Card className="shadow-md" bodyStyle={{ paddingTop: 24 }}>
+            {cvList}
           </Card>
         </div>
       </div>
