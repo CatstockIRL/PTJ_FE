@@ -21,18 +21,28 @@ const LoginForm: React.FC = () => {
       const response = await loginJobSeeker(values);
       const { accessToken, user } = response;
 
-      // Gán vai trò người tìm việc. Lý tưởng là vai trò nên được trả về từ backend.
-      // Tuy nhiên, theo yêu cầu, chúng ta sẽ gán cứng ở đây.
-      user.roles = [ROLES.JOB_SEEKER];
+      const normalizedRoles =
+        Array.isArray(user.roles) && user.roles.length > 0 ? user.roles : [ROLES.JOB_SEEKER];
+      const normalizedUser = {
+        ...user,
+        roles: normalizedRoles
+      };
       
       // 1. Lưu access token vào session storage
       setAccessToken(accessToken);
 
       // 2. Dispatch action để lưu thông tin user vào Redux
-      dispatch(loginSuccess({ user, token: accessToken }));
+      dispatch(loginSuccess({ user: normalizedUser, token: accessToken }));
       
-      if(user.roles.includes(ROLES.ADMIN)){
+      if (normalizedRoles.includes(ROLES.ADMIN)) {
+        message.success('Đăng nhập thành công!');
         navigate('/admin/dashboard');
+        return;
+      }
+
+      if (normalizedRoles.includes(ROLES.EMPLOYER)) {
+        message.success('Đăng nhập thành công!');
+        navigate('/nha-tuyen-dung/dashboard');
         return;
       }
 
