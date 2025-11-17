@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   Alert,
@@ -12,7 +12,8 @@ import {
   Typography,
   Space,
   Empty,
-  Tag
+  Tag,
+  Button
 } from 'antd';
 import type { TabsProps } from 'antd';
 import type { AppDispatch, RootState } from '../../app/store';
@@ -31,6 +32,7 @@ const EmployerProfilePage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { profile, loading, error } = useSelector((state: RootState) => state.profile);
   const authUser = useSelector((state: RootState) => state.auth.user);
+  const [showAllRatings, setShowAllRatings] = useState(false);
 
   useEffect(() => {
     void dispatch(fetchEmployerProfile());
@@ -45,6 +47,13 @@ const EmployerProfilePage: React.FC = () => {
   };
 
   const ratings: Rating[] = profile?.ratings ?? [];
+  const displayedRatings = useMemo(
+    () => (showAllRatings ? ratings : ratings.slice(0, 3)),
+    [ratings, showAllRatings]
+  );
+  useEffect(() => {
+    setShowAllRatings(false);
+  }, [ratings.length]);
   const computeAverage = (items: Rating[]) =>
     items.length > 0
       ? items.reduce((total, current) => total + Number(current.ratingValue ?? 0), 0) / items.length
@@ -63,28 +72,28 @@ const EmployerProfilePage: React.FC = () => {
 
   const overviewTab = profile ? (
     <div className="space-y-4">
-      <Card title="Thong tin nha tuyen dung" bordered={false} className="shadow-sm">
+      <Card title="Thông tin nhà tuyển dụng" bordered={false} className="shadow-sm">
         <Descriptions column={1} labelStyle={{ fontWeight: 600, width: 160 }}>
-          <Descriptions.Item label="Ten nha tuyen dung">{profile.displayName}</Descriptions.Item>
-          <Descriptions.Item label="Mo ta">
-            {profile.description || 'Chua co mo ta'}
+          <Descriptions.Item label="Tên nhà tuyển dụng">{profile.displayName}</Descriptions.Item>
+          <Descriptions.Item label="Mô tả">
+            {profile.description || 'Chưa có mô tả'}
           </Descriptions.Item>
-          <Descriptions.Item label="Nguoi lien he">
-            {profile.contactName || 'Chua cap nhat'}
+          <Descriptions.Item label="Người liên hệ">
+            {profile.contactName || 'Chưa cập nhật'}
           </Descriptions.Item>
-          <Descriptions.Item label="Vai tro">
-            <Tag color="purple">{profile.role || 'Employer'}</Tag>
+          <Descriptions.Item label="Vai trò">
+            <Tag color="purple">{profile.role || 'Nhà tuyển dụng'}</Tag>
           </Descriptions.Item>
         </Descriptions>
       </Card>
 
-      <Card title="Thong tin lien he" bordered={false} className="shadow-sm">
+      <Card title="Thông tin liên hệ" bordered={false} className="shadow-sm">
         <Descriptions column={2} labelStyle={{ fontWeight: 600 }}>
           <Descriptions.Item label="Email">
-            {profile.contactEmail ?? profile.email ?? 'Chua cap nhat'}
+            {profile.contactEmail ?? profile.email ?? 'Chưa cập nhật'}
           </Descriptions.Item>
-          <Descriptions.Item label="So dien thoai">
-            {profile.contactPhone ?? profile.phoneNumber ?? 'Chua cap nhat'}
+          <Descriptions.Item label="Số điện thoại">
+            {profile.contactPhone ?? profile.phoneNumber ?? 'Chưa cập nhật'}
           </Descriptions.Item>
           <Descriptions.Item label="Website">
             {profile.website ? (
@@ -92,28 +101,28 @@ const EmployerProfilePage: React.FC = () => {
                 {profile.website}
               </a>
             ) : (
-              'Chua cap nhat'
+              'Chưa cập nhật'
             )}
           </Descriptions.Item>
-          <Descriptions.Item label="Dia diem">
-            {profile.location ?? 'Chua cap nhat'}
+          <Descriptions.Item label="Địa điểm">
+            {profile.location ?? 'Chưa cập nhật'}
           </Descriptions.Item>
         </Descriptions>
       </Card>
     </div>
   ) : (
-    <Empty description="Chua co thong tin ho so" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+    <Empty description="Chưa có thông tin hồ sơ" image={Empty.PRESENTED_IMAGE_SIMPLE} />
   );
 
   const tabItems: TabsProps['items'] = [
     {
       key: 'overview',
-      label: 'Tong quan',
+      label: 'Tổng quan',
       children: overviewTab
     },
     {
       key: 'edit',
-      label: 'Chinh sua ho so',
+      label: 'Chỉnh sửa hồ sơ',
       children: (
         <ProfileForm
           profile={profile}
@@ -127,7 +136,7 @@ const EmployerProfilePage: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {error && <Alert message="Loi" description={error} type="error" showIcon className="mb-4" />}
+      {error && <Alert message="Lỗi" description={error} type="error" showIcon className="mb-4" />}
 
       <Row gutter={[24, 24]}>
         <Col xs={24} lg={8}>
@@ -139,36 +148,45 @@ const EmployerProfilePage: React.FC = () => {
           />
 
           <Card
-            title="Danh gia nha tuyen dung"
+            title="Đánh giá nhà tuyển dụng"
             bordered={false}
             className="shadow-md"
             bodyStyle={{ paddingTop: 16 }}
           >
             {ratings.length > 0 ? (
-              <List
-                itemLayout="vertical"
-                dataSource={ratings}
-                split={false}
-                renderItem={(item) => (
-                  <List.Item key={item.ratingId} className="bg-gray-50 rounded-lg px-4 py-3 mb-3">
-                    <Space direction="vertical" size={4} className="w-full">
-                      <Space align="center" className="justify-between">
-                        <Text strong>{item.raterName ?? `Nguoi dung ${item.raterId}`}</Text>
-                        <Text type="secondary">{formatDate(item.createdAt)}</Text>
+              <>
+                <List
+                  itemLayout="vertical"
+                  dataSource={displayedRatings}
+                  split={false}
+                  renderItem={(item) => (
+                    <List.Item key={item.ratingId} className="bg-gray-50 rounded-lg px-4 py-3 mb-3">
+                      <Space direction="vertical" size={4} className="w-full">
+                        <Space align="center" className="justify-between">
+                          <Text strong>{item.raterName ?? `Người dùng ${item.raterId}`}</Text>
+                          <Text type="secondary">{formatDate(item.createdAt)}</Text>
+                        </Space>
+                        <Space align="center">
+                          <Rate allowHalf disabled value={Number(item.ratingValue)} />
+                          <Text strong>{Number(item.ratingValue).toFixed(1)}</Text>
+                        </Space>
+                        <Paragraph className="mb-0">
+                          {item.comment ?? 'Không có nhận xét.'}
+                        </Paragraph>
                       </Space>
-                      <Space align="center">
-                        <Rate allowHalf disabled value={Number(item.ratingValue)} />
-                        <Text strong>{Number(item.ratingValue).toFixed(1)}</Text>
-                      </Space>
-                      <Paragraph className="mb-0">
-                        {item.comment ?? 'Khong co nhan xet.'}
-                      </Paragraph>
-                    </Space>
-                  </List.Item>
+                    </List.Item>
+                  )}
+                />
+                {ratings.length > 3 && (
+                  <div className="text-center mt-2">
+                    <Button type="link" onClick={() => setShowAllRatings((prev) => !prev)}>
+                      {showAllRatings ? 'Thu gọn' : 'Xem tất cả đánh giá'}
+                    </Button>
+                  </div>
                 )}
-              />
+              </>
             ) : (
-              <Empty description="Chua co danh gia" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+              <Empty description="Chưa có đánh giá" image={Empty.PRESENTED_IMAGE_SIMPLE} />
             )}
           </Card>
         </Col>
@@ -180,7 +198,7 @@ const EmployerProfilePage: React.FC = () => {
             title={
               <div className="flex items-center justify-between">
                 <Title level={4} className="mb-0">
-                  Thong tin ho so
+                  Thông tin hồ sơ
                 </Title>
                 {ratingAverage !== undefined && (
                   <Space size="small" align="center">
