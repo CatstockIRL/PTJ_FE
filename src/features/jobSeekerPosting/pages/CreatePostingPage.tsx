@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Form,
   Input,
@@ -10,12 +10,21 @@ import {
   Radio,
   message,
   Spin,
+  TimePicker,
+  Space,
 } from "antd";
+import type { Dayjs } from "dayjs";
+import dayjs from "dayjs";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import type { AppDispatch, RootState } from "../../../app/store";
 import { useAuth } from "../../auth/hooks";
-import { createPosting, resetPostStatus, fetchPostById, updatePosting } from "../slice/slice";
+import {
+  createPosting,
+  resetPostStatus,
+  fetchPostById,
+  updatePosting,
+} from "../slice/slice";
 import { useCategories } from "../../category/hook";
 import type {
   CreateJobSeekerPostPayload,
@@ -24,9 +33,29 @@ import type {
 import locationService, {
   type LocationOption,
 } from "../../location/locationService";
+import { fetchMyCvs } from "../../jobSeekerCv/services";
+import type { JobSeekerCv } from "../../jobSeekerCv/types";
 
 const { Title } = Typography;
 const { TextArea } = Input;
+const timeFormat = "HH:mm";
+
+const parseTimeValue = (value?: string | null): Dayjs | null => {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const normalized = trimmed
+    .replace(/[hH]/, ":")
+    .replace(/\s/g, "")
+    .replace(/(\d)(?=[ap]m$)/i, "$1"); // best effort cleanup
+  const [hourPart, minutePart = "00"] = normalized.split(":");
+  if (!hourPart) return null;
+  const hours = hourPart.padStart(2, "0").slice(-2);
+  const minutes = minutePart.padEnd(2, "0").slice(0, 2);
+  const formatted = `${hours}:${minutes}`;
+  const parsed = dayjs(formatted, timeFormat, true);
+  return parsed.isValid() ? parsed : null;
+};
 
 const CreatePostingPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -57,13 +86,15 @@ const CreatePostingPage: React.FC = () => {
     districts: false,
     wards: false,
   });
+  const [cvOptions, setCvOptions] = useState<JobSeekerCv[]>([]);
+  const [isLoadingCvs, setIsLoadingCvs] = useState(false);
 
   const pageTitle = isCreateMode
-    ? "T?o b�i dang t�m vi?c Part-time"
+    ? "Tạo bài đăng tìm việc Part-time"
     : isEditMode
-    ? "Ch?nh s?a b�i dang t�m vi?c"
-    : "Chi ti?t b�i dang t�m vi?c";
-  const buttonText = isCreateMode ? "�ang b�i" : "Luu thay d?i";
+    ? "Chỉnh sửa bài đăng tìm việc"
+    : "Chi tiết bài đăng tìm việc";
+  const buttonText = isCreateMode ? "Đăng bài" : "Lưu thay đổi";
 
   useEffect(() => {
     setIsReadOnly(isViewMode);
@@ -75,8 +106,8 @@ const CreatePostingPage: React.FC = () => {
       try {
         const data = await locationService.getProvinces();
         setProvinces(data);
-      } catch (err) {
-        message.error("Kh�ng th? t?i danh s�ch khu v?c");
+      } catch {
+        message.error("Không thể tải danh sách khu vực");
       } finally {
         setLocationLoading((prev) => ({ ...prev, provinces: false }));
       }
@@ -84,36 +115,46 @@ const CreatePostingPage: React.FC = () => {
     loadProvinces();
   }, []);
 
-  const handleProvinceChange = async (value?: number) => {
-    form.setFieldsValue({ districtId: undefined, wardId: undefined });
-    setDistricts([]);
-    setWards([]);
-    if (!value) return;
-    setLocationLoading((prev) => ({ ...prev, districts: true }));
-    try {
-      const data = await locationService.getDistricts(value);
-      setDistricts(data);
-    } catch (err) {
-      message.error("Kh�ng th? t?i danh s�ch qu?n/huy?n");
-    } finally {
-      setLocationLoading((prev) => ({ ...prev, districts: false }));
-    }
-  };
+  const handleProvinceChange = useCallback(
+    async (value?: number, preserveSelection = false) => {
+      if (!preserveSelection) {
+        form.setFieldsValue({ districtId: undefined, wardId: undefined });
+      }
+      setDistricts([]);
+      setWards([]);
+      if (!value) return;
+      setLocationLoading((prev) => ({ ...prev, districts: true }));
+      try {
+        const data = await locationService.getDistricts(value);
+        setDistricts(data);
+      } catch {
+        message.error("Không thể tải danh sách quận/huyện");
+      } finally {
+        setLocationLoading((prev) => ({ ...prev, districts: false }));
+      }
+    },
+    [form]
+  );
 
-  const handleDistrictChange = async (value?: number) => {
-    form.setFieldsValue({ wardId: undefined });
-    setWards([]);
-    if (!value) return;
-    setLocationLoading((prev) => ({ ...prev, wards: true }));
-    try {
-      const data = await locationService.getWards(value);
-      setWards(data);
-    } catch (err) {
-      message.error("Kh�ng th? t?i danh s�ch phu?ng/x�");
-    } finally {
-      setLocationLoading((prev) => ({ ...prev, wards: false }));
-    }
-  };
+  const handleDistrictChange = useCallback(
+    async (value?: number, preserveSelection = false) => {
+      if (!preserveSelection) {
+        form.setFieldsValue({ wardId: undefined });
+      }
+      setWards([]);
+      if (!value) return;
+      setLocationLoading((prev) => ({ ...prev, wards: true }));
+      try {
+        const data = await locationService.getWards(value);
+        setWards(data);
+      } catch {
+        message.error("Không thể tải danh sách phường/xã");
+      } finally {
+        setLocationLoading((prev) => ({ ...prev, wards: false }));
+      }
+    },
+    [form]
+  );
 
   useEffect(() => {
     if ((isViewMode || isEditMode) && id) {
@@ -123,47 +164,98 @@ const CreatePostingPage: React.FC = () => {
 
   useEffect(() => {
     if (postDetail && (isViewMode || isEditMode)) {
+      const fallbackParts =
+        postDetail.preferredWorkHours
+          ?.split("-")
+          .map((part) => part.trim()) ?? [];
+      const [fallbackStart, fallbackEnd] = fallbackParts;
+      const startTime = parseTimeValue(
+        postDetail.preferredWorkHourStart ?? fallbackStart
+      );
+      const endTime = parseTimeValue(
+        postDetail.preferredWorkHourEnd ?? fallbackEnd
+      );
+
       form.setFieldsValue({
         ...postDetail,
+        preferredWorkHourStart: startTime || undefined,
+        preferredWorkHourEnd: endTime || undefined,
         locationDetail: postDetail.preferredLocation,
+        selectedCvId: postDetail.selectedCvId ?? postDetail.cvId ?? undefined,
       });
+
+      (async () => {
+        if (postDetail.provinceId) {
+          await handleProvinceChange(postDetail.provinceId, true);
+          if (postDetail.districtId) {
+            await handleDistrictChange(postDetail.districtId, true);
+          }
+        }
+      })();
     }
-    if (postDetail && categories.length > 0 && (isViewMode || isEditMode)) {
-      const category = categories.find((c) => c.name === postDetail.categoryName);
-      if (category) {
-        form.setFieldsValue({
-          categoryID: category.categoryId,
-        });
+  }, [
+    postDetail,
+    isViewMode,
+    isEditMode,
+    form,
+    handleProvinceChange,
+    handleDistrictChange,
+  ]);
+
+  useEffect(() => {
+    if (!user || isViewMode) return;
+    const loadCvs = async () => {
+      setIsLoadingCvs(true);
+      try {
+        const data = await fetchMyCvs();
+        setCvOptions(data);
+      } catch {
+        message.error("Không thể tải danh sách CV");
+      } finally {
+        setIsLoadingCvs(false);
       }
-    }
-  }, [postDetail, categories, isViewMode, isEditMode, form]);
+    };
+    loadCvs();
+  }, [user, isViewMode]);
 
   useEffect(() => {
     if (success) {
       message.success(
-        isCreateMode ? "T?o b�i dang th�nh c�ng!" : "C?p nh?t th�nh c�ng!"
+        isCreateMode ? "Tạo bài đăng thành công!" : "Cập nhật thành công!"
       );
       dispatch(resetPostStatus());
       navigate("/quan-ly-bai-dang");
     }
     if (error) {
-      message.error(`Thao t�c th?t b?i: ${error}`);
+      message.error(`Thao tác thất bại: ${error}`);
       dispatch(resetPostStatus());
     }
   }, [success, error, dispatch, navigate, isCreateMode]);
 
+  const { provinces: provincesLoading, districts: districtsLoading, wards: wardsLoading } =
+    locationLoading;
+
   const buildPreferredLocation = (values: any) => {
-    const provinceName = provinces.find((p) => p.code === values.provinceId)?.name;
-    const districtName = districts.find((d) => d.code === values.districtId)?.name;
+    const provinceName = provinces.find(
+      (p) => p.code === values.provinceId
+    )?.name;
+    const districtName = districts.find(
+      (d) => d.code === values.districtId
+    )?.name;
     const wardName = wards.find((w) => w.code === values.wardId)?.name;
-    return [values.locationDetail?.trim(), wardName, districtName, provinceName]
+    return [
+      values.locationDetail?.trim(),
+      wardName,
+      districtName,
+      provinceName,
+    ]
       .filter((part) => part && part.length > 0)
       .join(", ");
   };
 
   const onFinish = (values: any) => {
     if (!user) {
-      message.error("Vui l�ng dang nh?p d? th?c hi?n ch?c nang n�y");
+      message.error("Vui lòng đăng nhập để thực hiện chức năng này");
       return;
     }
 
@@ -172,32 +264,44 @@ const CreatePostingPage: React.FC = () => {
       provinceId,
       districtId,
       wardId,
+      preferredWorkHourStart,
+      preferredWorkHourEnd,
+      selectedCvId,
       ...rest
     } = values;
 
-    const preferredLocation = buildPreferredLocation(values) || locationDetail || "";
+    const preferredLocation =
+      buildPreferredLocation({ ...values, locationDetail }) || "";
+
+    const startTime = (preferredWorkHourStart as Dayjs).format(timeFormat);
+    const endTime = (preferredWorkHourEnd as Dayjs).format(timeFormat);
+
+    const payload: CreateJobSeekerPostPayload = {
+      ...rest,
+      preferredLocation,
+      userID: user.id,
+      age: Number(rest.age),
+      categoryID: Number(rest.categoryID),
+      provinceId: Number(provinceId),
+      districtId: Number(districtId),
+      wardId: Number(wardId),
+      preferredWorkHourStart: startTime,
+      preferredWorkHourEnd: endTime,
+      selectedCvId: selectedCvId ? Number(selectedCvId) : undefined,
+    };
 
     if (isCreateMode) {
-      const payload: CreateJobSeekerPostPayload = {
-        ...rest,
-        preferredLocation,
-        userID: user.id,
-        age: Number(values.age),
-        categoryID: Number(values.categoryID),
-      };
       dispatch(createPosting(payload));
     } else if (isEditMode && id) {
-      const payload: UpdateJobSeekerPostPayload = {
-        ...rest,
-        preferredLocation,
+      const updatePayload: UpdateJobSeekerPostPayload = {
+        ...payload,
         jobSeekerPostId: Number(id),
-        userID: user.id,
-        age: Number(values.age),
-        categoryID: Number(values.categoryID),
       };
-      dispatch(updatePosting(payload));
+      dispatch(updatePosting(updatePayload));
     }
   };
+
+  const disabledTimePicker = isReadOnly;
 
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
@@ -207,30 +311,60 @@ const CreatePostingPage: React.FC = () => {
         </Title>
         <Spin spinning={isSubmitting || isLoadingDetail}>
           <Card>
-            <Form form={form} layout="vertical" name="create-posting-form" onFinish={onFinish}>
-              <Form.Item
-                name="title"
-                label="Ti�u d? b�i dang"
-                rules={[
-                  { required: true, message: "Vui l�ng nh?p ti�u d?!" },
-                  { max: 100, message: "Ti�u d? kh�ng vu?t qu� 100 k� t?!" },
-                ]}
-              >
-                <Input placeholder="V� d?: Sinh vi�n nam 2 t�m vi?c l�m ph?c v?" readOnly={isReadOnly} />
-              </Form.Item>
+            <Form
+              layout="vertical"
+              form={form}
+              onFinish={onFinish}
+            >
+            <Form.Item
+  name="title"
+  label="Tiêu đề bài đăng"
+  rules={[
+    { required: true, message: "Vui lòng nhập tiêu đề!" },
+    { max: 120, message: "Tiêu đề không vượt quá 120 ký tự!" },
+    {
+      validator: (_, value) => {
+        const text = (value || "").trim();
+        if (!text) {
+          // đã có rule required xử lý rồi
+          return Promise.resolve();
+        }
+
+        if (text.length < 5) {
+          return Promise.reject(
+            new Error("Tiêu đề phải có ít nhất 5 ký tự!")
+          );
+        }
+
+        return Promise.resolve();
+      },
+    },
+  ]}
+>
+  <Input
+    placeholder="Ví dụ: Sinh viên năm 2 tìm việc làm phục vụ"
+    readOnly={isReadOnly}
+  />
+</Form.Item>
+
 
               <Form.Item
                 name="categoryID"
-                label="Ng�nh ngh? mong mu?n"
-                rules={[{ required: true, message: "Vui l�ng ch?n ng�nh ngh?!" }]}
+                label="Ngành nghề mong muốn"
+                rules={[{ required: true, message: "Vui lòng chọn ngành nghề!" }]}
               >
                 <Select
-                  placeholder="Ch?n ng�nh ngh?"
+                  placeholder="Chọn ngành nghề"
                   loading={isLoadingCategories}
                   disabled={isReadOnly}
+                  showSearch
+                  optionFilterProp="children"
                 >
                   {categories.map((category) => (
-                    <Select.Option key={category.categoryId} value={category.categoryId}>
+                    <Select.Option
+                      key={category.categoryId}
+                      value={category.categoryId}
+                    >
                       {category.name}
                     </Select.Option>
                   ))}
@@ -238,28 +372,19 @@ const CreatePostingPage: React.FC = () => {
               </Form.Item>
 
               <Form.Item
-                name="locationDetail"
-                label="�?a ch? chi ti?t"
-                rules={[{ required: true, message: "Vui l�ng nh?p d?a ch? chi ti?t!" }]}
-              >
-                <Input placeholder="V� d?: S? 12, du?ng L�ng" readOnly={isReadOnly} />
-              </Form.Item>
-
-              <Form.Item
                 name="provinceId"
-                label="T?nh / Th�nh ph?"
-                rules={[{ required: true, message: "Vui l�ng ch?n t?nh/th�nh!" }]}
+                label="Tỉnh / Thành phố"
+                rules={[{ required: true, message: "Vui lòng chọn tỉnh/thành!" }]}
               >
                 <Select
                   showSearch
-                  placeholder="Ch?n t?nh / th�nh"
+                  placeholder="Chọn tỉnh / thành"
                   optionFilterProp="children"
-                  filterOption={(input, option) =>
-                    (option?.children as string).toLowerCase().includes(input.toLowerCase())
-                  }
                   disabled={isReadOnly}
-                  loading={locationLoading.provinces}
-                  onChange={(value) => handleProvinceChange(value as number)}
+                  loading={provincesLoading}
+                  onChange={(value) =>
+                    handleProvinceChange(value as number | undefined, false)
+                  }
                   allowClear
                 >
                   {provinces.map((province) => (
@@ -272,14 +397,16 @@ const CreatePostingPage: React.FC = () => {
 
               <Form.Item
                 name="districtId"
-                label="Qu?n / Huy?n"
-                rules={[{ required: true, message: "Vui l�ng ch?n qu?n/huy?n!" }]}
+                label="Quận / Huyện"
+                rules={[{ required: true, message: "Vui lòng chọn quận/huyện!" }]}
               >
                 <Select
-                  placeholder="Ch?n qu?n / huy?n"
+                  placeholder="Chọn quận / huyện"
                   disabled={isReadOnly || !form.getFieldValue("provinceId")}
-                  loading={locationLoading.districts}
-                  onChange={(value) => handleDistrictChange(value as number)}
+                  loading={districtsLoading}
+                  onChange={(value) =>
+                    handleDistrictChange(value as number | undefined, false)
+                  }
                   allowClear
                 >
                   {districts.map((district) => (
@@ -292,13 +419,13 @@ const CreatePostingPage: React.FC = () => {
 
               <Form.Item
                 name="wardId"
-                label="Phu?ng / X�"
-                rules={[{ required: true, message: "Vui l�ng ch?n phu?ng/x�!" }]}
+                label="Phường / Xã"
+                rules={[{ required: true, message: "Vui lòng chọn phường/xã!" }]}
               >
                 <Select
-                  placeholder="Ch?n phu?ng / x�"
+                  placeholder="Chọn phường / xã"
                   disabled={isReadOnly || !form.getFieldValue("districtId")}
-                  loading={locationLoading.wards}
+                  loading={wardsLoading}
                   allowClear
                 >
                   {wards.map((ward) => (
@@ -310,74 +437,174 @@ const CreatePostingPage: React.FC = () => {
               </Form.Item>
 
               <Form.Item
-                name="preferredWorkHours"
-                label="Th?i gian l�m vi?c mong mu?n"
+                name="locationDetail"
+                label="Địa chỉ chi tiết"
                 rules={[
-                  { required: true, message: "Vui l�ng nh?p th?i gian l�m vi?c!" },
-                  {
-                    validator: (_, value) => {
-                      const hourFormatRegex = /^(\d{1,2})(h|:00)?\s*-\s*(\d{1,2})(h|:00)?$/;
-                      if (!value || hourFormatRegex.test(value) || value.includes("-")) {
-                        return Promise.resolve();
-                      }
-                      return Promise.reject(
-                        new Error('Vui l�ng nh?p d�ng d?nh d?ng "gi? - gi?" (VD: 8:00-17:00)')
-                      );
-                    },
-                  },
+                  { required: true, message: "Vui lòng nhập địa chỉ chi tiết!" },
                 ]}
               >
-                <Input placeholder="V� d?: Bu?i t?i c�c ng�y trong tu?n" readOnly={isReadOnly} />
+                <Input
+                  placeholder="Ví dụ: Số 12, đường Láng"
+                  readOnly={isReadOnly}
+                />
+              </Form.Item>
+
+              <Form.Item
+                label="Thời gian làm việc mong muốn"
+                required
+                className="time-picker-item"
+              >
+                <Space.Compact className="w-full">
+                  <Form.Item
+                    name="preferredWorkHourStart"
+                    noStyle
+                    rules={[
+                      { required: true, message: "Vui lòng chọn giờ bắt đầu!" },
+                    ]}
+                  >
+                    <TimePicker
+                      format={timeFormat}
+                      placeholder="Từ"
+                      style={{ width: "50%" }}
+                      disabled={disabledTimePicker}
+                    />
+                  </Form.Item>
+                  <Form.Item
+                    name="preferredWorkHourEnd"
+                    noStyle
+                    dependencies={["preferredWorkHourStart"]}
+                    rules={[
+                      { required: true, message: "Vui lòng chọn giờ kết thúc!" },
+                      ({ getFieldValue }) => ({
+                        validator(_, value) {
+                          const start: Dayjs | undefined =
+                            getFieldValue("preferredWorkHourStart");
+                          if (
+                            !value ||
+                            !start ||
+                            value.isAfter(start)
+                          ) {
+                            return Promise.resolve();
+                          }
+                          return Promise.reject(
+                            new Error("Giờ kết thúc phải sau giờ bắt đầu")
+                          );
+                        },
+                      }),
+                    ]}
+                  >
+                    <TimePicker
+                      format={timeFormat}
+                      placeholder="Đến"
+                      style={{ width: "50%" }}
+                      disabled={disabledTimePicker}
+                    />
+                  </Form.Item>
+                </Space.Compact>
               </Form.Item>
 
               <Form.Item
                 name="phoneContact"
-                label="S? di?n tho?i li�n h?"
+                label="Số điện thoại liên hệ"
                 rules={[
-                  { required: true, message: "Vui l�ng nh?p s? di?n tho?i!" },
-                  { pattern: /^\d{10}$/, message: "S? di?n tho?i ph?i c� 10 ch? s?!" },
+                  { required: true, message: "Vui lòng nhập số điện thoại!" },
+                  {
+                    pattern: /^\d{10}$/,
+                    message: "Số điện thoại phải có 10 chữ số!",
+                  },
                 ]}
               >
-                <Input type="tel" placeholder="Nh� tuy?n d?ng s? li�n h? qua s? n�y" readOnly={isReadOnly} />
+                <Input
+                  type="tel"
+                  placeholder="Nhà tuyển dụng sẽ liên hệ qua số này"
+                  readOnly={isReadOnly}
+                />
               </Form.Item>
 
               <Form.Item
                 name="age"
-                label="Tu?i"
-                rules={[{ required: true, message: "Vui l�ng nh?p tu?i c?a b?n!" }]}
+                label="Tuổi"
+                rules={[{ required: true, message: "Vui lòng nhập tuổi của bạn!" }]}
               >
-                <InputNumber min={16} max={60} style={{ width: "100%" }} readOnly={isReadOnly} />
+                <InputNumber
+                  min={16}
+                  max={60}
+                  style={{ width: "100%" }}
+                  disabled={isReadOnly}
+                />
               </Form.Item>
 
               <Form.Item
                 name="gender"
-                label="Gi?i t�nh"
-                rules={[{ required: true, message: "Vui l�ng ch?n gi?i t�nh!" }]}
+                label="Giới tính"
+                rules={[{ required: true, message: "Vui lòng chọn giới tính!" }]}
               >
                 <Radio.Group disabled={isReadOnly}>
                   <Radio value="Nam">Nam</Radio>
-                  <Radio value="N?">N?</Radio>
-                  <Radio value="Kh�c">Kh�c</Radio>
+                  <Radio value="Nữ">Nữ</Radio>
+                  <Radio value="Khác">Khác</Radio>
                 </Radio.Group>
               </Form.Item>
 
               <Form.Item
                 name="description"
-                label="M� t? chi ti?t v? b?n th�n v� kinh nghi?m"
-                rules={[{ required: true, message: "Vui l�ng nh?p m� t?!" }]}
+                label="Mô tả chi tiết về bản thân và kinh nghiệm"
+                rules={[
+                  { required: true, message: "Vui lòng nhập mô tả!" },
+                  {
+                    validator: (_, value) => {
+                      const length = (value ?? "").trim().length;
+                      return length >= 20
+                        ? Promise.resolve()
+                        : Promise.reject(
+                            new Error(
+                              "Mô tả phải có ít nhất 20 ký tự để hệ thống hiểu rõ về bạn"
+                            )
+                          );
+                    },
+                  },
+                ]}
               >
-                <TextArea rows={6} placeholder="Gi?i thi?u v? k? nang, kinh nghi?m l�m vi?c..." readOnly={isReadOnly} />
+                <TextArea
+                  rows={6}
+                  placeholder="Giới thiệu về kỹ năng, kinh nghiệm làm việc..."
+                  readOnly={isReadOnly}
+                />
               </Form.Item>
+
+              {!isViewMode && (
+                <Form.Item name="selectedCvId" label="Chọn CV đính kèm">
+                  <Select
+                    placeholder="Chọn một CV để AI ưu tiên gợi ý việc làm"
+                    loading={isLoadingCvs}
+                    allowClear
+                    showSearch
+                    optionFilterProp="children"
+                    disabled={isReadOnly}
+                    notFoundContent={
+                      !isLoadingCvs ? "Bạn chưa có CV nào." : undefined
+                    }
+                  >
+                    {cvOptions.map((cv) => (
+                      <Select.Option key={cv.cvid} value={cv.cvid}>
+                        {cv.cvTitle}
+                      </Select.Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+              )}
 
               <Form.Item>
                 {isViewMode ? (
-                  user && postDetail && user.id === postDetail.userID && (
+                  user &&
+                  postDetail &&
+                  user.id === postDetail.userID && (
                     <Button
                       type="primary"
                       block
                       onClick={() => navigate(`/sua-bai-dang-tim-viec/${id}`)}
                     >
-                      Ch?nh s?a b�i dang
+                      Chỉnh sửa bài đăng
                     </Button>
                   )
                 ) : (
