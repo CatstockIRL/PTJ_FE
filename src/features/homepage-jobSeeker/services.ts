@@ -26,7 +26,7 @@ const mapBackendJobToFrontendJob = (backendJob: BackendJob): Job => {
   const salaryValue = backendJob.salary ?? null;
   const salaryText =
     salaryValue === null || salaryValue <= 0
-      ? "Thoa thuan"
+      ? "Thỏa thuận"
       : `${salaryValue.toLocaleString("vi-VN")} VND`;
 
   return {

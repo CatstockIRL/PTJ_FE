@@ -4,6 +4,9 @@ import { getEmployers } from '../services/service';
 
 interface EmployerState {
   allEmployers: Employer[];
+  totalRecords: number; 
+  currentPage: number;  
+  pageSize: number;       
   loading: boolean;
   error: string | null;
   filters: EmployerFilter;
@@ -11,12 +14,18 @@ interface EmployerState {
 
 const initialState: EmployerState = {
   allEmployers: [],
+  totalRecords: 0,
+  currentPage: 1,
+  pageSize: 10,
   loading: false,
   error: null,
-  filters: {},
+  filters: {
+    page: 1,
+    pageSize: 10
+  },
 };
 
-export const fetchEmployers = createAsyncThunk<Employer[], EmployerFilter>(
+export const fetchEmployers = createAsyncThunk<{ employers: Employer[], totalRecords: number }, EmployerFilter>(
   'employers/fetchEmployers',
   async (filters) => {
     const response = await getEmployers(filters);
@@ -29,7 +38,10 @@ const employerSlice = createSlice({
   initialState,
   reducers: {
     setEmployerFilters(state, action: PayloadAction<EmployerFilter>) {
-        state.filters = action.payload;
+        state.filters = { ...state.filters, ...action.payload };
+        if (action.payload.page) {
+            state.currentPage = action.payload.page;
+        }
     },
   },
   extraReducers: (builder) => {
@@ -38,14 +50,16 @@ const employerSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchEmployers.fulfilled, (state, action: PayloadAction<Employer[]>) => {
+      .addCase(fetchEmployers.fulfilled, (state, action) => {
         state.loading = false;
-        state.allEmployers = action.payload;
+        state.allEmployers = action.payload.employers;
+        state.totalRecords = action.payload.totalRecords; 
       })
       .addCase(fetchEmployers.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Lỗi khi tải danh sách nhà tuyển dụng';
         state.allEmployers = [];
+        state.totalRecords = 0;
       });
   },
 });

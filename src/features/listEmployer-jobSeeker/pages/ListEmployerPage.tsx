@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Row, Col, Input, Typography, Spin, Pagination, Empty } from 'antd';
 import { useEmployers } from '../hooks/useEmployers';
 import EmployerCard from '../components/EmployerCard';
+import { Link } from 'react-router-dom';
 
 const { Title, Text } = Typography;
 const { Search } = Input;
@@ -12,23 +13,20 @@ const ListEmployerPage: React.FC = () => {
     loading,
     filters,
     applyFilters,
+    totalRecords,
+    currentPage,
+    pageSize
   } = useEmployers();
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 12;
-
-  const paginatedEmployers = useMemo(() => {
-    const startIndex = (currentPage - 1) * pageSize;
-    return employers.slice(startIndex, startIndex + pageSize);
-  }, [employers, currentPage, pageSize]);
-
   const handleSearch = (keyword: string) => {
-    setCurrentPage(1);
-    applyFilters({ keyword });
+    applyFilters({ keyword, page: 1 });
   };
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+  const handlePageChange = (page: number, newPageSize?: number) => {
+    applyFilters({ 
+      page, 
+      pageSize: newPageSize || pageSize 
+    });
   };
 
   return (
@@ -44,10 +42,15 @@ const ListEmployerPage: React.FC = () => {
                   onSearch={handleSearch}
                   enterButton
                   defaultValue={filters.keyword}
+                  loading={loading}
                 />
               </Col>
               <Col style={{ paddingLeft: '16px' }}>
-                {loading ? <Spin /> : <Text strong>{employers.length} nhà tuyển dụng được tìm thấy</Text>}
+                {loading ? (
+                  <Spin size="small" />
+                ) : (
+                  <Text strong>{totalRecords} nhà tuyển dụng được tìm thấy</Text>
+                )}
               </Col>
             </Row>
 
@@ -55,19 +58,22 @@ const ListEmployerPage: React.FC = () => {
               <div className="text-center p-10">
                 <Spin size="large" />
               </div>
-            ) : paginatedEmployers.length > 0 ? (
+            ) : employers.length > 0 ? (
               <>
                 <Row gutter={[16, 16]}>
-                  {paginatedEmployers.map((employer) => (
+                  {employers.map((employer) => (
                     <Col key={employer.id} xs={24} sm={12} md={8} lg={6}>
-                      <EmployerCard employer={employer} />
+                      <Link to={`/nha-tuyen-dung/chi-tiet/${employer.id}`} className="block h-full">
+                         <EmployerCard employer={employer} />
+                      </Link>
                     </Col>
                   ))}
                 </Row>
+                
                 <Pagination
                   current={currentPage}
                   pageSize={pageSize}
-                  total={employers.length}
+                  total={totalRecords}
                   onChange={handlePageChange}
                   className="text-center mt-6"
                   showSizeChanger={false}

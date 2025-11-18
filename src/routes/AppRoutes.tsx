@@ -42,6 +42,7 @@ import CandidateListPage from "../features/applyJob-employer/pages/CandidateList
 import ShortlistedCandidatesPage from "../features/candidate/pages/ShortlistedCandidatesPage";
 import JobSeekerPostListPage from '../features/jobseekerList-jobSeeker/pages/JobSeekerPostListPage';
 import JobSeekerCvPage from "../features/jobSeekerCv/pages/JobSeekerCvPage";
+import EmployerDetailPage from "../features/employerDetail-jobseeker/pages/EmployerDetailPage";
 
 export const AppRoutes: React.FC = () => {
   return (
@@ -59,6 +60,7 @@ export const AppRoutes: React.FC = () => {
         <Route path="verify-success" element={<VerifySuccessPage />} />
         <Route path="verify-failed" element={<VerifyFailedPage />} />
         <Route path="danh-sach-bai-dang-tim-viec" element={<JobSeekerPostListPage />} />
+        <Route path="/nha-tuyen-dung/chi-tiet/:id" element={<EmployerDetailPage />} />
 
 
         {/* Job Seeker Protected Routes */}

@@ -6,9 +6,15 @@ import type { EmployerFilter } from '../types';
 
 export const useEmployers = () => {
   const dispatch: AppDispatch = useDispatch();
-  const { allEmployers, loading, error, filters } = useSelector(
-    (state: RootState) => state.employers
-  );
+  const { 
+    allEmployers, 
+    loading, 
+    error, 
+    filters, 
+    totalRecords, 
+    currentPage, 
+    pageSize 
+  } = useSelector((state: RootState) => state.employers);
 
   const applyFilters = (newFilters: EmployerFilter) => {
     dispatch(setEmployerFilters(newFilters));
@@ -19,10 +25,13 @@ export const useEmployers = () => {
   }, [dispatch, filters]);
 
   return {
-    employers: allEmployers,
+    employers: allEmployers, 
     loading,
     error,
     filters,
+    totalRecords, 
+    currentPage,  
+    pageSize,     
     applyFilters,
   };
 };

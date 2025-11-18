@@ -51,7 +51,7 @@ const AppliedJobsPage: React.FC = () => {
     if (status === 'succeeded' && jobs.length === 0) {
       return (
         <div className='text-center'>
-          <img src='/src/assets/empty-box.png' alt='No jobs found' className='mx-auto mb-4 h-40' />
+          {/* <img src='/src/assets/empty-box.png' alt='No jobs found' className='mx-auto mb-4 h-40' /> */}
           <Title level={5}>Bạn chưa ứng tuyển công việc nào.</Title>
           <p>Hãy bắt đầu tìm kiếm và ứng tuyển những công việc mơ ước của bạn!</p>
         </div>

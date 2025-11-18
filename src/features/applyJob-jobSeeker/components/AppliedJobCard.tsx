@@ -50,13 +50,13 @@ const AppliedJobCard = ({ appliedJob, onWithdraw }: AppliedJobCardProps) => {
 
         {/* Cột hiển thị thông tin chính của công việc */}
         <Col xs={24} sm={14}>
-          <Link to={`/find-job/job-detail/${appliedJob.employerPostId}`}>
+          <Link to={`/viec-lam/chi-tiet/${appliedJob.employerPostId}`}>
             <h3 className='mb-2 text-lg font-bold text-blue-600'>{appliedJob.postTitle}</h3>
           </Link>
           <p className='mb-2 text-base font-semibold text-gray-700'>{appliedJob.employerName}</p>
           <div className='flex flex-wrap items-center gap-4 text-gray-500'>
             <span className='flex items-center'>
-              <DollarCircleOutlined className='mr-2' /> {appliedJob.salary}
+              <DollarCircleOutlined className='mr-2' /> {appliedJob.salary > 0 ? appliedJob.salary : "Thỏa Thuận"}
             </span>
             <span className='flex items-center'>
               <EnvironmentOutlined className='mr-2' /> {appliedJob.location}
