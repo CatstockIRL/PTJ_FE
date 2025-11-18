@@ -106,9 +106,6 @@ const EmployerDashboard: React.FC = () => {
         ) : recentApps.length === 0 ? (
           <div className="text-center text-gray-500 py-10">
             <p>Bạn không có thư xin việc nào phù hợp</p>
-            <Text type="secondary" italic>
-              (Ghi chú: Cần service `getRecentAppsByEmployer` để tải.)
-            </Text>
           </div>
         ) : (
           <div className="space-y-3">
