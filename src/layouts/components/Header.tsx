@@ -48,6 +48,11 @@ const jobSeekerNavLinks = [
     path: '/viec-da-ung-tuyen'
   },
   {
+    icon: <FileTextOutlined />,
+    text: 'CV của tôi',
+    path: '/cv-cua-toi'
+  },
+  {
     icon: <BellOutlined />,
     text: 'Thông báo việc làm',
     path: '/thong-bao-viec-lam'
