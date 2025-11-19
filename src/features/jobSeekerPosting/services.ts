@@ -1,6 +1,6 @@
 import axios from 'axios';
 import baseService from '../../services/baseService';
-import type { CreateJobSeekerPostPayload, Province, JobSeekerPost, GetJobByIdResponse, UpdateJobSeekerPostPayload } from './types';
+import type { CreateJobSeekerPostPayload, Province, JobSeekerPost, GetJobByIdResponse, UpdateJobSeekerPostPayload, JobSuggestionResponse } from './types';
 
 const PROVINCES_API_URL = 'https://provinces.open-api.vn/api/p/';
 
@@ -64,4 +64,8 @@ export const getPostsByUserId = async (userId: number): Promise<JobSeekerPost[]>
 
 export const getJobById = async (id: number): Promise<GetJobByIdResponse> => {
   return await baseService.get<GetJobByIdResponse>(`/JobSeekerPost/${id}`);
+};
+
+export const getJobSuggestions = async (jobSeekerPostId: number, take = 10, skip = 0): Promise<JobSuggestionResponse> => {
+  return await baseService.get<JobSuggestionResponse>(`/JobSeekerPost/${jobSeekerPostId}/suggestions?take=${take}&skip=${skip}`);
 };
