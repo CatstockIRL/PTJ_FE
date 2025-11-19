@@ -12,6 +12,10 @@ import {
   Input,
   Row,
   Col,
+  List,
+  Progress,
+  Avatar,
+  Typography,
 } from "antd";
 import type { TableProps, TableColumnsType } from "antd";
 import {
@@ -20,19 +24,56 @@ import {
   SyncOutlined,
   MoneyCollectOutlined,
   AppstoreOutlined,
+  BulbOutlined,
+  EnvironmentOutlined,
+  PhoneOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "../../features/auth/hooks";
 import jobPostService from "../../features/job/jobPostService";
 import type { JobPostView } from "../../features/job/jobTypes";
-import { JobDetailView } from "../../features/job/components/employer/JobDetailView";
 import { useCategories } from "../../features/category/hook";
-
 import { useSelector } from "react-redux";
 import type { RootState } from "../../app/store";
 import { JobPostDetailModal } from "../../features/job/components/employer/JobPostDetailModal";
 
 const { Option } = Select;
 const { Search } = Input;
+const { Text } = Typography;
+
+const MOCK_API_RESPONSE = {
+  success: true,
+  total: 3,
+  data: [
+    {
+      employerPostId: 9991,
+      title: "Trình Dược Viên Tại Tuyên Quang [Thu Nhập Không Giới Hạn] (Mẫu)",
+      location: "Phường Minh Xuân, TP Tuyên Quang, Tuyên Quang",
+      matchPercent: 97,
+      phoneContact: "0326397621",
+      employerName: "Hệ thống (Gợi ý mẫu)",
+      createdAt: new Date().toISOString(),
+    },
+    {
+      employerPostId: 9992,
+      title: "Trình Dược Viên Tại Điện Biên (Đi làm ngay) (Mẫu)",
+      location: "Xã Mường Tùng, Huyện Mường Chà, Điện Biên",
+      matchPercent: 82,
+      phoneContact: "0326845871",
+      employerName: "Hệ thống (Gợi ý mẫu)",
+      createdAt: new Date().toISOString(),
+    },
+    {
+      employerPostId: 9993,
+      title: "Nhân viên Kinh doanh Dược phẩm - Yên Bái (Mẫu)",
+      location: "Xã Lâm Giang, Huyện Văn Yên, Yên Bái",
+      matchPercent: 75,
+      phoneContact: "0327865284",
+      employerName: "Hệ thống (Gợi ý mẫu)",
+      createdAt: new Date().toISOString(),
+    },
+  ],
+};
 
 const formatCurrency = (value: number | null | undefined) => {
   if (value == null || value <= 0) return "Thỏa thuận";
@@ -50,9 +91,13 @@ const EmployerJobsPage: React.FC = () => {
 
   const [allJobs, setAllJobs] = useState<JobPostView[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedJob, setSelectedJob] = useState<JobPostView | null>(null);
+
+  const [isSuggestionModalVisible, setIsSuggestionModalVisible] = useState(false);
+  const [suggestionList, setSuggestionList] = useState<any[]>([]);
+  const [isSuggestionLoading, setIsSuggestionLoading] = useState(false);
+  const [currentJobTitle, setCurrentJobTitle] = useState("");
 
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
@@ -85,6 +130,28 @@ const EmployerJobsPage: React.FC = () => {
   useEffect(() => {
     fetchJobs();
   }, [user]);
+
+  const handleShowSuggestions = async (postId: number, jobTitle: string) => {
+    setCurrentJobTitle(jobTitle);
+    setIsSuggestionModalVisible(true);
+    setIsSuggestionLoading(true);
+    setSuggestionList([]); 
+
+    try {
+      const res: any = await jobPostService.getSuggestions(postId);
+      
+      if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+        setSuggestionList(res.data);
+      } else {
+        setSuggestionList(MOCK_API_RESPONSE.data);
+      }
+    } catch (error) {
+      console.error("Lỗi tải gợi ý, sử dụng dữ liệu mẫu", error);
+      setSuggestionList(MOCK_API_RESPONSE.data);
+    } finally {
+      setIsSuggestionLoading(false);
+    }
+  };
 
   const processedJobs = useMemo(() => {
     let filteredData = [...allJobs];
@@ -273,7 +340,17 @@ const EmployerJobsPage: React.FC = () => {
       title: "Hành động",
       key: "action",
       render: (_, record) => (
-        <Space size="middle">
+        <Space size="small">
+          <Button
+            icon={<BulbOutlined />}
+            size="small"
+            className="text-yellow-600 border-yellow-500 hover:!text-yellow-700 hover:!border-yellow-700"
+            onClick={() =>
+              handleShowSuggestions(record.employerPostId, record.title)
+            }
+          >
+            Gợi ý
+          </Button>
           <Button
             type="link"
             size="small"
@@ -297,7 +374,9 @@ const EmployerJobsPage: React.FC = () => {
                   key: "saved",
                   label: "Đã lưu (Saved)",
                   onClick: () =>
-                    navigate(`/nha-tuyen-dung/da-luu/${record.employerPostId}`),
+                    navigate(
+                      `/nha-tuyen-dung/da-luu/${record.employerPostId}`
+                    ),
                 },
                 {
                   key: "3",
@@ -383,24 +462,109 @@ const EmployerJobsPage: React.FC = () => {
           }}
         />
 
-        {/* <Modal
-          title="Chi tiết công việc"
-          open={isModalVisible}
-          onCancel={handleCloseModal}
-          footer={[
-            <Button key="close" onClick={handleCloseModal}>
-              Đóng
-            </Button>,
-          ]}
-          width={800}
-        >
-          {selectedJob && <JobDetailView job={selectedJob} />}
-        </Modal> */}
         <JobPostDetailModal
           jobPost={selectedJob}
           visible={isModalVisible}
           onClose={handleCloseModal}
         />
+
+        <Modal
+          title={
+            <div className="flex items-center gap-2">
+              <BulbOutlined style={{ color: "#faad14", fontSize: "20px" }} />
+              <div>
+                <div className="font-bold">Gợi ý phù hợp</div>
+                <div className="text-xs text-gray-500 font-normal">
+                  Dành cho tin: {currentJobTitle}
+                </div>
+              </div>
+            </div>
+          }
+          open={isSuggestionModalVisible}
+          onCancel={() => setIsSuggestionModalVisible(false)}
+          footer={[
+            <Button
+              key="close"
+              onClick={() => setIsSuggestionModalVisible(false)}
+            >
+              Đóng
+            </Button>,
+          ]}
+          width={700}
+          centered
+        >
+          <List
+            loading={isSuggestionLoading}
+            itemLayout="vertical"
+            dataSource={suggestionList}
+            renderItem={(item) => (
+              <List.Item
+                key={item.employerPostId}
+                className="hover:bg-gray-50 transition-colors border-b last:border-0 p-4"
+                extra={
+                  <div className="flex flex-col items-center justify-center pl-4 border-l">
+                    <Progress
+                      type="circle"
+                      percent={item.matchPercent}
+                      width={60}
+                      strokeColor={
+                        item.matchPercent >= 80
+                          ? "#52c41a"
+                          : item.matchPercent >= 50
+                          ? "#faad14"
+                          : "#ff4d4f"
+                      }
+                      format={(percent) => (
+                        <span className="text-sm font-bold">{percent}%</span>
+                      )}
+                    />
+                    <span className="text-xs text-gray-500 mt-1">
+                      Độ phù hợp
+                    </span>
+                  </div>
+                }
+              >
+                <List.Item.Meta
+                  avatar={
+                    <Avatar
+                      icon={<UserOutlined />}
+                      style={{ backgroundColor: "#1890ff" }}
+                    />
+                  }
+                  title={
+                    <a
+                      href="#"
+                      className="text-base font-semibold text-blue-700 hover:underline"
+                    >
+                      {item.title}
+                    </a>
+                  }
+                  description={
+                    <div className="space-y-1 mt-1">
+                      <div className="flex items-start gap-2 text-gray-600 text-sm">
+                        <EnvironmentOutlined className="mt-1 shrink-0" />
+                        <span>{item.location || "Chưa cập nhật địa điểm"}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-gray-600 text-sm">
+                        <PhoneOutlined />
+                        <span>
+                          Liên hệ:{" "}
+                          <Text strong copyable>
+                            {item.phoneContact || "N/A"}
+                          </Text>
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-400 mt-2">
+                        Đăng bởi: {item.employerName} •{" "}
+                        {item.createdAt ? new Date(item.createdAt).toLocaleDateString("vi-VN") : ""}
+                      </div>
+                    </div>
+                  }
+                />
+              </List.Item>
+            )}
+          />
+        </Modal>
       </div>
     </div>
   );

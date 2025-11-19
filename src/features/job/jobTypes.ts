@@ -124,3 +124,15 @@ export interface EmployerApplicationListResponse {
   success: boolean;
   data: EmployerApplicationDto[];
 }
+
+export interface JobSuggestionDto {
+  employerPostId: number;
+  title: string;
+  location: string;
+  matchPercent: number;
+  phoneContact: string;
+  employerName: string;
+  createdAt: string;
+  categoryName?: string;
+  requirements?: string;
+}

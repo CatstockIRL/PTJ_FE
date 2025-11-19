@@ -32,6 +32,9 @@ export const updateStatus = async (id: number, status: 'Accepted' | 'Rejected', 
   return await baseService.put<ApplicationActionResponse>(`/JobApplication/${id}/status`, payload);
 };
 
+export const getSuggestions = async (postId: number) => {
+    return await baseService.get<any>(`/EmployerPost/${postId}/suggestions`); 
+};
 
 export const jobPostService = {
   createJobPost,
@@ -39,6 +42,7 @@ export const jobPostService = {
   updateJobPost,
   deleteJobPost,
   getJobById,
+  getSuggestions
 };
 
 export default jobPostService;
