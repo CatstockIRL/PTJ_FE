@@ -55,3 +55,25 @@ export interface GetJobByIdResponse {
   success: boolean;
   data: JobSeekerPost;
 }
+
+export interface JobSuggestionData {
+  employerPostId: number;
+  employerUserId: number;
+  title: string;
+  description: string;
+  location: string;
+  workHours: string;
+  phoneContact: string;
+  categoryName: string;
+  employerName: string;
+  matchPercent: number;
+  rawScore: number;
+  isSaved: boolean;
+  createdAt: string;
+}
+
+export interface JobSuggestionResponse {
+  success: boolean;
+  total: number;
+  data: JobSuggestionData[];
+}

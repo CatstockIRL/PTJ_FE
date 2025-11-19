@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
-import { createJobSeekerPost, getJobById, updateJobSeekerPost, deleteJobSeekerPost } from '../services';
+import { createJobSeekerPost, getJobById, updateJobSeekerPost, deleteJobSeekerPost, getJobSuggestions } from '../services';
 import type { CreateJobSeekerPostPayload, JobSeekerPost, UpdateJobSeekerPostPayload } from '../types';
+import type { Job } from '../../../types';
 
 interface JobSeekerPostingState {
   create: {
@@ -17,6 +18,11 @@ interface JobSeekerPostingState {
     loading: boolean;
     error: string | null;
     success: boolean;
+  };
+  suggestions: {
+    jobs: Job[];
+    loading: boolean;
+    error: string | null;
   };
 }
 
@@ -36,6 +42,11 @@ const initialState: JobSeekerPostingState = {
     error: null,
     success: false,
   },
+  suggestions: {
+    jobs: [],
+    loading: false,
+    error: null,
+  }
 };
 
 export const createPosting = createAsyncThunk(
@@ -86,6 +97,34 @@ export const deletePosting = createAsyncThunk(
   }
 );
 
+export const fetchPostSuggestions = createAsyncThunk(
+  'jobSeekerPosting/fetchSuggestions',
+  async (jobSeekerPostId: number, { rejectWithValue }) => {
+    try {
+      const response = await getJobSuggestions(jobSeekerPostId);
+      
+      if (response.success && Array.isArray(response.data)) {
+        // Mapping dữ liệu từ API (JobSuggestionData) sang Interface Job
+        const mappedJobs: Job[] = response.data.map((item) => ({
+          id: item.employerPostId.toString(),
+          title: item.title || 'Công việc gợi ý',
+          description: item.description || '',
+          company: item.employerName || null,
+          location: item.location || null,
+          salary: 'Thỏa thuận', 
+          updatedAt: item.createdAt,
+          companyLogo: null, 
+          isHot: item.matchPercent >= 90,
+        }));
+        return mappedJobs;
+      }
+      return [];
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Không thể tải danh sách gợi ý');
+    }
+  }
+);
+
 const jobSeekerPostingSlice = createSlice({
   name: 'jobSeekerPosting',
   initialState,
@@ -115,7 +154,6 @@ const jobSeekerPostingSlice = createSlice({
         state.create.loading = false;
         state.create.error = action.payload;
       })
-      // Reducers for updating post
       .addCase(updatePosting.pending, (state) => {
         state.create.loading = true;
         state.create.error = null;
@@ -142,7 +180,6 @@ const jobSeekerPostingSlice = createSlice({
         state.detail.loading = false;
         state.detail.error = action.payload;
       })
-      // Reducers for deleting post
       .addCase(deletePosting.pending, (state) => {
         state.delete.loading = true;
         state.delete.error = null;
@@ -155,7 +192,19 @@ const jobSeekerPostingSlice = createSlice({
       .addCase(deletePosting.rejected, (state, action: PayloadAction<any>) => {
         state.delete.loading = false;
         state.delete.error = action.payload;
-      });;
+      })
+      .addCase(fetchPostSuggestions.pending, (state) => {
+        state.suggestions.loading = true;
+        state.suggestions.error = null;
+      })
+      .addCase(fetchPostSuggestions.fulfilled, (state, action) => {
+        state.suggestions.loading = false;
+        state.suggestions.jobs = action.payload;
+      })
+      .addCase(fetchPostSuggestions.rejected, (state, action: PayloadAction<any>) => {
+        state.suggestions.loading = false;
+        state.suggestions.error = action.payload;
+      });
   },
 });
 

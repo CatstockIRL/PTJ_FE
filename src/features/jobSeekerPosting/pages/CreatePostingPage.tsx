@@ -12,6 +12,7 @@ import {
   Spin,
   TimePicker,
   Space,
+  Empty,
 } from "antd";
 import type { Dayjs } from "dayjs";
 import dayjs from "dayjs";
@@ -24,6 +25,7 @@ import {
   resetPostStatus,
   fetchPostById,
   updatePosting,
+  fetchPostSuggestions,
 } from "../slice/slice";
 import { useCategories } from "../../category/hook";
 import type {
@@ -35,6 +37,7 @@ import locationService, {
 } from "../../location/locationService";
 import { fetchMyCvs } from "../../jobSeekerCv/services";
 import type { JobSeekerCv } from "../../jobSeekerCv/types";
+import JobCard from "../../homepage-jobSeeker/components/JobCard";
 
 const { Title } = Typography;
 const { TextArea } = Input;
@@ -75,6 +78,9 @@ const CreatePostingPage: React.FC = () => {
   );
   const { post: postDetail, loading: isLoadingDetail } = useSelector(
     (state: RootState) => state.jobSeekerPosting.create.detail
+  );
+  const { jobs: suggestedJobs, loading: isLoadingSuggestions } = useSelector(
+    (state: RootState) => state.jobSeekerPosting.create.suggestions
   );
 
   const { categories, isLoading: isLoadingCategories } = useCategories();
@@ -161,6 +167,12 @@ const CreatePostingPage: React.FC = () => {
       dispatch(fetchPostById(Number(id)));
     }
   }, [dispatch, id, isViewMode, isEditMode]);
+
+  useEffect(() => {
+    if (isViewMode && id) {
+      dispatch(fetchPostSuggestions(Number(id)));
+    }
+  }, [dispatch, isViewMode, id]);
 
   useEffect(() => {
     if (postDetail && (isViewMode || isEditMode)) {
@@ -302,320 +314,348 @@ const CreatePostingPage: React.FC = () => {
   };
 
   const disabledTimePicker = isReadOnly;
+  const MainContent = (
+    <Spin spinning={isSubmitting || isLoadingDetail}>
+      <Card>
+        <Form layout="vertical" form={form} onFinish={onFinish}>
+          <Form.Item
+            name="title"
+            label="Tiêu đề bài đăng"
+            rules={[
+              { required: true, message: "Vui lòng nhập tiêu đề!" },
+              { max: 120, message: "Tiêu đề không vượt quá 120 ký tự!" },
+              {
+                validator: (_, value) => {
+                  const text = (value || "").trim();
+                  if (!text) {
+                    return Promise.resolve();
+                  }
+                  if (text.length < 5) {
+                    return Promise.reject(
+                      new Error("Tiêu đề phải có ít nhất 5 ký tự!")
+                    );
+                  }
+                  return Promise.resolve();
+                },
+              },
+            ]}
+          >
+            <Input
+              placeholder="Ví dụ: Sinh viên năm 2 tìm việc làm phục vụ"
+              readOnly={isReadOnly}
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="categoryID"
+            label="Ngành nghề mong muốn"
+            rules={[{ required: true, message: "Vui lòng chọn ngành nghề!" }]}
+          >
+            <Select
+              placeholder="Chọn ngành nghề"
+              loading={isLoadingCategories}
+              disabled={isReadOnly}
+              showSearch
+              optionFilterProp="children"
+            >
+              {categories.map((category) => (
+                <Select.Option
+                  key={category.categoryId}
+                  value={category.categoryId}
+                >
+                  {category.name}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            name="provinceId"
+            label="Tỉnh / Thành phố"
+            rules={[{ required: true, message: "Vui lòng chọn tỉnh/thành!" }]}
+          >
+            <Select
+              showSearch
+              placeholder="Chọn tỉnh / thành"
+              optionFilterProp="children"
+              disabled={isReadOnly}
+              loading={provincesLoading}
+              onChange={(value) =>
+                handleProvinceChange(value as number | undefined, false)
+              }
+              allowClear
+            >
+              {provinces.map((province) => (
+                <Select.Option key={province.code} value={province.code}>
+                  {province.name}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            name="districtId"
+            label="Quận / Huyện"
+            rules={[{ required: true, message: "Vui lòng chọn quận/huyện!" }]}
+          >
+            <Select
+              placeholder="Chọn quận / huyện"
+              disabled={isReadOnly || !form.getFieldValue("provinceId")}
+              loading={districtsLoading}
+              onChange={(value) =>
+                handleDistrictChange(value as number | undefined, false)
+              }
+              allowClear
+            >
+              {districts.map((district) => (
+                <Select.Option key={district.code} value={district.code}>
+                  {district.name}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            name="wardId"
+            label="Phường / Xã"
+            rules={[{ required: true, message: "Vui lòng chọn phường/xã!" }]}
+          >
+            <Select
+              placeholder="Chọn phường / xã"
+              disabled={isReadOnly || !form.getFieldValue("districtId")}
+              loading={wardsLoading}
+              allowClear
+            >
+              {wards.map((ward) => (
+                <Select.Option key={ward.code} value={ward.code}>
+                  {ward.name}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            name="locationDetail"
+            label="Địa chỉ chi tiết"
+            rules={[
+              { required: true, message: "Vui lòng nhập địa chỉ chi tiết!" },
+            ]}
+          >
+            <Input
+              placeholder="Ví dụ: Số 12, đường Láng"
+              readOnly={isReadOnly}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Thời gian làm việc mong muốn"
+            required
+            className="time-picker-item"
+          >
+            <Space.Compact className="w-full">
+              <Form.Item
+                name="preferredWorkHourStart"
+                noStyle
+                rules={[
+                  { required: true, message: "Vui lòng chọn giờ bắt đầu!" },
+                ]}
+              >
+                <TimePicker
+                  format={timeFormat}
+                  placeholder="Từ"
+                  style={{ width: "50%" }}
+                  disabled={disabledTimePicker}
+                />
+              </Form.Item>
+              <Form.Item
+                name="preferredWorkHourEnd"
+                noStyle
+                dependencies={["preferredWorkHourStart"]}
+                rules={[
+                  { required: true, message: "Vui lòng chọn giờ kết thúc!" },
+                  ({ getFieldValue }) => ({
+                    validator(_, value) {
+                      const start: Dayjs | undefined = getFieldValue(
+                        "preferredWorkHourStart"
+                      );
+                      if (!value || !start || value.isAfter(start)) {
+                        return Promise.resolve();
+                      }
+                      return Promise.reject(
+                        new Error("Giờ kết thúc phải sau giờ bắt đầu")
+                      );
+                    },
+                  }),
+                ]}
+              >
+                <TimePicker
+                  format={timeFormat}
+                  placeholder="Đến"
+                  style={{ width: "50%" }}
+                  disabled={disabledTimePicker}
+                />
+              </Form.Item>
+            </Space.Compact>
+          </Form.Item>
+
+          <Form.Item
+            name="phoneContact"
+            label="Số điện thoại liên hệ"
+            rules={[
+              { required: true, message: "Vui lòng nhập số điện thoại!" },
+              {
+                pattern: /^\d{10}$/,
+                message: "Số điện thoại phải có 10 chữ số!",
+              },
+            ]}
+          >
+            <Input
+              type="tel"
+              placeholder="Nhà tuyển dụng sẽ liên hệ qua số này"
+              readOnly={isReadOnly}
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="age"
+            label="Tuổi"
+            rules={[{ required: true, message: "Vui lòng nhập tuổi của bạn!" }]}
+          >
+            <InputNumber
+              min={16}
+              max={60}
+              style={{ width: "100%" }}
+              disabled={isReadOnly}
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="gender"
+            label="Giới tính"
+            rules={[{ required: true, message: "Vui lòng chọn giới tính!" }]}
+          >
+            <Radio.Group disabled={isReadOnly}>
+              <Radio value="Nam">Nam</Radio>
+              <Radio value="Nữ">Nữ</Radio>
+              <Radio value="Khác">Khác</Radio>
+            </Radio.Group>
+          </Form.Item>
+
+          <Form.Item
+            name="description"
+            label="Mô tả chi tiết về bản thân và kinh nghiệm"
+            rules={[
+              { required: true, message: "Vui lòng nhập mô tả!" },
+              {
+                validator: (_, value) => {
+                  const length = (value ?? "").trim().length;
+                  return length >= 20
+                    ? Promise.resolve()
+                    : Promise.reject(
+                        new Error(
+                          "Mô tả phải có ít nhất 20 ký tự để hệ thống hiểu rõ về bạn"
+                        )
+                      );
+                },
+              },
+            ]}
+          >
+            <TextArea
+              rows={6}
+              placeholder="Giới thiệu về kỹ năng, kinh nghiệm làm việc..."
+              readOnly={isReadOnly}
+            />
+          </Form.Item>
+
+          {!isViewMode && (
+            <Form.Item name="selectedCvId" label="Chọn CV đính kèm">
+              <Select
+                placeholder="Chọn một CV để AI ưu tiên gợi ý việc làm"
+                loading={isLoadingCvs}
+                allowClear
+                showSearch
+                optionFilterProp="children"
+                disabled={isReadOnly}
+                notFoundContent={
+                  !isLoadingCvs ? "Bạn chưa có CV nào." : undefined
+                }
+              >
+                {cvOptions.map((cv) => (
+                  <Select.Option key={cv.cvid} value={cv.cvid}>
+                    {cv.cvTitle}
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+          )}
+
+          <Form.Item>
+            {isViewMode ? (
+              user &&
+              postDetail &&
+              user.id === postDetail.userID && (
+                <Button
+                  type="primary"
+                  block
+                  onClick={() => navigate(`/sua-bai-dang-tim-viec/${id}`)}
+                >
+                  Chỉnh sửa bài đăng
+                </Button>
+              )
+            ) : (
+              <Button
+                type="primary"
+                htmlType="submit"
+                block
+                loading={isSubmitting}
+              >
+                {buttonText}
+              </Button>
+            )}
+          </Form.Item>
+        </Form>
+      </Card>
+    </Spin>
+  );
 
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
-      <div className="max-w-2xl mx-auto">
+      <div className={`${isViewMode ? 'max-w-7xl' : 'max-w-2xl'} mx-auto`}>
         <Title level={2} className="mb-6 text-center">
           {pageTitle}
         </Title>
-        <Spin spinning={isSubmitting || isLoadingDetail}>
-          <Card>
-            <Form
-              layout="vertical"
-              form={form}
-              onFinish={onFinish}
-            >
-            <Form.Item
-  name="title"
-  label="Tiêu đề bài đăng"
-  rules={[
-    { required: true, message: "Vui lòng nhập tiêu đề!" },
-    { max: 120, message: "Tiêu đề không vượt quá 120 ký tự!" },
-    {
-      validator: (_, value) => {
-        const text = (value || "").trim();
-        if (!text) {
-          // đã có rule required xử lý rồi
-          return Promise.resolve();
-        }
+        
+        {isViewMode ? (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              {MainContent}
+            </div>
 
-        if (text.length < 5) {
-          return Promise.reject(
-            new Error("Tiêu đề phải có ít nhất 5 ký tự!")
-          );
-        }
-
-        return Promise.resolve();
-      },
-    },
-  ]}
->
-  <Input
-    placeholder="Ví dụ: Sinh viên năm 2 tìm việc làm phục vụ"
-    readOnly={isReadOnly}
-  />
-</Form.Item>
-
-
-              <Form.Item
-                name="categoryID"
-                label="Ngành nghề mong muốn"
-                rules={[{ required: true, message: "Vui lòng chọn ngành nghề!" }]}
-              >
-                <Select
-                  placeholder="Chọn ngành nghề"
-                  loading={isLoadingCategories}
-                  disabled={isReadOnly}
-                  showSearch
-                  optionFilterProp="children"
-                >
-                  {categories.map((category) => (
-                    <Select.Option
-                      key={category.categoryId}
-                      value={category.categoryId}
-                    >
-                      {category.name}
-                    </Select.Option>
-                  ))}
-                </Select>
-              </Form.Item>
-
-              <Form.Item
-                name="provinceId"
-                label="Tỉnh / Thành phố"
-                rules={[{ required: true, message: "Vui lòng chọn tỉnh/thành!" }]}
-              >
-                <Select
-                  showSearch
-                  placeholder="Chọn tỉnh / thành"
-                  optionFilterProp="children"
-                  disabled={isReadOnly}
-                  loading={provincesLoading}
-                  onChange={(value) =>
-                    handleProvinceChange(value as number | undefined, false)
-                  }
-                  allowClear
-                >
-                  {provinces.map((province) => (
-                    <Select.Option key={province.code} value={province.code}>
-                      {province.name}
-                    </Select.Option>
-                  ))}
-                </Select>
-              </Form.Item>
-
-              <Form.Item
-                name="districtId"
-                label="Quận / Huyện"
-                rules={[{ required: true, message: "Vui lòng chọn quận/huyện!" }]}
-              >
-                <Select
-                  placeholder="Chọn quận / huyện"
-                  disabled={isReadOnly || !form.getFieldValue("provinceId")}
-                  loading={districtsLoading}
-                  onChange={(value) =>
-                    handleDistrictChange(value as number | undefined, false)
-                  }
-                  allowClear
-                >
-                  {districts.map((district) => (
-                    <Select.Option key={district.code} value={district.code}>
-                      {district.name}
-                    </Select.Option>
-                  ))}
-                </Select>
-              </Form.Item>
-
-              <Form.Item
-                name="wardId"
-                label="Phường / Xã"
-                rules={[{ required: true, message: "Vui lòng chọn phường/xã!" }]}
-              >
-                <Select
-                  placeholder="Chọn phường / xã"
-                  disabled={isReadOnly || !form.getFieldValue("districtId")}
-                  loading={wardsLoading}
-                  allowClear
-                >
-                  {wards.map((ward) => (
-                    <Select.Option key={ward.code} value={ward.code}>
-                      {ward.name}
-                    </Select.Option>
-                  ))}
-                </Select>
-              </Form.Item>
-
-              <Form.Item
-                name="locationDetail"
-                label="Địa chỉ chi tiết"
-                rules={[
-                  { required: true, message: "Vui lòng nhập địa chỉ chi tiết!" },
-                ]}
-              >
-                <Input
-                  placeholder="Ví dụ: Số 12, đường Láng"
-                  readOnly={isReadOnly}
-                />
-              </Form.Item>
-
-              <Form.Item
-                label="Thời gian làm việc mong muốn"
-                required
-                className="time-picker-item"
-              >
-                <Space.Compact className="w-full">
-                  <Form.Item
-                    name="preferredWorkHourStart"
-                    noStyle
-                    rules={[
-                      { required: true, message: "Vui lòng chọn giờ bắt đầu!" },
-                    ]}
-                  >
-                    <TimePicker
-                      format={timeFormat}
-                      placeholder="Từ"
-                      style={{ width: "50%" }}
-                      disabled={disabledTimePicker}
-                    />
-                  </Form.Item>
-                  <Form.Item
-                    name="preferredWorkHourEnd"
-                    noStyle
-                    dependencies={["preferredWorkHourStart"]}
-                    rules={[
-                      { required: true, message: "Vui lòng chọn giờ kết thúc!" },
-                      ({ getFieldValue }) => ({
-                        validator(_, value) {
-                          const start: Dayjs | undefined =
-                            getFieldValue("preferredWorkHourStart");
-                          if (
-                            !value ||
-                            !start ||
-                            value.isAfter(start)
-                          ) {
-                            return Promise.resolve();
-                          }
-                          return Promise.reject(
-                            new Error("Giờ kết thúc phải sau giờ bắt đầu")
-                          );
-                        },
-                      }),
-                    ]}
-                  >
-                    <TimePicker
-                      format={timeFormat}
-                      placeholder="Đến"
-                      style={{ width: "50%" }}
-                      disabled={disabledTimePicker}
-                    />
-                  </Form.Item>
-                </Space.Compact>
-              </Form.Item>
-
-              <Form.Item
-                name="phoneContact"
-                label="Số điện thoại liên hệ"
-                rules={[
-                  { required: true, message: "Vui lòng nhập số điện thoại!" },
-                  {
-                    pattern: /^\d{10}$/,
-                    message: "Số điện thoại phải có 10 chữ số!",
-                  },
-                ]}
-              >
-                <Input
-                  type="tel"
-                  placeholder="Nhà tuyển dụng sẽ liên hệ qua số này"
-                  readOnly={isReadOnly}
-                />
-              </Form.Item>
-
-              <Form.Item
-                name="age"
-                label="Tuổi"
-                rules={[{ required: true, message: "Vui lòng nhập tuổi của bạn!" }]}
-              >
-                <InputNumber
-                  min={16}
-                  max={60}
-                  style={{ width: "100%" }}
-                  disabled={isReadOnly}
-                />
-              </Form.Item>
-
-              <Form.Item
-                name="gender"
-                label="Giới tính"
-                rules={[{ required: true, message: "Vui lòng chọn giới tính!" }]}
-              >
-                <Radio.Group disabled={isReadOnly}>
-                  <Radio value="Nam">Nam</Radio>
-                  <Radio value="Nữ">Nữ</Radio>
-                  <Radio value="Khác">Khác</Radio>
-                </Radio.Group>
-              </Form.Item>
-
-              <Form.Item
-                name="description"
-                label="Mô tả chi tiết về bản thân và kinh nghiệm"
-                rules={[
-                  { required: true, message: "Vui lòng nhập mô tả!" },
-                  {
-                    validator: (_, value) => {
-                      const length = (value ?? "").trim().length;
-                      return length >= 20
-                        ? Promise.resolve()
-                        : Promise.reject(
-                            new Error(
-                              "Mô tả phải có ít nhất 20 ký tự để hệ thống hiểu rõ về bạn"
-                            )
-                          );
-                    },
-                  },
-                ]}
-              >
-                <TextArea
-                  rows={6}
-                  placeholder="Giới thiệu về kỹ năng, kinh nghiệm làm việc..."
-                  readOnly={isReadOnly}
-                />
-              </Form.Item>
-
-              {!isViewMode && (
-                <Form.Item name="selectedCvId" label="Chọn CV đính kèm">
-                  <Select
-                    placeholder="Chọn một CV để AI ưu tiên gợi ý việc làm"
-                    loading={isLoadingCvs}
-                    allowClear
-                    showSearch
-                    optionFilterProp="children"
-                    disabled={isReadOnly}
-                    notFoundContent={
-                      !isLoadingCvs ? "Bạn chưa có CV nào." : undefined
-                    }
-                  >
-                    {cvOptions.map((cv) => (
-                      <Select.Option key={cv.cvid} value={cv.cvid}>
-                        {cv.cvTitle}
-                      </Select.Option>
-                    ))}
-                  </Select>
-                </Form.Item>
-              )}
-
-              <Form.Item>
-                {isViewMode ? (
-                  user &&
-                  postDetail &&
-                  user.id === postDetail.userID && (
-                    <Button
-                      type="primary"
-                      block
-                      onClick={() => navigate(`/sua-bai-dang-tim-viec/${id}`)}
-                    >
-                      Chỉnh sửa bài đăng
-                    </Button>
-                  )
-                ) : (
-                  <Button type="primary" htmlType="submit" block loading={isSubmitting}>
-                    {buttonText}
-                  </Button>
-                )}
-              </Form.Item>
-            </Form>
-          </Card>
-        </Spin>
+            <div className="lg:col-span-1">
+              <div className="sticky top-4">
+                <Title level={4} className="mb-4 text-indigo-700">
+                  <i className="fas fa-bolt mr-2"></i>
+                  Công việc phù hợp
+                </Title>
+                <Spin spinning={isLoadingSuggestions}>
+                  <div className="flex flex-col gap-4">
+                    {suggestedJobs && suggestedJobs.length > 0 ? (
+                      suggestedJobs.map((job) => (
+                        <div key={job.id} className="transform hover:scale-102 transition-transform duration-200">
+                           <JobCard job={job} />
+                        </div>
+                      ))
+                    ) : (
+                      <Empty description="Chưa tìm thấy công việc phù hợp" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                    )}
+                  </div>
+                </Spin>
+              </div>
+            </div>
+          </div>
+        ) : (
+          MainContent
+        )}
       </div>
     </div>
   );
