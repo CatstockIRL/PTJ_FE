@@ -96,11 +96,11 @@ const CreatePostingPage: React.FC = () => {
   const [isLoadingCvs, setIsLoadingCvs] = useState(false);
 
   const pageTitle = isCreateMode
-    ? "Tß║ío b├ái ─æ─âng t├¼m viß╗çc Part-time"
+    ? "Tạo bài đăng tìm việc Part-time"
     : isEditMode
-    ? "Chß╗ënh sß╗¡a b├ái ─æ─âng t├¼m viß╗çc"
-    : "Chi tiß║┐t b├ái ─æ─âng t├¼m viß╗çc";
-  const buttonText = isCreateMode ? "─É─âng b├ái" : "L╞░u thay ─æß╗òi";
+    ? "Chỉnh sửa bài đăng tìm việc"
+    : "Chi tiết bài đăng tìm việc";
+  const buttonText = isCreateMode ? "Đăng bài" : "Lưu thay đổi";
 
   useEffect(() => {
     setIsReadOnly(isViewMode);
@@ -113,7 +113,7 @@ const CreatePostingPage: React.FC = () => {
         const data = await locationService.getProvinces();
         setProvinces(data);
       } catch {
-        message.error("Kh├┤ng thß╗â tß║úi danh s├ích khu vß╗▒c");
+        message.error("Không thể tải danh sách khu vực");
       } finally {
         setLocationLoading((prev) => ({ ...prev, provinces: false }));
       }
@@ -134,7 +134,7 @@ const CreatePostingPage: React.FC = () => {
         const data = await locationService.getDistricts(value);
         setDistricts(data);
       } catch {
-        message.error("Kh├┤ng thß╗â tß║úi danh s├ích quß║¡n/huyß╗çn");
+        message.error("Không thể tải danh sách quận/huyện");
       } finally {
         setLocationLoading((prev) => ({ ...prev, districts: false }));
       }
@@ -154,7 +154,7 @@ const CreatePostingPage: React.FC = () => {
         const data = await locationService.getWards(value);
         setWards(data);
       } catch {
-        message.error("Kh├┤ng thß╗â tß║úi danh s├ích ph╞░ß╗¥ng/x├ú");
+        message.error("Không thể tải danh sách phường/xã");
       } finally {
         setLocationLoading((prev) => ({ ...prev, wards: false }));
       }
@@ -222,7 +222,7 @@ const CreatePostingPage: React.FC = () => {
         const data = await fetchMyCvs();
         setCvOptions(data);
       } catch {
-        message.error("Kh├┤ng thß╗â tß║úi danh s├ích CV");
+        message.error("Không thể tải danh sách CV");
       } finally {
         setIsLoadingCvs(false);
       }
@@ -233,19 +233,22 @@ const CreatePostingPage: React.FC = () => {
   useEffect(() => {
     if (success) {
       message.success(
-        isCreateMode ? "Tß║ío b├ái ─æ─âng th├ánh c├┤ng!" : "Cß║¡p nhß║¡t th├ánh c├┤ng!"
+        isCreateMode ? "Tạo bài đăng thành công!" : "Cập nhật thành công!"
       );
       dispatch(resetPostStatus());
       navigate("/quan-ly-bai-dang");
     }
     if (error) {
-      message.error(`Thao t├íc thß║Ñt bß║íi: ${error}`);
+      message.error(`Thao tác thất bại: ${error}`);
       dispatch(resetPostStatus());
     }
   }, [success, error, dispatch, navigate, isCreateMode]);
 
-  const { provinces: provincesLoading, districts: districtsLoading, wards: wardsLoading } =
-    locationLoading;
+  const {
+    provinces: provincesLoading,
+    districts: districtsLoading,
+    wards: wardsLoading,
+  } = locationLoading;
 
   const buildPreferredLocation = (values: any) => {
     const provinceName = provinces.find(
@@ -267,7 +270,7 @@ const CreatePostingPage: React.FC = () => {
 
   const onFinish = (values: any) => {
     if (!user) {
-      message.error("Vui l├▓ng ─æ─âng nhß║¡p ─æß╗â thß╗▒c hiß╗çn chß╗⌐c n─âng n├áy");
+      message.error("Vui lòng đăng nhập để thực hiện chức năng này");
       return;
     }
 
@@ -320,10 +323,10 @@ const CreatePostingPage: React.FC = () => {
         <Form layout="vertical" form={form} onFinish={onFinish}>
           <Form.Item
             name="title"
-            label="Ti├¬u ─æß╗ü b├ái ─æ─âng"
+            label="Tiêu đề bài đăng"
             rules={[
-              { required: true, message: "Vui l├▓ng nhß║¡p ti├¬u ─æß╗ü!" },
-              { max: 120, message: "Ti├¬u ─æß╗ü kh├┤ng v╞░ß╗út qu├í 120 k├╜ tß╗▒!" },
+              { required: true, message: "Vui lòng nhập tiêu đề!" },
+              { max: 120, message: "Tiêu đề không vượt quá 120 ký tự!" },
               {
                 validator: (_, value) => {
                   const text = (value || "").trim();
@@ -332,7 +335,7 @@ const CreatePostingPage: React.FC = () => {
                   }
                   if (text.length < 5) {
                     return Promise.reject(
-                      new Error("Ti├¬u ─æß╗ü phß║úi c├│ ├¡t nhß║Ñt 5 k├╜ tß╗▒!")
+                      new Error("Tiêu đề phải có ít nhất 5 ký tự!")
                     );
                   }
                   return Promise.resolve();
@@ -341,18 +344,20 @@ const CreatePostingPage: React.FC = () => {
             ]}
           >
             <Input
-              placeholder="V├¡ dß╗Ñ: Sinh vi├¬n n─âm 2 t├¼m viß╗çc l├ám phß╗Ñc vß╗Ñ"
+              placeholder="Ví dụ: Sinh viên năm 2 tìm việc làm phục vụ"
               readOnly={isReadOnly}
             />
           </Form.Item>
 
           <Form.Item
             name="categoryID"
-            label="Ng├ánh nghß╗ü mong muß╗æn"
-            rules={[{ required: true, message: "Vui l├▓ng chß╗ìn ng├ánh nghß╗ü!" }]}
+            label="Ngành nghề mong muốn"
+            rules={[
+              { required: true, message: "Vui lòng chọn ngành nghề!" },
+            ]}
           >
             <Select
-              placeholder="Chß╗ìn ng├ánh nghß╗ü"
+              placeholder="Chọn ngành nghề"
               loading={isLoadingCategories}
               disabled={isReadOnly}
               showSearch
@@ -371,12 +376,17 @@ const CreatePostingPage: React.FC = () => {
 
           <Form.Item
             name="provinceId"
-            label="Tß╗ënh / Th├ánh phß╗æ"
-            rules={[{ required: true, message: "Vui l├▓ng chß╗ìn tß╗ënh/th├ánh!" }]}
+            label="Tỉnh / Thành phố"
+            rules={[
+              {
+                required: true,
+                message: "Vui lòng chọn tỉnh/thành!",
+              },
+            ]}
           >
             <Select
               showSearch
-              placeholder="Chß╗ìn tß╗ënh / th├ánh"
+              placeholder="Chọn tỉnh / thành phố"
               optionFilterProp="children"
               disabled={isReadOnly}
               loading={provincesLoading}
@@ -395,11 +405,16 @@ const CreatePostingPage: React.FC = () => {
 
           <Form.Item
             name="districtId"
-            label="Quß║¡n / Huyß╗çn"
-            rules={[{ required: true, message: "Vui l├▓ng chß╗ìn quß║¡n/huyß╗çn!" }]}
+            label="Quận / Huyện"
+            rules={[
+              {
+                required: true,
+                message: "Vui lòng chọn quận/huyện!",
+              },
+            ]}
           >
             <Select
-              placeholder="Chß╗ìn quß║¡n / huyß╗çn"
+              placeholder="Chọn quận / huyện"
               disabled={isReadOnly || !form.getFieldValue("provinceId")}
               loading={districtsLoading}
               onChange={(value) =>
@@ -417,11 +432,16 @@ const CreatePostingPage: React.FC = () => {
 
           <Form.Item
             name="wardId"
-            label="Ph╞░ß╗¥ng / X├ú"
-            rules={[{ required: true, message: "Vui l├▓ng chß╗ìn ph╞░ß╗¥ng/x├ú!" }]}
+            label="Phường / Xã"
+            rules={[
+              {
+                required: true,
+                message: "Vui lòng chọn phường/xã!",
+              },
+            ]}
           >
             <Select
-              placeholder="Chß╗ìn ph╞░ß╗¥ng / x├ú"
+              placeholder="Chọn phường / xã"
               disabled={isReadOnly || !form.getFieldValue("districtId")}
               loading={wardsLoading}
               allowClear
@@ -436,19 +456,22 @@ const CreatePostingPage: React.FC = () => {
 
           <Form.Item
             name="locationDetail"
-            label="─Éß╗ïa chß╗ë chi tiß║┐t"
+            label="Địa chỉ chi tiết"
             rules={[
-              { required: true, message: "Vui l├▓ng nhß║¡p ─æß╗ïa chß╗ë chi tiß║┐t!" },
+              {
+                required: true,
+                message: "Vui lòng nhập địa chỉ chi tiết!",
+              },
             ]}
           >
             <Input
-              placeholder="V├¡ dß╗Ñ: Sß╗æ 12, ─æ╞░ß╗¥ng L├íng"
+              placeholder="Ví dụ: Số 12, đường Láng"
               readOnly={isReadOnly}
             />
           </Form.Item>
 
           <Form.Item
-            label="Thß╗¥i gian l├ám viß╗çc mong muß╗æn"
+            label="Thời gian làm việc mong muốn"
             required
             className="time-picker-item"
           >
@@ -457,12 +480,15 @@ const CreatePostingPage: React.FC = () => {
                 name="preferredWorkHourStart"
                 noStyle
                 rules={[
-                  { required: true, message: "Vui l├▓ng chß╗ìn giß╗¥ bß║»t ─æß║ºu!" },
+                  {
+                    required: true,
+                    message: "Vui lòng chọn giờ bắt đầu!",
+                  },
                 ]}
               >
                 <TimePicker
                   format={timeFormat}
-                  placeholder="Tß╗½"
+                  placeholder="Từ"
                   style={{ width: "50%" }}
                   disabled={disabledTimePicker}
                 />
@@ -472,7 +498,10 @@ const CreatePostingPage: React.FC = () => {
                 noStyle
                 dependencies={["preferredWorkHourStart"]}
                 rules={[
-                  { required: true, message: "Vui l├▓ng chß╗ìn giß╗¥ kß║┐t th├║c!" },
+                  {
+                    required: true,
+                    message: "Vui lòng chọn giờ kết thúc!",
+                  },
                   ({ getFieldValue }) => ({
                     validator(_, value) {
                       const start: Dayjs | undefined = getFieldValue(
@@ -482,7 +511,9 @@ const CreatePostingPage: React.FC = () => {
                         return Promise.resolve();
                       }
                       return Promise.reject(
-                        new Error("Giß╗¥ kß║┐t th├║c phß║úi sau giß╗¥ bß║»t ─æß║ºu")
+                        new Error(
+                          "Giờ kết thúc phải sau giờ bắt đầu"
+                        )
                       );
                     },
                   }),
@@ -490,7 +521,7 @@ const CreatePostingPage: React.FC = () => {
               >
                 <TimePicker
                   format={timeFormat}
-                  placeholder="─Éß║┐n"
+                  placeholder="Đến"
                   style={{ width: "50%" }}
                   disabled={disabledTimePicker}
                 />
@@ -500,26 +531,31 @@ const CreatePostingPage: React.FC = () => {
 
           <Form.Item
             name="phoneContact"
-            label="Sß╗æ ─æiß╗çn thoß║íi li├¬n hß╗ç"
+            label="Số điện thoại liên hệ"
             rules={[
-              { required: true, message: "Vui l├▓ng nhß║¡p sß╗æ ─æiß╗çn thoß║íi!" },
+              { required: true, message: "Vui lòng nhập số điện thoại!" },
               {
                 pattern: /^\d{10}$/,
-                message: "Sß╗æ ─æiß╗çn thoß║íi phß║úi c├│ 10 chß╗» sß╗æ!",
+                message: "Số điện thoại phải có 10 chữ số!",
               },
             ]}
           >
             <Input
               type="tel"
-              placeholder="Nh├á tuyß╗ân dß╗Ñng sß║╜ li├¬n hß╗ç qua sß╗æ n├áy"
+              placeholder="Nhà tuyển dụng sẽ liên hệ qua số này"
               readOnly={isReadOnly}
             />
           </Form.Item>
 
           <Form.Item
             name="age"
-            label="Tuß╗òi"
-            rules={[{ required: true, message: "Vui l├▓ng nhß║¡p tuß╗òi cß╗ºa bß║ín!" }]}
+            label="Tuổi"
+            rules={[
+              {
+                required: true,
+                message: "Vui lòng nhập tuổi của bạn!",
+              },
+            ]}
           >
             <InputNumber
               min={16}
@@ -531,21 +567,26 @@ const CreatePostingPage: React.FC = () => {
 
           <Form.Item
             name="gender"
-            label="Giß╗¢i t├¡nh"
-            rules={[{ required: true, message: "Vui l├▓ng chß╗ìn giß╗¢i t├¡nh!" }]}
+            label="Giới tính"
+            rules={[
+              {
+                required: true,
+                message: "Vui lòng chọn giới tính!",
+              },
+            ]}
           >
             <Radio.Group disabled={isReadOnly}>
               <Radio value="Nam">Nam</Radio>
-              <Radio value="Nß╗»">Nß╗»</Radio>
-              <Radio value="Kh├íc">Kh├íc</Radio>
+              <Radio value="Nữ">Nữ</Radio>
+              <Radio value="Khác">Khác</Radio>
             </Radio.Group>
           </Form.Item>
 
           <Form.Item
             name="description"
-            label="M├┤ tß║ú chi tiß║┐t vß╗ü bß║ún th├ón v├á kinh nghiß╗çm"
+            label="Mô tả chi tiết về bản thân và kinh nghiệm"
             rules={[
-              { required: true, message: "Vui l├▓ng nhß║¡p m├┤ tß║ú!" },
+              { required: true, message: "Vui lòng nhập mô tả!" },
               {
                 validator: (_, value) => {
                   const length = (value ?? "").trim().length;
@@ -553,7 +594,7 @@ const CreatePostingPage: React.FC = () => {
                     ? Promise.resolve()
                     : Promise.reject(
                         new Error(
-                          "M├┤ tß║ú phß║úi c├│ ├¡t nhß║Ñt 20 k├╜ tß╗▒ ─æß╗â hß╗ç thß╗æng hiß╗âu r├╡ vß╗ü bß║ín"
+                          "Mô tả phải có ít nhất 20 ký tự để nhà tuyển dụng hiểu rõ về bạn"
                         )
                       );
                 },
@@ -562,22 +603,22 @@ const CreatePostingPage: React.FC = () => {
           >
             <TextArea
               rows={6}
-              placeholder="Giß╗¢i thiß╗çu vß╗ü kß╗╣ n─âng, kinh nghiß╗çm l├ám viß╗çc..."
+              placeholder="Giới thiệu về kỹ năng, kinh nghiệm làm việc..."
               readOnly={isReadOnly}
             />
           </Form.Item>
 
           {!isViewMode && (
-            <Form.Item name="selectedCvId" label="Chß╗ìn CV ─æ├¡nh k├¿m">
+            <Form.Item name="selectedCvId" label="Chọn CV đính kèm">
               <Select
-                placeholder="Chß╗ìn mß╗Öt CV ─æß╗â AI ╞░u ti├¬n gß╗úi ├╜ viß╗çc l├ám"
+                placeholder="Chọn một CV để AI ưu tiên gửi cho việc làm"
                 loading={isLoadingCvs}
                 allowClear
                 showSearch
                 optionFilterProp="children"
                 disabled={isReadOnly}
                 notFoundContent={
-                  !isLoadingCvs ? "Bß║ín ch╞░a c├│ CV n├áo." : undefined
+                  !isLoadingCvs ? "Bạn chưa có CV nào." : undefined
                 }
               >
                 {cvOptions.map((cv) => (
@@ -599,7 +640,7 @@ const CreatePostingPage: React.FC = () => {
                   block
                   onClick={() => navigate(`/sua-bai-dang-tim-viec/${id}`)}
                 >
-                  Chß╗ënh sß╗¡a b├ái ─æ─âng
+                  Chỉnh sửa bài đăng
                 </Button>
               )
             ) : (
@@ -620,33 +661,37 @@ const CreatePostingPage: React.FC = () => {
 
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
-      <div className={`${isViewMode ? 'max-w-7xl' : 'max-w-2xl'} mx-auto`}>
+      <div className={`${isViewMode ? "max-w-7xl" : "max-w-2xl"} mx-auto`}>
         <Title level={2} className="mb-6 text-center">
           {pageTitle}
         </Title>
-        
+
         {isViewMode ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-              {MainContent}
-            </div>
+            <div className="lg:col-span-2">{MainContent}</div>
 
             <div className="lg:col-span-1">
               <div className="sticky top-4">
                 <Title level={4} className="mb-4 text-indigo-700">
                   <i className="fas fa-bolt mr-2"></i>
-                  C├┤ng viß╗çc ph├╣ hß╗úp
+                  Công việc phù hợp
                 </Title>
                 <Spin spinning={isLoadingSuggestions}>
                   <div className="flex flex-col gap-4">
                     {suggestedJobs && suggestedJobs.length > 0 ? (
                       suggestedJobs.map((job) => (
-                        <div key={job.id} className="transform hover:scale-102 transition-transform duration-200">
-                           <JobCard job={job} />
+                        <div
+                          key={job.id}
+                          className="transform hover:scale-102 transition-transform duration-200"
+                        >
+                          <JobCard job={job} />
                         </div>
                       ))
                     ) : (
-                      <Empty description="Ch╞░a t├¼m thß║Ñy c├┤ng viß╗çc ph├╣ hß╗úp" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                      <Empty
+                        description="Chưa tìm thấy công việc phù hợp"
+                        image={Empty.PRESENTED_IMAGE_SIMPLE}
+                      />
                     )}
                   </div>
                 </Spin>

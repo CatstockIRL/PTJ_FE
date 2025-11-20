@@ -174,7 +174,7 @@ export const JobPostDetailModal: React.FC<Props> = ({ jobPost, visible, onClose 
                               : 'N/A'}
                           </div>
                           <div className="flex items-center gap-2">
-                            <span>Trang thai:</span>
+                            <span>Trạng thái:</span>
                             {renderStatusTag(app.status)}
                           </div>
                         </div>

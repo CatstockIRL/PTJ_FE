@@ -47,37 +47,38 @@ const MOCK_API_RESPONSE = {
   data: [
     {
       employerPostId: 9991,
-      title: "Tr├¼nh D╞░ß╗úc Vi├¬n Tß║íi Tuy├¬n Quang [Thu Nhß║¡p Kh├┤ng Giß╗¢i Hß║ín] (Mß║½u)",
-      location: "Ph╞░ß╗¥ng Minh Xu├ón, TP Tuy├¬n Quang, Tuy├¬n Quang",
+      title:
+        "Trình Dược Viên Tại Tuyên Quang [Thu Nhập Không Giới Hạn] (Mẫu)",
+      location: "Phường Minh Xuân, TP Tuyên Quang, Tuyên Quang",
       matchPercent: 97,
       phoneContact: "0326397621",
-      employerName: "Hß╗ç thß╗æng (Gß╗úi ├╜ mß║½u)",
+      employerName: "Hệ thống (Gợi ý mẫu)",
       createdAt: new Date().toISOString(),
     },
     {
       employerPostId: 9992,
-      title: "Tr├¼nh D╞░ß╗úc Vi├¬n Tß║íi ─Éiß╗çn Bi├¬n (─Éi l├ám ngay) (Mß║½u)",
-      location: "X├ú M╞░ß╗¥ng T├╣ng, Huyß╗çn M╞░ß╗¥ng Ch├á, ─Éiß╗çn Bi├¬n",
+      title: "Trình Dược Viên Tại Điện Biên (Đi làm ngay) (Mẫu)",
+      location: "Xã Mường Tùng, Huyện Mường Chà, Điện Biên",
       matchPercent: 82,
       phoneContact: "0326845871",
-      employerName: "Hß╗ç thß╗æng (Gß╗úi ├╜ mß║½u)",
+      employerName: "Hệ thống (Gợi ý mẫu)",
       createdAt: new Date().toISOString(),
     },
     {
       employerPostId: 9993,
-      title: "Nh├ón vi├¬n Kinh doanh D╞░ß╗úc phß║⌐m - Y├¬n B├íi (Mß║½u)",
-      location: "X├ú L├óm Giang, Huyß╗çn V─ân Y├¬n, Y├¬n B├íi",
+      title: "Nhân viên Kinh doanh Dược phẩm - Yên Bái (Mẫu)",
+      location: "Xã Lâm Giang, Huyện Văn Yên, Yên Bái",
       matchPercent: 75,
       phoneContact: "0327865284",
-      employerName: "Hß╗ç thß╗æng (Gß╗úi ├╜ mß║½u)",
+      employerName: "Hệ thống (Gợi ý mẫu)",
       createdAt: new Date().toISOString(),
     },
   ],
 };
 
 const formatCurrency = (value: number | null | undefined) => {
-  if (value == null || value <= 0) return "Thß╗Åa thuß║¡n";
-  return `${value.toLocaleString("vi-VN")} vn─æ`;
+  if (value == null || value <= 0) return "Thỏa thuận";
+  return `${value.toLocaleString("vi-VN")} vnđ`;
 };
 
 const EmployerJobsPage: React.FC = () => {
@@ -94,7 +95,8 @@ const EmployerJobsPage: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedJob, setSelectedJob] = useState<JobPostView | null>(null);
 
-  const [isSuggestionModalVisible, setIsSuggestionModalVisible] = useState(false);
+  const [isSuggestionModalVisible, setIsSuggestionModalVisible] =
+    useState(false);
   const [suggestionList, setSuggestionList] = useState<any[]>([]);
   const [isSuggestionLoading, setIsSuggestionLoading] = useState(false);
   const [currentJobTitle, setCurrentJobTitle] = useState("");
@@ -119,10 +121,10 @@ const EmployerJobsPage: React.FC = () => {
       if (res.success) {
         setAllJobs(res.data);
       } else {
-        message.error("Kh├┤ng thß╗â tß║úi danh s├ích c├┤ng viß╗çc.");
+        message.error("Không thể tải danh sách công việc.");
       }
     } catch (err: any) {
-      message.error(err.response?.data?.message || "Lß╗ùi khi tß║úi dß╗» liß╗çu.");
+      message.error(err.response?.data?.message || "Lỗi khi tải dữ liệu.");
     }
     setIsLoading(false);
   };
@@ -135,18 +137,18 @@ const EmployerJobsPage: React.FC = () => {
     setCurrentJobTitle(jobTitle);
     setIsSuggestionModalVisible(true);
     setIsSuggestionLoading(true);
-    setSuggestionList([]); 
+    setSuggestionList([]);
 
     try {
       const res: any = await jobPostService.getSuggestions(postId);
-      
+
       if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
         setSuggestionList(res.data);
       } else {
         setSuggestionList(MOCK_API_RESPONSE.data);
       }
     } catch (error) {
-      console.error("Lß╗ùi tß║úi gß╗úi ├╜, sß╗¡ dß╗Ñng dß╗» liß╗çu mß║½u", error);
+      console.error("Lỗi tải gợi ý, sử dụng dữ liệu mẫu", error);
       setSuggestionList(MOCK_API_RESPONSE.data);
     } finally {
       setIsSuggestionLoading(false);
@@ -206,11 +208,11 @@ const EmployerJobsPage: React.FC = () => {
 
   const handleDelete = (id: number) => {
     Modal.confirm({
-      title: "Bß║ín c├│ chß║»c muß╗æn x├│a b├ái ─æ─âng n├áy?",
-      content: "H├ánh ─æß╗Öng n├áy kh├┤ng thß╗â ho├án t├íc.",
-      okText: "X├íc nhß║¡n X├│a",
+      title: "Bạn có chắc muốn xóa bài đăng này?",
+      content: "Hành động này không thể hoàn tác.",
+      okText: "Xác nhận xóa",
       okType: "danger",
-      cancelText: "Hß╗ºy",
+      cancelText: "Hủy",
       onOk: async () => {
         try {
           const res = await jobPostService.deleteJobPost(id);
@@ -221,7 +223,7 @@ const EmployerJobsPage: React.FC = () => {
             message.error(res.message);
           }
         } catch (err: any) {
-          message.error(err.response?.data?.message || "X├│a thß║Ñt bß║íi.");
+          message.error(err.response?.data?.message || "Xóa thất bại.");
         }
       },
     });
@@ -233,7 +235,7 @@ const EmployerJobsPage: React.FC = () => {
       setSelectedJob(jobToView);
       setIsModalVisible(true);
     } else {
-      message.error("Kh├┤ng t├¼m thß║Ñy chi tiß║┐t c├┤ng viß╗çc.");
+      message.error("Không tìm thấy chi tiết công việc.");
     }
   };
 
@@ -274,17 +276,21 @@ const EmployerJobsPage: React.FC = () => {
 
   const columns: TableColumnsType<JobPostView> = [
     {
-      title: "Trß║íng th├íi",
+      title: "Trạng thái",
       dataIndex: "status",
       key: "status",
       sorter: true,
       render: (status: string) => (
         <>
-          {status.toLowerCase() === "draft" && <Tag color="grey">Bß║óN Tß║áM</Tag>}
-          {status.toLowerCase() === "active" && (
-            <Tag color="green">─ÉANG ─É─éNG</Tag>
+          {status.toLowerCase() === "draft" && (
+            <Tag color="grey">BẢN NHÁP</Tag>
           )}
-          {status.toLowerCase() === "expired" && <Tag color="red">Hß║╛T Hß║áN</Tag>}
+          {status.toLowerCase() === "active" && (
+            <Tag color="green">ĐANG ĐĂNG</Tag>
+          )}
+          {status.toLowerCase() === "expired" && (
+            <Tag color="red">HẾT HẠN</Tag>
+          )}
           {!["draft", "active", "expired"].includes(status.toLowerCase()) && (
             <Tag>{status.toUpperCase()}</Tag>
           )}
@@ -292,7 +298,7 @@ const EmployerJobsPage: React.FC = () => {
       ),
     },
     {
-      title: "C├┤ng viß╗çc",
+      title: "Công việc",
       dataIndex: "title",
       key: "title",
       sorter: true,
@@ -305,16 +311,17 @@ const EmployerJobsPage: React.FC = () => {
             {text}
           </a>
           <div className="text-xs text-gray-500">
-            {record.location || "(Ch╞░a c├│ ─æß╗ïa ─æiß╗âm)"}
+            {record.location || "(Chưa có địa điểm)"}
           </div>
           <div className="text-xs text-gray-500">
-            Cß║¡p nhß║¡t: {new Date(record.createdAt).toLocaleDateString("vi-VN")}
+            Cập nhật:{" "}
+            {new Date(record.createdAt).toLocaleDateString("vi-VN")}
           </div>
         </div>
       ),
     },
     {
-      title: "Ng├ánh nghß╗ü",
+      title: "Ngành nghề",
       dataIndex: "categoryName",
       key: "categoryName",
       sorter: true,
@@ -325,19 +332,19 @@ const EmployerJobsPage: React.FC = () => {
       ),
     },
     {
-      title: "L╞░╞íng",
+      title: "Lương",
       dataIndex: "salary",
       key: "salary",
       sorter: true,
       render: (salary) => (
         <Space>
           <MoneyCollectOutlined />
-          {salary === 0 ? "Thoß║ú thuß║¡n" : formatCurrency(salary)}
+          {salary === 0 ? "Thỏa thuận" : formatCurrency(salary)}
         </Space>
       ),
     },
     {
-      title: "H├ánh ─æß╗Öng",
+      title: "Hành động",
       key: "action",
       render: (_, record) => (
         <Space size="small">
@@ -349,7 +356,7 @@ const EmployerJobsPage: React.FC = () => {
               handleShowSuggestions(record.employerPostId, record.title)
             }
           >
-            Gß╗úi ├╜
+            Gợi ý
           </Button>
           <Button
             type="link"
@@ -357,14 +364,14 @@ const EmployerJobsPage: React.FC = () => {
             className="!px-0"
             onClick={() => handleEdit(record.employerPostId)}
           >
-            Sß╗¡a
+            Sửa
           </Button>
           <Dropdown
             menu={{
               items: [
                 {
                   key: "1",
-                  label: "Xem ß╗⌐ng vi├¬n (Shortlist)",
+                  label: "Xem ứng viên (Shortlist)",
                   onClick: () =>
                     navigate(
                       `/nha-tuyen-dung/ung-vien/${record.employerPostId}`
@@ -372,7 +379,7 @@ const EmployerJobsPage: React.FC = () => {
                 },
                 {
                   key: "saved",
-                  label: "─É├ú l╞░u (Saved)",
+                  label: "Đã lưu (Saved)",
                   onClick: () =>
                     navigate(
                       `/nha-tuyen-dung/da-luu/${record.employerPostId}`
@@ -380,7 +387,7 @@ const EmployerJobsPage: React.FC = () => {
                 },
                 {
                   key: "3",
-                  label: "X├│a",
+                  label: "Xóa",
                   danger: true,
                   onClick: () => handleDelete(record.employerPostId),
                 },
@@ -399,7 +406,7 @@ const EmployerJobsPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">
-          C├┤ng viß╗çc cß╗ºa t├┤i ({allJobs.length})
+          Công việc của tôi ({allJobs.length})
         </h1>
         <div className="flex gap-2">
           <Button
@@ -409,11 +416,11 @@ const EmployerJobsPage: React.FC = () => {
             onClick={handleRefresh}
             loading={isLoading}
           >
-            L├ám mß╗¢i
+            Làm mới
           </Button>
           <NavLink to="/nha-tuyen-dung/dang-tin">
             <Button type="primary" icon={<PlusOutlined />} size="large">
-              ─É─âng c├┤ng viß╗çc mß╗¢i
+              Đăng công việc mới
             </Button>
           </NavLink>
         </div>
@@ -423,7 +430,7 @@ const EmployerJobsPage: React.FC = () => {
         <Row gutter={[16, 16]}>
           <Col xs={24} md={12} lg={8}>
             <Search
-              placeholder="T├¼m kiß║┐m theo ti├¬u ─æß╗ü c├┤ng viß╗çc..."
+              placeholder="Tìm kiếm theo tiêu đề công việc..."
               onSearch={handleSearch}
               onChange={(e) => handleSearch(e.target.value)}
               enterButton
@@ -433,7 +440,7 @@ const EmployerJobsPage: React.FC = () => {
           </Col>
           <Col xs={24} md={12} lg={6}>
             <Select
-              placeholder="Lß╗ìc theo ng├ánh nghß╗ü"
+              placeholder="Lọc theo ngành nghề"
               onChange={handleCategoryChange}
               allowClear
               style={{ width: "100%" }}
@@ -473,9 +480,9 @@ const EmployerJobsPage: React.FC = () => {
             <div className="flex items-center gap-2">
               <BulbOutlined style={{ color: "#faad14", fontSize: "20px" }} />
               <div>
-                <div className="font-bold">Gß╗úi ├╜ ph├╣ hß╗úp</div>
+                <div className="font-bold">Gợi ý phù hợp</div>
                 <div className="text-xs text-gray-500 font-normal">
-                  D├ánh cho tin: {currentJobTitle}
+                  Dành cho tin: {currentJobTitle}
                 </div>
               </div>
             </div>
@@ -487,7 +494,7 @@ const EmployerJobsPage: React.FC = () => {
               key="close"
               onClick={() => setIsSuggestionModalVisible(false)}
             >
-              ─É├│ng
+              Đóng
             </Button>,
           ]}
           width={700}
@@ -519,7 +526,7 @@ const EmployerJobsPage: React.FC = () => {
                       )}
                     />
                     <span className="text-xs text-gray-500 mt-1">
-                      ─Éß╗Ö ph├╣ hß╗úp
+                      Độ phù hợp
                     </span>
                   </div>
                 }
@@ -543,20 +550,26 @@ const EmployerJobsPage: React.FC = () => {
                     <div className="space-y-1 mt-1">
                       <div className="flex items-start gap-2 text-gray-600 text-sm">
                         <EnvironmentOutlined className="mt-1 shrink-0" />
-                        <span>{item.location || "Ch╞░a cß║¡p nhß║¡t ─æß╗ïa ─æiß╗âm"}</span>
+                        <span>
+                          {item.location || "Chưa cập nhật địa điểm"}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2 text-gray-600 text-sm">
                         <PhoneOutlined />
                         <span>
-                          Li├¬n hß╗ç:{" "}
+                          Liên hệ:{" "}
                           <Text strong copyable>
                             {item.phoneContact || "N/A"}
                           </Text>
                         </span>
                       </div>
                       <div className="text-xs text-gray-400 mt-2">
-                        ─É─âng bß╗ƒi: {item.employerName} ΓÇó{" "}
-                        {item.createdAt ? new Date(item.createdAt).toLocaleDateString("vi-VN") : ""}
+                        Đăng bởi: {item.employerName} •{" "}
+                        {item.createdAt
+                          ? new Date(
+                              item.createdAt
+                            ).toLocaleDateString("vi-VN")
+                          : ""}
                       </div>
                     </div>
                   }
