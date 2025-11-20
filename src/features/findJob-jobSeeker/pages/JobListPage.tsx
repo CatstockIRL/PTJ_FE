@@ -4,6 +4,7 @@ import JobCard from '../../homepage-jobSeeker/components/JobCard';
 import { mockJobs } from '../mockData';
 import { Breadcrumb, Select, Pagination } from 'antd';
 import { SearchBar } from '../components/SearchBar';
+import type { JobSearchFilters } from '../types';
 
 const { Option } = Select;
 
@@ -20,7 +21,9 @@ const JobListPage: React.FC = () => {
 
   return (
     <div className="container mx-auto p-4">
-      <SearchBar />
+      <SearchBar value={undefined} onSearch={function (filters: JobSearchFilters): void {
+        throw new Error('Function not implemented.');
+      } } />
       <Breadcrumb className="mb-4">
         <Breadcrumb.Item href="/">Trang chủ</Breadcrumb.Item>
         <Breadcrumb.Item href="/viec-lam">Việc làm</Breadcrumb.Item>

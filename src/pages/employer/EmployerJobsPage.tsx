@@ -29,6 +29,7 @@ import {
   UserOutlined,
   DeleteOutlined,
   UsergroupAddOutlined,
+  EditOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "../../features/auth/hooks";
 import jobPostService from "../../features/job/jobPostService";
@@ -359,11 +360,16 @@ const EmployerJobsPage: React.FC = () => {
       title: "Hành động",
       key: "action",
       render: (_, record) => (
-        <Space size="small" wrap>
+        <Space size="middle" wrap>
           <Tooltip title="Gợi ý công việc">
             <Button
               icon={<BulbOutlined />}
               size="small"
+              style={{
+                backgroundColor: "#fffbe6",
+                borderColor: "#fadb14",
+                color: "#ad8b00",
+              }}
               onClick={() =>
                 handleShowSuggestions(record.employerPostId, record.title)
               }
@@ -375,19 +381,32 @@ const EmployerJobsPage: React.FC = () => {
             <Button
               icon={<UsergroupAddOutlined />}
               size="small"
-              onClick={() => navigate(`/nha-tuyen-dung/ung-vien/${record.employerPostId}`)}
+              style={{
+                backgroundColor: "#f6ffed",
+                borderColor: "#b7eb8f",
+                color: "#389e0d",
+              }}
+              onClick={() =>
+                navigate(`/nha-tuyen-dung/ung-vien/${record.employerPostId}`)
+              }
             >
               Ứng viên
             </Button>
           </Tooltip>
-          <Button
-            type="link"
-            size="small"
-            className="!px-0"
-            onClick={() => handleEdit(record.employerPostId)}
-          >
-            Sửa
-          </Button>
+          <Tooltip title="Chỉnh sửa bài đăng">
+            <Button
+              icon={<EditOutlined />}
+              size="small"
+              style={{
+                backgroundColor: "#e6f4ff",
+                borderColor: "#91caff",
+                color: "#0958d9",
+              }}
+              onClick={() => handleEdit(record.employerPostId)}
+            >
+              Sửa
+            </Button>
+          </Tooltip>
           <Tooltip title="Xóa bài đăng">
             <Button
               danger

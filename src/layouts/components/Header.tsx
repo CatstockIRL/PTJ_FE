@@ -62,11 +62,6 @@ const mainNavLinks = [
     path: '/viec-lam'
   },
   {
-    icon: <TeamOutlined />,
-    text: 'Bài đăng tìm việc',
-    path: '/danh-sach-bai-dang-tim-viec'
-  },
-  {
     icon: <BankOutlined />,
     text: 'Nhà tuyển dụng',
     path: '/employer'

@@ -55,6 +55,11 @@ export const EmployerSidebar: React.FC<SidebarProps> = ({ isOpen }) => {
       ),
     ]),
     getItem(
+      <NavLink to="/nha-tuyen-dung/tim-kiem">Bài đăng tìm việc</NavLink>,
+      "/nha-tuyen-dung/tim-kiem",
+      <SearchOutlined />
+    ),
+    getItem(
       <NavLink to="/nha-tuyen-dung/cam-nang">Cẩm nang Tuyển dụng</NavLink>,
       "/nha-tuyen-dung/cam-nang"
     ),
