@@ -6,7 +6,6 @@ import {
   Table,
   Tag,
   Space,
-  Dropdown,
   message,
   Modal,
   Input,
@@ -16,11 +15,11 @@ import {
   Progress,
   Avatar,
   Typography,
+  Tooltip,
 } from "antd";
 import type { TableProps, TableColumnsType } from "antd";
 import {
   PlusOutlined,
-  MoreOutlined,
   SyncOutlined,
   MoneyCollectOutlined,
   AppstoreOutlined,
@@ -28,6 +27,8 @@ import {
   EnvironmentOutlined,
   PhoneOutlined,
   UserOutlined,
+  DeleteOutlined,
+  UsergroupAddOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "../../features/auth/hooks";
 import jobPostService from "../../features/job/jobPostService";
@@ -47,8 +48,7 @@ const MOCK_API_RESPONSE = {
   data: [
     {
       employerPostId: 9991,
-      title:
-        "Trình Dược Viên Tại Tuyên Quang [Thu Nhập Không Giới Hạn] (Mẫu)",
+      title: "Trình Dược Viên Tại Tuyên Quang [Thu Nhập Không Giới Hạn] (Mẫu)",
       location: "Phường Minh Xuân, TP Tuyên Quang, Tuyên Quang",
       matchPercent: 97,
       phoneContact: "0326397621",
@@ -95,8 +95,7 @@ const EmployerJobsPage: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedJob, setSelectedJob] = useState<JobPostView | null>(null);
 
-  const [isSuggestionModalVisible, setIsSuggestionModalVisible] =
-    useState(false);
+  const [isSuggestionModalVisible, setIsSuggestionModalVisible] = useState(false);
   const [suggestionList, setSuggestionList] = useState<any[]>([]);
   const [isSuggestionLoading, setIsSuggestionLoading] = useState(false);
   const [currentJobTitle, setCurrentJobTitle] = useState("");
@@ -279,23 +278,37 @@ const EmployerJobsPage: React.FC = () => {
       title: "Trạng thái",
       dataIndex: "status",
       key: "status",
+      width: 120,
       sorter: true,
-      render: (status: string) => (
-        <>
-          {status.toLowerCase() === "draft" && (
-            <Tag color="grey">BẢN NHÁP</Tag>
-          )}
-          {status.toLowerCase() === "active" && (
-            <Tag color="green">ĐANG ĐĂNG</Tag>
-          )}
-          {status.toLowerCase() === "expired" && (
-            <Tag color="red">HẾT HẠN</Tag>
-          )}
-          {!["draft", "active", "expired"].includes(status.toLowerCase()) && (
-            <Tag>{status.toUpperCase()}</Tag>
-          )}
-        </>
-      ),
+      render: (status: string) => {
+        const normalized = status?.toLowerCase();
+        if (normalized === "draft") {
+          return (
+            <Tag color="default" style={{ fontSize: 12, padding: "2px 8px" }}>
+              Bản nháp
+            </Tag>
+          );
+        }
+        if (normalized === "active") {
+          return (
+            <Tag color="green" style={{ fontSize: 12, padding: "2px 8px" }}>
+              Đang đăng
+            </Tag>
+          );
+        }
+        if (normalized === "expired") {
+          return (
+            <Tag color="red" style={{ fontSize: 12, padding: "2px 8px" }}>
+              Hết hạn
+            </Tag>
+          );
+        }
+        return (
+          <Tag style={{ fontSize: 12, padding: "2px 8px" }}>
+            {status || "Khác"}
+          </Tag>
+        );
+      },
     },
     {
       title: "Công việc",
@@ -314,8 +327,7 @@ const EmployerJobsPage: React.FC = () => {
             {record.location || "(Chưa có địa điểm)"}
           </div>
           <div className="text-xs text-gray-500">
-            Cập nhật:{" "}
-            {new Date(record.createdAt).toLocaleDateString("vi-VN")}
+            Cập nhật: {new Date(record.createdAt).toLocaleDateString("vi-VN")}
           </div>
         </div>
       ),
@@ -347,17 +359,27 @@ const EmployerJobsPage: React.FC = () => {
       title: "Hành động",
       key: "action",
       render: (_, record) => (
-        <Space size="small">
-          <Button
-            icon={<BulbOutlined />}
-            size="small"
-            className="text-yellow-600 border-yellow-500 hover:!text-yellow-700 hover:!border-yellow-700"
-            onClick={() =>
-              handleShowSuggestions(record.employerPostId, record.title)
-            }
-          >
-            Gợi ý
-          </Button>
+        <Space size="small" wrap>
+          <Tooltip title="Gợi ý công việc">
+            <Button
+              icon={<BulbOutlined />}
+              size="small"
+              onClick={() =>
+                handleShowSuggestions(record.employerPostId, record.title)
+              }
+            >
+              Gợi ý
+            </Button>
+          </Tooltip>
+          <Tooltip title="Ứng viên & Đã lưu">
+            <Button
+              icon={<UsergroupAddOutlined />}
+              size="small"
+              onClick={() => navigate(`/nha-tuyen-dung/ung-vien/${record.employerPostId}`)}
+            >
+              Ứng viên
+            </Button>
+          </Tooltip>
           <Button
             type="link"
             size="small"
@@ -366,37 +388,15 @@ const EmployerJobsPage: React.FC = () => {
           >
             Sửa
           </Button>
-          <Dropdown
-            menu={{
-              items: [
-                {
-                  key: "1",
-                  label: "Xem ứng viên (Shortlist)",
-                  onClick: () =>
-                    navigate(
-                      `/nha-tuyen-dung/ung-vien/${record.employerPostId}`
-                    ),
-                },
-                {
-                  key: "saved",
-                  label: "Đã lưu (Saved)",
-                  onClick: () =>
-                    navigate(
-                      `/nha-tuyen-dung/da-luu/${record.employerPostId}`
-                    ),
-                },
-                {
-                  key: "3",
-                  label: "Xóa",
-                  danger: true,
-                  onClick: () => handleDelete(record.employerPostId),
-                },
-              ],
-            }}
-            trigger={["click"]}
-          >
-            <Button type="text" icon={<MoreOutlined />} />
-          </Dropdown>
+          <Tooltip title="Xóa bài đăng">
+            <Button
+              danger
+              type="text"
+              size="small"
+              icon={<DeleteOutlined />}
+              onClick={() => handleDelete(record.employerPostId)}
+            />
+          </Tooltip>
         </Space>
       ),
     },
@@ -550,25 +550,18 @@ const EmployerJobsPage: React.FC = () => {
                     <div className="space-y-1 mt-1">
                       <div className="flex items-start gap-2 text-gray-600 text-sm">
                         <EnvironmentOutlined className="mt-1 shrink-0" />
-                        <span>
-                          {item.location || "Chưa cập nhật địa điểm"}
-                        </span>
+                        <span>{item.location || "Chưa cập nhật địa điểm"}</span>
                       </div>
                       <div className="flex items-center gap-2 text-gray-600 text-sm">
                         <PhoneOutlined />
                         <span>
-                          Liên hệ:{" "}
-                          <Text strong copyable>
-                            {item.phoneContact || "N/A"}
-                          </Text>
+                          Liên hệ: <Text strong copyable>{item.phoneContact || "N/A"}</Text>
                         </span>
                       </div>
                       <div className="text-xs text-gray-400 mt-2">
-                        Đăng bởi: {item.employerName} •{" "}
+                        Đăng bởi: {item.employerName} • {" "}
                         {item.createdAt
-                          ? new Date(
-                              item.createdAt
-                            ).toLocaleDateString("vi-VN")
+                          ? new Date(item.createdAt).toLocaleDateString("vi-VN")
                           : ""}
                       </div>
                     </div>

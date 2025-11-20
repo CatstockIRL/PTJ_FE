@@ -1,15 +1,31 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Table, message, Typography, Tag, Button, Space, Tooltip, Modal, Input } from 'antd';
-import { 
-  ArrowLeftOutlined, HeartOutlined, HeartFilled, 
-  CheckCircleOutlined, CloseCircleOutlined
+import {
+  Table,
+  message,
+  Typography,
+  Tag,
+  Button,
+  Space,
+  Tooltip,
+  Modal,
+  Input,
+  Tabs,
+} from 'antd';
+import {
+  ArrowLeftOutlined,
+  HeartOutlined,
+  HeartFilled,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons';
 import type { TableColumnsType } from 'antd';
-import { jobApplicationService } from '../jobApplicationService'; 
+import { jobApplicationService } from '../jobApplicationService';
 import { jobSeekerPostService } from '../../candidate/services';
 import { useAuth } from '../../auth/hooks';
 import type { JobApplicationResultDto } from '../../applyJob-jobSeeker/type';
+import type { ShortlistedCandidateDto } from '../../candidate/type';
 
 const { Title } = Typography;
 const { TextArea } = Input;
@@ -18,146 +34,153 @@ const CandidateListPage: React.FC = () => {
   const navigate = useNavigate();
   const { employerPostId } = useParams<{ employerPostId: string }>();
   const { user } = useAuth();
-  
-  const [applications, setApplications] = useState<JobApplicationResultDto[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [total, setTotal] = useState(0);
-  const [savedSeekerIds, setSavedSeekerIds] = useState<Set<number>>(new Set());
 
+  const [applications, setApplications] = useState<JobApplicationResultDto[]>([]);
+  const [savedList, setSavedList] = useState<ShortlistedCandidateDto[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [postTitle, setPostTitle] = useState('');
   const [statusModal, setStatusModal] = useState({
     visible: false,
     id: 0,
-    currentNote: '', 
+    currentNote: '',
     targetStatus: '' as 'Accepted' | 'Rejected',
-    newNote: '' 
+    newNote: '',
   });
 
-  const postTitle = applications.length > 0 ? applications[0].postTitle : "";
+  const savedIdSet = new Set(savedList.map((s) => s.jobSeekerId));
 
   useEffect(() => {
-    if (employerPostId) {
-      fetchAllData(parseInt(employerPostId, 10)); 
-    } else {
-      message.error("Không tìm thấy ID bài đăng.");
+    if (!employerPostId) {
+      message.error('Không tìm thấy ID bài đăng.');
       setIsLoading(false);
+      return;
     }
+    const postId = parseInt(employerPostId, 10);
+    fetchAll(postId);
   }, [employerPostId]);
 
-  const fetchAllData = async (postId: number) => {
+  const fetchAll = async (postId: number) => {
     setIsLoading(true);
     try {
-      const [applicationsRes, shortlistedRes] = await Promise.all([
+      const [applicationsRes, savedRes] = await Promise.all([
         jobApplicationService.getApplicationsByPost(postId),
-        jobSeekerPostService.getShortlistedCandidates(postId)
+        jobSeekerPostService.getShortlistedCandidates(postId),
       ]);
 
       if (applicationsRes.success) {
         setApplications(applicationsRes.data);
-        setTotal(applicationsRes.total || applicationsRes.data.length);
+        const titleFromApplicants = applicationsRes.data[0]?.postTitle || '';
+        setPostTitle(titleFromApplicants);
       } else {
-        message.error("Tải danh sách ứng viên thất bại.");
+        message.error('Tải danh sách ứng viên thất bại.');
       }
 
-      if (shortlistedRes.success) {
-        const savedIds = shortlistedRes.data.map(candidate => candidate.jobSeekerId);
-        setSavedSeekerIds(new Set(savedIds));
+      if (savedRes.success) {
+        setSavedList(savedRes.data);
+        if (!postTitle && savedRes.data[0]?.postTitle) {
+          setPostTitle(savedRes.data[0].postTitle);
+        }
       }
-
     } catch (err: any) {
-      message.error(err.response?.data?.message || "Lỗi khi tải dữ liệu.");
+      message.error(err?.response?.data?.message || 'Lỗi khi tải dữ liệu.');
     }
     setIsLoading(false);
+  };
+
+  const handleToggleSave = async (record: JobApplicationResultDto) => {
+    if (!user || !employerPostId) {
+      message.warning('Vui lòng đăng nhập để thao tác.');
+      return;
+    }
+    const postId = parseInt(employerPostId, 10);
+    const dto = {
+      employerId: user.id,
+      jobSeekerId: record.jobSeekerId,
+      employerPostId: postId,
+    };
+    const isSaved = savedIdSet.has(record.jobSeekerId);
+    try {
+      if (isSaved) {
+        const res = await jobSeekerPostService.unsaveCandidate(dto);
+        if (res?.success || res) {
+          message.success('Đã bỏ lưu ứng viên');
+          setSavedList((prev) => prev.filter((s) => s.jobSeekerId !== record.jobSeekerId));
+        }
+      } else {
+        const res = await jobSeekerPostService.saveCandidate(dto);
+        if (res?.success || res) {
+          message.success('Đã lưu hồ sơ ứng viên');
+          setSavedList((prev) => [
+            ...prev,
+            {
+              jobSeekerId: record.jobSeekerId,
+              jobSeekerName: record.username,
+              addedAt: new Date().toISOString(),
+              note: record.notes,
+              postTitle: postTitle,
+            } as ShortlistedCandidateDto,
+          ]);
+        }
+      }
+    } catch (err) {
+      message.error('Thao tác thất bại.');
+    }
   };
 
   const openStatusModal = (record: JobApplicationResultDto, status: 'Accepted' | 'Rejected') => {
     setStatusModal({
       visible: true,
-      id: record.candidateListId, 
-      currentNote: record.notes || '', 
+      id: record.candidateListId,
+      currentNote: record.notes || '',
       targetStatus: status,
-      newNote: '' 
+      newNote: '',
     });
   };
 
   const handleSubmitStatus = async () => {
     const { id, targetStatus, newNote, currentNote } = statusModal;
     if (!id) return;
-
-    const finalNote = newNote.trim() !== "" ? newNote : currentNote;
-
+    const finalNote = newNote.trim() !== '' ? newNote : currentNote;
     try {
       const res = await jobApplicationService.updateStatus(id, targetStatus, finalNote);
-      
       if (res.success) {
-        message.success(`Đã cập nhật: ${targetStatus === 'Accepted' ? 'Duyệt' : 'Từ chối'}`);
+        message.success(targetStatus === 'Accepted' ? 'Đã duyệt' : 'Đã từ chối');
         setStatusModal({ ...statusModal, visible: false });
-        if (employerPostId) fetchAllData(parseInt(employerPostId, 10));
+        if (employerPostId) fetchAll(parseInt(employerPostId, 10));
       } else {
-        message.error(res.message || "Thất bại.");
+        message.error(res.message || 'Thất bại.');
       }
     } catch (err) {
-      message.error("Lỗi hệ thống.");
+      message.error('Lỗi hệ thống.');
     }
   };
 
-  const handleToggleSave = async (record: JobApplicationResultDto) => {
-    if (!user) {
-      message.warning("Vui lòng đăng nhập để thực hiện chức năng này.");
-      return;
-    }
-
-    const pId = employerPostId ? parseInt(employerPostId, 10) : record.employerPostId;
-
-    const dto = {
-      employerId: user.id,
-      jobSeekerId: record.jobSeekerId,
-      employerPostId: pId
-    };
-
-    const isSaved = savedSeekerIds.has(record.jobSeekerId);
-
-    try {
-      let res;
-      if (isSaved) {
-        res = await jobSeekerPostService.unsaveCandidate(dto);
-        if (res.success || res) {
-           message.success("Đã bỏ lưu ứng viên");
-           setSavedSeekerIds(prev => {
-             const newSet = new Set(prev);
-             newSet.delete(record.jobSeekerId);
-             return newSet;
-           });
-        }
-      } else {
-        res = await jobSeekerPostService.saveCandidate(dto);
-        if (res.success || res) {
-           message.success("Đã lưu hồ sơ ứng viên");
-           setSavedSeekerIds(prev => new Set(prev).add(record.jobSeekerId));
-        }
-      }
-    } catch (err: any) {
-      message.error("Thao tác thất bại.");
-    }
+  const renderStatusTag = (status?: string) => {
+    const s = status?.toLowerCase();
+    if (s === 'accepted') return <Tag color="success">Đã duyệt</Tag>;
+    if (s === 'rejected') return <Tag color="error">Đã từ chối</Tag>;
+    if (s === 'pending') return <Tag color="processing">Chờ duyệt</Tag>;
+    return <Tag>Chưa xem</Tag>;
   };
 
-  const columns: TableColumnsType<JobApplicationResultDto> = [
+  const applicantColumns: TableColumnsType<JobApplicationResultDto> = [
     {
       title: '',
       key: 'save',
       width: 50,
       align: 'center',
       render: (_, record) => {
-        const isSaved = savedSeekerIds.has(record.jobSeekerId);
+        const isSaved = savedIdSet.has(record.jobSeekerId);
         return (
-          <Tooltip title={isSaved ? "Bỏ lưu" : "Lưu hồ sơ"}>
+          <Tooltip title={isSaved ? 'Bỏ lưu' : 'Lưu hồ sơ'}>
             <Button
               type="text"
               shape="circle"
               icon={
                 isSaved ? (
-                  <HeartFilled style={{ color: 'hotpink', fontSize: '18px' }} />
+                  <HeartFilled style={{ color: 'hotpink', fontSize: 18 }} />
                 ) : (
-                  <HeartOutlined style={{ color: 'gray', fontSize: '18px' }} />
+                  <HeartOutlined style={{ color: 'gray', fontSize: 18 }} />
                 )
               }
               onClick={() => handleToggleSave(record)}
@@ -181,58 +204,48 @@ const CandidateListPage: React.FC = () => {
       title: 'Ngày nộp',
       dataIndex: 'applicationDate',
       key: 'applicationDate',
-      render: (date: string) => date ? new Date(date).toLocaleDateString('vi-VN') : "-",
+      render: (date: string) => (date ? new Date(date).toLocaleDateString('vi-VN') : '-'),
     },
     {
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
-      render: (status: string) => {
-        let color = 'default';
-        let label = 'Chờ duyệt';
-        const s = status?.toLowerCase();
-        if (s === 'accepted') { color = 'success'; label = 'Đã duyệt'; }
-        else if (s === 'rejected') { color = 'error'; label = 'Đã từ chối'; }
-        else if (s === 'pending') { color = 'processing'; label = 'Chờ duyệt'; }
-        return <Tag color={color}>{label}</Tag>;
-      },
+      render: renderStatusTag,
     },
     {
       title: 'Ghi chú',
       dataIndex: 'notes',
       key: 'notes',
-      render: (text) => <span className="text-gray-500 italic text-xs">{text}</span>
+      render: (text) => <span className="text-gray-500 italic text-xs">{text}</span>,
     },
     {
       title: 'Xét duyệt',
       key: 'approval',
       render: (_, record) => {
         const currentStatus = record.status?.toLowerCase();
-
         return (
           <Space>
             {(currentStatus === 'pending' || currentStatus === 'rejected') && (
-              <Tooltip title={currentStatus === 'rejected' ? "Đổi ý: Duyệt lại" : "Chấp nhận"}>
-                <Button 
+              <Tooltip title={currentStatus === 'rejected' ? 'Duyệt lại' : 'Chấp nhận'}>
+                <Button
                   type={currentStatus === 'rejected' ? 'dashed' : 'text'}
-                  className={currentStatus === 'rejected' ? "text-green-600 border-green-600" : "text-green-600"}
-                  icon={<CheckCircleOutlined style={{ fontSize: '18px' }} />} 
+                  className={currentStatus === 'rejected' ? 'text-green-600 border-green-600' : 'text-green-600'}
+                  icon={<CheckCircleOutlined style={{ fontSize: 18 }} />}
                   onClick={() => openStatusModal(record, 'Accepted')}
                 >
-                  {currentStatus === 'rejected' && "Duyệt lại"}
+                  {currentStatus === 'rejected' && 'Duyệt lại'}
                 </Button>
               </Tooltip>
             )}
-
             {(currentStatus === 'pending' || currentStatus === 'accepted') && (
-              <Tooltip title={currentStatus === 'accepted' ? "Đổi ý: Từ chối" : "Từ chối"}>
-                <Button 
+              <Tooltip title={currentStatus === 'accepted' ? 'Hủy duyệt' : 'Từ chối'}>
+                <Button
                   type={currentStatus === 'accepted' ? 'dashed' : 'text'}
                   danger
-                  icon={<CloseCircleOutlined style={{ fontSize: '18px' }} />} 
+                  icon={<CloseCircleOutlined style={{ fontSize: 18 }} />}
                   onClick={() => openStatusModal(record, 'Rejected')}
                 >
-                  {currentStatus === 'accepted' && "Hủy duyệt"}
+                  {currentStatus === 'accepted' && 'Hủy duyệt'}
                 </Button>
               </Tooltip>
             )}
@@ -241,8 +254,67 @@ const CandidateListPage: React.FC = () => {
       },
     },
     {
-      title: 'Hành động',
-      key: 'action',
+      title: 'Hồ sơ',
+      key: 'profile',
+      render: (_, record) => (
+        <Button type="link" onClick={() => navigate(`/ho-so/${record.jobSeekerId}`)}>
+          Xem hồ sơ
+        </Button>
+      ),
+    },
+  ];
+
+  const savedColumns: TableColumnsType<ShortlistedCandidateDto> = [
+    {
+      title: '',
+      key: 'delete',
+      width: 50,
+      align: 'center',
+      render: (_, record) => (
+        <Tooltip title="Bỏ lưu">
+          <Button
+            type="text"
+            danger
+            shape="circle"
+            icon={<DeleteOutlined />}
+            onClick={async () => {
+              if (!user || !employerPostId) return;
+              try {
+                await jobSeekerPostService.unsaveCandidate({
+                  employerId: user.id,
+                  jobSeekerId: record.jobSeekerId,
+                  employerPostId: parseInt(employerPostId, 10),
+                });
+                message.success('Đã bỏ lưu');
+                setSavedList((prev) => prev.filter((s) => s.jobSeekerId !== record.jobSeekerId));
+              } catch {
+                message.error('Không thể bỏ lưu');
+              }
+            }}
+          />
+        </Tooltip>
+      ),
+    },
+    {
+      title: 'Ứng viên',
+      dataIndex: 'jobSeekerName',
+      key: 'jobSeekerName',
+    },
+    {
+      title: 'Ghi chú',
+      dataIndex: 'note',
+      key: 'note',
+      render: (text) => <span className="text-gray-500 italic text-xs">{text}</span>,
+    },
+    {
+      title: 'Ngày lưu',
+      dataIndex: 'addedAt',
+      key: 'addedAt',
+      render: (date: string) => (date ? new Date(date).toLocaleDateString('vi-VN') : '-'),
+    },
+    {
+      title: 'Hồ sơ',
+      key: 'profile',
       render: (_, record) => (
         <Button type="link" onClick={() => navigate(`/ho-so/${record.jobSeekerId}`)}>
           Xem hồ sơ
@@ -255,29 +327,51 @@ const CandidateListPage: React.FC = () => {
     <div className="space-y-6 p-6">
       <div className="flex justify-between items-center">
         <div>
-          <Title level={2} className="mb-0">Danh sách ứng viên</Title>
+          <Title level={2} className="mb-0">
+            Danh sách ứng viên
+          </Title>
           {postTitle && <div className="text-gray-500 mt-1">Tin: {postTitle}</div>}
         </div>
-        <Button 
-          icon={<ArrowLeftOutlined />} 
-          onClick={() => navigate(-1)}
-        >
+        <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>
           Quay lại
         </Button>
       </div>
-      
+
       <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-        <Table
-          rowKey="candidateListId"
-          dataSource={applications}
-          columns={columns}
-          loading={isLoading}
-          pagination={{ total: total, pageSize: 10 }}
+        <Tabs
+          items={[
+            {
+              key: 'applicants',
+              label: `Ứng viên (${applications.length})`,
+              children: (
+                <Table
+                  rowKey="candidateListId"
+                  dataSource={applications}
+                  columns={applicantColumns}
+                  loading={isLoading}
+                  pagination={{ pageSize: 10 }}
+                />
+              ),
+            },
+            {
+              key: 'saved',
+              label: `Đã lưu (${savedList.length})`,
+              children: (
+                <Table
+                  rowKey={(record) => `${record.jobSeekerId}-${record.addedAt}`}
+                  dataSource={savedList}
+                  columns={savedColumns}
+                  loading={isLoading}
+                  pagination={{ pageSize: 10 }}
+                />
+              ),
+            },
+          ]}
         />
       </div>
 
       <Modal
-        title={statusModal.targetStatus === 'Accepted' ? "Duyệt hồ sơ" : "Từ chối hồ sơ"}
+        title={statusModal.targetStatus === 'Accepted' ? 'Duyệt hồ sơ' : 'Từ chối hồ sơ'}
         open={statusModal.visible}
         onOk={handleSubmitStatus}
         onCancel={() => setStatusModal({ ...statusModal, visible: false })}
@@ -287,10 +381,11 @@ const CandidateListPage: React.FC = () => {
       >
         <div className="space-y-4">
           <p>
-            Bạn xác nhận muốn chuyển trạng thái sang: 
-            <strong className={statusModal.targetStatus === 'Accepted' ? "text-green-600 ml-1" : "text-red-600 ml-1"}>
-              {statusModal.targetStatus === 'Accepted' ? 'Đã duyệt' : 'Từ chối'}
-            </strong>?
+            Bạn xác nhận chuyển trạng thái sang
+            <strong className={statusModal.targetStatus === 'Accepted' ? 'text-green-600 ml-1' : 'text-red-600 ml-1'}>
+              {statusModal.targetStatus === 'Accepted' ? 'Đã duyệt' : 'Đã từ chối'}
+            </strong>
+            ?
           </p>
 
           {statusModal.currentNote && (
@@ -298,14 +393,14 @@ const CandidateListPage: React.FC = () => {
               <strong>Ghi chú hiện tại:</strong> {statusModal.currentNote}
             </div>
           )}
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Ghi chú mới (Để trống sẽ giữ nguyên note cũ):
+              Ghi chú mới (để trống sẽ giữ nguyên ghi chú cũ):
             </label>
-            <TextArea 
-              rows={3} 
-              placeholder="Nhập ghi chú mới..."
+            <TextArea
+              rows={3}
+              placeholder="Nhập ghi chú..."
               value={statusModal.newNote}
               onChange={(e) => setStatusModal({ ...statusModal, newNote: e.target.value })}
             />
