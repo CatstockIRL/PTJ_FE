@@ -1,10 +1,23 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Form, Input, Button, Card, message, Row, Col, Upload, Avatar, Space } from 'antd';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  Form,
+  Input,
+  Button,
+  Card,
+  message,
+  Row,
+  Col,
+  Upload,
+  Avatar,
+  Space,
+  Select
+} from 'antd';
 import type { UploadChangeParam } from 'antd/es/upload';
 import type { UploadFile } from 'antd/es/upload/interface';
 import { CameraOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { Profile, ProfileUpdateRequest } from '../../../../types/profile';
 import defaultCompanyLogo from '../../../../assets/no-logo.png';
+import locationService, { type LocationOption } from '../../../location/locationService';
 
 interface ProfileFormProps {
   profile: Profile | null;
@@ -22,20 +35,110 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
   const [form] = Form.useForm<ProfileUpdateRequest>();
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | undefined>(profile?.avatarUrl ?? undefined);
+  const [provinceOptions, setProvinceOptions] = useState<LocationOption[]>([]);
+  const [districtOptions, setDistrictOptions] = useState<LocationOption[]>([]);
+  const [wardOptions, setWardOptions] = useState<LocationOption[]>([]);
+  const [loadingProvinces, setLoadingProvinces] = useState(false);
+  const [loadingDistricts, setLoadingDistricts] = useState(false);
+  const [loadingWards, setLoadingWards] = useState(false);
+
+  const fetchDistricts = useCallback(async (provinceId?: number) => {
+    if (!provinceId) {
+      setDistrictOptions([]);
+      return;
+    }
+    setLoadingDistricts(true);
+    try {
+      const data = await locationService.getDistricts(provinceId);
+      setDistrictOptions(data);
+    } catch {
+      message.error('Không thể tải danh sách quận/huyện');
+    } finally {
+      setLoadingDistricts(false);
+    }
+  }, []);
+
+  const fetchWards = useCallback(async (districtId?: number) => {
+    if (!districtId) {
+      setWardOptions([]);
+      return;
+    }
+    setLoadingWards(true);
+    try {
+      const data = await locationService.getWards(districtId);
+      setWardOptions(data);
+    } catch {
+      message.error('Không thể tải danh sách phường/xã');
+    } finally {
+      setLoadingWards(false);
+    }
+  }, []);
+
+  const handleProvinceChange = async (value?: number) => {
+    form.setFieldsValue({ districtId: undefined, wardId: undefined });
+    setDistrictOptions([]);
+    setWardOptions([]);
+    if (value) {
+      await fetchDistricts(value);
+    }
+  };
+
+  const handleDistrictChange = async (value?: number) => {
+    form.setFieldsValue({ wardId: undefined });
+    setWardOptions([]);
+    if (value) {
+      await fetchWards(value);
+    }
+  };
+
+  useEffect(() => {
+    const loadProvinces = async () => {
+      setLoadingProvinces(true);
+      try {
+        const data = await locationService.getProvinces();
+        setProvinceOptions(data);
+      } catch {
+        message.error('Không thể tải danh sách tỉnh/thành');
+      } finally {
+        setLoadingProvinces(false);
+      }
+    };
+
+    void loadProvinces();
+  }, []);
 
   useEffect(() => {
     form.setFieldsValue({
       displayName: profile?.displayName ?? '',
       description: profile?.description ?? '',
       website: profile?.website ?? '',
-      location: profile?.location ?? '',
+      fullLocation: profile?.fullLocation ?? '',
+      provinceId: profile?.provinceId,
+      districtId: profile?.districtId,
+      wardId: profile?.wardId,
       contactName: profile?.contactName ?? '',
       contactEmail: profile?.contactEmail ?? '',
       contactPhone: profile?.contactPhone ?? ''
     });
     setPreviewUrl(profile?.avatarUrl ?? undefined);
     setAvatarFile(null);
-  }, [form, profile]);
+
+    const initLocations = async () => {
+      if (profile?.provinceId) {
+        await fetchDistricts(profile.provinceId);
+      } else {
+        setDistrictOptions([]);
+      }
+
+      if (profile?.districtId) {
+        await fetchWards(profile.districtId);
+      } else {
+        setWardOptions([]);
+      }
+    };
+
+    void initLocations();
+  }, [profile, form, fetchDistricts, fetchWards]);
 
   const canDeleteAvatar = useMemo(() => Boolean(profile?.avatarUrl), [profile?.avatarUrl]);
 
@@ -67,7 +170,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
       setAvatarFile(null);
       setPreviewUrl(undefined);
       message.success('Đã xóa ảnh đại diện');
-    } catch (error) {
+    } catch {
       message.error('Không thể xóa ảnh');
     }
   };
@@ -76,7 +179,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
     try {
       await onSubmit({ ...values, imageFile: avatarFile });
       message.success('Cập nhật hồ sơ thành công');
-    } catch (error) {
+    } catch {
       message.error('Cập nhật hồ sơ thất bại');
     }
   };
@@ -159,12 +262,73 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
                 </Form.Item>
               </Col>
               <Col xs={24} md={12}>
+                <Form.Item name="fullLocation" label="Địa chỉ chi tiết">
+                  <Input placeholder="Số nhà, đường, khu vực" />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={8}>
                 <Form.Item
-                  name="location"
-                  label="Địa điểm chính"
-                  rules={[{ required: true, message: 'Vui lòng nhập địa điểm!' }]}
+                  name="provinceId"
+                  label="Tỉnh/Thành phố"
+                  rules={[{ required: true, message: 'Vui lòng chọn tỉnh/thành phố!' }]}
                 >
-                  <Input placeholder="VD: Hà Nội, Việt Nam" />
+                  <Select
+                    showSearch
+                    allowClear
+                    placeholder="Chọn tỉnh/thành"
+                    loading={loadingProvinces}
+                    options={provinceOptions.map((province) => ({
+                      label: province.name,
+                      value: province.code
+                    }))}
+                    optionFilterProp="label"
+                    onChange={(value) => {
+                      void handleProvinceChange(value as number | undefined);
+                    }}
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={8}>
+                <Form.Item
+                  name="districtId"
+                  label="Quận/Huyện"
+                  rules={[{ required: true, message: 'Vui lòng chọn quận/huyện!' }]}
+                >
+                  <Select
+                    showSearch
+                    allowClear
+                    placeholder="Chọn quận/huyện"
+                    disabled={!form.getFieldValue('provinceId')}
+                    loading={loadingDistricts}
+                    options={districtOptions.map((district) => ({
+                      label: district.name,
+                      value: district.code
+                    }))}
+                    optionFilterProp="label"
+                    onChange={(value) => {
+                      void handleDistrictChange(value as number | undefined);
+                    }}
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={8}>
+                <Form.Item
+                  name="wardId"
+                  label="Phường/Xã"
+                  rules={[{ required: true, message: 'Vui lòng chọn phường/xã!' }]}
+                >
+                  <Select
+                    showSearch
+                    allowClear
+                    placeholder="Chọn phường/xã"
+                    disabled={!form.getFieldValue('districtId')}
+                    loading={loadingWards}
+                    options={wardOptions.map((ward) => ({
+                      label: ward.name,
+                      value: ward.code
+                    }))}
+                    optionFilterProp="label"
+                  />
                 </Form.Item>
               </Col>
             </Row>

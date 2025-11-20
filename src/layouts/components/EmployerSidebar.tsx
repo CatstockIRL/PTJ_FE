@@ -1,7 +1,5 @@
-﻿import React from "react";
+import React from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { useAuth } from "../../features/auth/hooks";
-import { ROLES } from "../../constants/roles";
 import { Avatar, Menu, type MenuProps } from "antd";
 import {
   HomeOutlined,
@@ -12,6 +10,8 @@ import {
   QuestionCircleOutlined,
   UserOutlined,
 } from "@ant-design/icons";
+import { useAuth } from "../../features/auth/hooks";
+import { ROLES } from "../../constants/roles";
 
 type MenuItem = Required<MenuProps>["items"][number];
 
@@ -24,8 +24,6 @@ function getItem(
   return { key, icon, children, label } as MenuItem;
 }
 
-const menuDivider: MenuItem = { type: "divider" };
-
 interface SidebarProps {
   isOpen: boolean;
 }
@@ -34,14 +32,13 @@ export const EmployerSidebar: React.FC<SidebarProps> = ({ isOpen }) => {
   const { user } = useAuth();
   const location = useLocation();
 
-  // Má»¥c menu chÃ­nh
   const employerItems: MenuItem[] = [
     getItem(
-     <NavLink to="/nha-tuyen-dung/dashboard">Thông tin</NavLink>,
+      <NavLink to="/nha-tuyen-dung/dashboard">Thông tin</NavLink>,
       "/nha-tuyen-dung/dashboard",
       <HomeOutlined />
     ),
-    getItem("Công Việc", "sub-cong-viec", <FileTextOutlined />, [
+    getItem("Công việc", "sub-cong-viec", <FileTextOutlined />, [
       getItem(
         <NavLink to="/nha-tuyen-dung/cong-viec">Bài đăng của tôi</NavLink>,
         "/nha-tuyen-dung/cong-viec"
@@ -49,44 +46,20 @@ export const EmployerSidebar: React.FC<SidebarProps> = ({ isOpen }) => {
       getItem(
         <NavLink to="/nha-tuyen-dung/dang-tin">Đăng bài</NavLink>,
         "/nha-tuyen-dung/dang-tin"
-      ),
+      )
     ]),
     getItem(
-      <NavLink to="/nha-tuyen-dung/cam-nang">Cẩm nang Tuyển dụng</NavLink>,
-      "/nha-tuyen-dung/cam-nang"
+      <NavLink to="/nha-tuyen-dung/cam-nang">Cẩm nang tuyển dụng</NavLink>,
+      "/nha-tuyen-dung/cam-nang",
+      <ReadOutlined />
     ),
-  ];
-
-  const adminItems: MenuItem[] = [
-    getItem("Quản lí bài viết", "sub-cong-viec", <FileTextOutlined />, [
-      getItem(
-        <NavLink to="/admin/jobseeker-post">Bài đăng của ứng viên</NavLink>,
-        "/admin/jobseeker-post"
-      ),
-      getItem(
-        <NavLink to="/admin/employer-post">
-          Bài đăng của nhà tuyển dụng
-        </NavLink>,
-        "admin/employer-post"
-      ),
-    ]),
-    // getItem(
-    //   <NavLink to="/admin/jobseeker-post">
-    //     Quản lí bài của nhà tuyển dụng
-    //   </NavLink>,
-    //   "/admin/jobseeker-post"
-    // ),
   ];
 
   const getMenuItems = (): MenuItem[] => {
     if (!user) return [];
 
     if (user.roles.includes(ROLES.EMPLOYER)) {
-      return [...employerItems];
-    }
-
-    if (user.roles.includes(ROLES.ADMIN)) {
-      return [...adminItems];
+      return employerItems;
     }
 
     return [];
@@ -119,7 +92,7 @@ export const EmployerSidebar: React.FC<SidebarProps> = ({ isOpen }) => {
       </div>
 
       {user && (
-        <div className="p-4 flex-shrink-0 border-t border-gray-200">
+        <div className="p-4 flex-shrink-0 border-top border-gray-200">
           <div
             className={`flex items-center space-x-3 ${
               !isOpen ? "justify-center" : ""
