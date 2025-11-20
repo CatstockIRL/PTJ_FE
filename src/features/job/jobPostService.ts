@@ -43,6 +43,10 @@ export const getJobSuggestions = async (postId: number): Promise<JobSuggestionRe
   return await baseService.get<JobSuggestionResponse>(`/EmployerPost/${postId}/suggestions`);
 };
 
+export const getSuggestions = async (postId: number): Promise<JobSuggestionResponse> => {
+  return getJobSuggestions(postId);
+};
+
 export const jobPostService = {
   createJobPost,
   getJobsByUser,
@@ -52,6 +56,7 @@ export const jobPostService = {
   getAllJobs,
   updateStatus,
   getJobSuggestions,
+  getSuggestions,
 };
 
 export default jobPostService;
