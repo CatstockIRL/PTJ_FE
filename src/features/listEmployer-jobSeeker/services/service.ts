@@ -1,83 +1,115 @@
 import baseService from '../../../services/baseService';
-import type { Employer, EmployerFilter, EmployerJobResponse, PaginatedApiResponse, UserApiResponse } from '../types';
+import type { Employer, EmployerFilter } from '../types';
+import type { PaginatedJobResponse, JobPostView } from '../../job/jobTypes';
 
-const USER_API_URL = 'https://localhost:7100/api/admin/users';
-const JOB_API_URL = 'https://localhost:7100/api/EmployerPost/by-user';
+const JOB_LIST_API_URL = '/EmployerPost/all';
+const PUBLIC_PROFILE_API_URL = '/EmployerProfile/public';
+interface EmployerPublicProfileApi {
+  displayName?: string;
+  avatarUrl?: string;
+}
+
+type EmployerJobPostView = JobPostView & { employerId?: number };
 
 const getPlaceholderLogo = (username: string) => {
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=random&color=fff`;
-}
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=random&color=fff`;
+};
 
 const extractProvince = (fullAddress: string): string => {
-    if (!fullAddress) return '';
-    const parts = fullAddress.split(',');
-    const lastPart = parts[parts.length - 1].trim();
-    return lastPart.replace(/^(Tỉnh|Thành phố|TP\.?)\s+/i, '');
-}
+  if (!fullAddress) return '';
+  const parts = fullAddress.split(',');
+  const lastPart = parts[parts.length - 1].trim();
+  return lastPart.replace(/^(Tinh|Thanh pho|TP\.?)\s+/i, '');
+};
 
-const getJobDetailsByUserId = async (userId: number): Promise<{ count: number, locations: string[] }> => {
-    try {
-        const response = await baseService.get<EmployerJobResponse>(`${JOB_API_URL}/${userId}`);
-        
-        if (!response.data || response.data.length === 0) {
-            return { count: 0, locations: [] };
-        }
-
-        const uniqueLocations = new Set<string>();
-        
-        response.data.forEach(job => {
-            const province = extractProvince(job.location);
-            if (province) {
-                uniqueLocations.add(province);
-            }
-        });
-
-        return { 
-            count: response.total || 0, 
-            locations: Array.from(uniqueLocations)
-        };
-
-    } catch (error) {
-        console.warn(`Không tải được job của user ${userId}`, error);
-        return { count: 0, locations: [] };
-    }
-}
-
-export const getEmployers = async (filters: EmployerFilter): Promise<{ employers: Employer[], totalRecords: number }> => {
+const enrichWithProfile = async (employer: Employer): Promise<Employer> => {
   try {
-    const params = {
-        role: 'employer',
-        isActive: true,
-        isVerified: true,
-        keyword: filters.keyword || '',
-        page: filters.page || 1,
-        pageSize: filters.pageSize || 10
-    };
-
-    const response = await baseService.get<PaginatedApiResponse<UserApiResponse>>(USER_API_URL, { params });
-    
-    const employerPromises = response.data.map(async (user) => {
-        const jobDetails = await getJobDetailsByUserId(user.userId);
-
-        return {
-            id: user.userId,
-            name: user.username,
-            logo: user.avatarUrl || getPlaceholderLogo(user.username),
-            jobCount: jobDetails.count,     
-            locations: jobDetails.locations
-        };
-    });
-
-    const employers = await Promise.all(employerPromises);
-
+    const profile = await baseService.get<EmployerPublicProfileApi>(`${PUBLIC_PROFILE_API_URL}/${employer.id}`);
     return {
-        employers,
-        totalRecords: response.totalRecords
+      ...employer,
+      name: profile.displayName || employer.name,
+      logo: profile.avatarUrl || employer.logo || getPlaceholderLogo(profile.displayName || employer.name),
     };
-
   } catch (error) {
-    console.error('Lỗi khi tải danh sách nhà tuyển dụng:', error);
-    return { employers: [], totalRecords: 0 };
+    console.warn(`Khong the tai profile cho nha tuyen dung ${employer.id}`, error);
+    if (!employer.logo) {
+      return { ...employer, logo: getPlaceholderLogo(employer.name) };
+    }
+    return employer;
   }
 };
 
+export const getEmployers = async (
+  filters: EmployerFilter
+): Promise<{ employers: Employer[]; totalRecords: number }> => {
+  try {
+    const response = await baseService.get<PaginatedJobResponse>(JOB_LIST_API_URL);
+    const jobData: EmployerJobPostView[] = (response.data ?? []) as EmployerJobPostView[];
+
+    const employerMap = new Map<
+      number,
+      {
+        base: Employer;
+        locations: Set<string>;
+      }
+    >();
+
+    jobData.forEach((job) => {
+      const employerId = Number(job.employerId);
+      if (!employerId) {
+        return;
+      }
+
+      const existing = employerMap.get(employerId);
+      const province = extractProvince(job.location || '');
+      if (existing) {
+        existing.base.jobCount += 1;
+        if (province) {
+          existing.locations.add(province);
+        }
+      } else {
+        const locations = new Set<string>();
+        if (province) {
+          locations.add(province);
+        }
+        employerMap.set(employerId, {
+          base: {
+            id: employerId,
+            name: job.employerName || `Nha tuyen dung #${employerId}`,
+            logo: '',
+            jobCount: 1,
+            locations: [],
+          },
+          locations,
+        });
+      }
+    });
+
+    let employers = Array.from(employerMap.values()).map(({ base, locations }) => ({
+      ...base,
+      locations: Array.from(locations),
+    }));
+
+    const keyword = (filters.keyword ?? '').trim().toLowerCase();
+    if (keyword) {
+      employers = employers.filter((employer) => employer.name.toLowerCase().includes(keyword));
+    }
+
+    const totalRecords = employers.length;
+    const page = filters.page && filters.page > 0 ? filters.page : 1;
+    const pageSize = filters.pageSize && filters.pageSize > 0 ? filters.pageSize : 10;
+
+    const startIndex = (page - 1) * pageSize;
+    const paginatedEmployers = employers.slice(startIndex, startIndex + pageSize);
+
+    const enrichedEmployers = await Promise.all(paginatedEmployers.map((employer) => enrichWithProfile(employer)));
+
+    return {
+      employers: enrichedEmployers,
+      totalRecords,
+    };
+  } catch (error) {
+    console.error('Loi khi tai danh sach nha tuyen dung:', error);
+    return { employers: [], totalRecords: 0 };
+  }
+};
