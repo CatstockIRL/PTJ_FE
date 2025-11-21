@@ -83,6 +83,7 @@ export const AppRoutes: React.FC = () => {
           <Route path="viec-lam-da-luu" element={<SavedJobsPage />} />
           <Route path="viec-da-ung-tuyen" element={<AppliedJobsPage />} />
           <Route path="tai-khoan" element={<JobSeekerProfilePage />} />
+          <Route path="doi-mat-khau" element={<ChangePasswordPage />} />
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />

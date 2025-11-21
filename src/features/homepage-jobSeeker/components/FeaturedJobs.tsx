@@ -68,8 +68,7 @@ const FeaturedJobs: React.FC = () => {
       <div className="max-w-[120rem] mx-auto bg-white border border-gray-200 rounded-3xl p-12 shadow-[0_30px_90px_rgba(15,23,42,0.1)]">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8 text-slate-900">
           <div>
-            <p className="uppercase text-xs tracking-[0.35em] text-blue-500">Kho co hoi</p>
-            <h2 className="text-3xl font-bold">Viec lam gan day</h2>
+            <h2 className="text-3xl font-bold">Việc làm gần đây</h2>
           </div>
           <a href="#" className="text-blue-600 hover:text-blue-800 transition font-semibold text-sm">
             Xem tat ca &gt;
