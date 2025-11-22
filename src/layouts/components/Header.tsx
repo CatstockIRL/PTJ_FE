@@ -45,7 +45,7 @@ const accountNavLinks = [{ icon: <LockOutlined />, text: 'Đổi mật khẩu', 
 const mainNavLinks = [
   { icon: <SearchOutlined />, text: 'Danh sách việc làm', path: '/viec-lam' },
   { icon: <BankOutlined />, text: 'Nhà tuyển dụng', path: '/employer' },
-  { icon: <BookOutlined />, text: 'Cẩm nang việc làm', path: '/cam-nang' },
+  { icon: <BookOutlined />, text: 'Tin tức', path: '/news' },
   { icon: <UserOutlined />, text: 'Cho người tìm việc', children: jobSeekerNavLinks }
 ];
 

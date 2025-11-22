@@ -19,6 +19,9 @@ import jobSeekerProfileReducer from '../features/profile-JobSeeker/slice/profile
 import adminEmployerReducer from '../features/admin-employer-post/slice';
 import jobSeekerPostListReducer from '../features/jobseekerList-jobSeeker/slice';
 import employerDetailReducer from '../features/employerDetail-jobseeker/slice';
+import newsListreducer from '../features/listNew-JobSeeker/slice';
+import newsDetailReducer from '../features/newsDetail-JobSeeker/slice';
+
 const rootReducer = combineReducers({
   auth: authReducer,
   homepage: homepageReducer,
@@ -37,6 +40,8 @@ const rootReducer = combineReducers({
   adminEmployer: adminEmployerReducer,
   jobSeekerPostList: jobSeekerPostListReducer,
   employerDetail: employerDetailReducer,//redux của employer chi tiết khi click vào thẻ card employer ở jobseeker
+  newsList: newsListreducer,
+  newsDetail: newsDetailReducer
 });
 
 export const store = configureStore({
