@@ -266,7 +266,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             Cho người tìm việc
           </NavLink>
         ) : (
-          <NavLink to="/nha-tuyen-dung" className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
+          <NavLink to="/nha-tuyen-dung/dashboard" className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
             Nhà tuyển dụng
           </NavLink>
         )}
