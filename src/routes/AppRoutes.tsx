@@ -40,11 +40,10 @@ import AdminReportManagementPage from "../pages/admin/AdminReportManagementPage"
 import ListEmployerPage from "../features/listEmployer-jobSeeker/pages/ListEmployerPage";
 import JobSeekerProfilePage from "../features/profile-JobSeeker/pages/JobSeekerProfilePage";
 import AdminEmployerPostPage from "../features/admin-employer-post/pages/AdminEmployerPostPage";
+import AdminEmployerRegistrationPage from "../pages/admin/AdminEmployerRegistrationPage";
 import CandidateListPage from "../features/applyJob-employer/pages/CandidateListPage";
 import ShortlistedCandidatesPage from "../features/candidate/pages/ShortlistedCandidatesPage";
-import JobSeekerCvPage from "../features/jobSeekerCv/pages/JobSeekerCvPage";
-import EmployerDetailPage from "../features/employerDetail-jobseeker/pages/EmployerDetailPage";
-import FollowedEmployersPage from "../features/findJob-jobSeeker/pages/FollowedEmployersPage";
+import JobSeekerPostListPage from '../features/jobseekerList-jobSeeker/pages/JobSeekerPostListPage';
 
 export const AppRoutes: React.FC = () => {
   return (
@@ -67,7 +66,7 @@ export const AppRoutes: React.FC = () => {
         <Route path="unauthorized" element={<UnauthorizedPage />} />
         <Route path="verify-success" element={<VerifySuccessPage />} />
         <Route path="verify-failed" element={<VerifyFailedPage />} />
-        <Route path="/nha-tuyen-dung/chi-tiet/:id" element={<EmployerDetailPage />} />
+        <Route path="danh-sach-bai-dang-tim-viec" element={<JobSeekerPostListPage />} />
 
 
         {/* Job Seeker Protected Routes */}
@@ -80,13 +79,11 @@ export const AppRoutes: React.FC = () => {
           />
           <Route
             path="sua-bai-dang-tim-viec/:id"
-            element={<ManagePostingsPage />}
+            element={<CreatePostingPage />}
           />
           <Route path="viec-lam-da-luu" element={<SavedJobsPage />} />
           <Route path="viec-da-ung-tuyen" element={<AppliedJobsPage />} />
           <Route path="tai-khoan" element={<JobSeekerProfilePage />} />
-          <Route path="nha-tuyen-dung-theo-doi" element={<FollowedEmployersPage />} />
-          <Route path="cv-cua-toi" element={<JobSeekerCvPage />} />
           <Route path="doi-mat-khau" element={<ChangePasswordPage />} />
         </Route>
 
@@ -154,6 +151,10 @@ export const AppRoutes: React.FC = () => {
           <Route
             path="admin/employer-post"
             element={<AdminEmployerPostPage />}
+          />
+          <Route
+            path="admin/employer-registrations"
+            element={<AdminEmployerRegistrationPage />}
           />
         </Route>
       </Route>

@@ -56,9 +56,6 @@ export interface JobPostView {
   subCategoryId?: number | null;
   subCategoryName?: string | null;
   employerName: string;
-  employerAvatarUrl?: string | null;
-  companyLogo?: string | null;
-  avatarUrl?: string | null;
   createdAt: string;
   status: 'draft' | 'active' | 'expired' | string;
   companyLogo?: string;

@@ -44,7 +44,7 @@ const DetailField: React.FC<DetailFieldProps> = ({ label, value, span = 1 }) => 
   <div className={`flex flex-col gap-1 ${span === 2 ? 'md:col-span-2' : ''}`}>
     <span className="text-sm font-semibold text-gray-600">{label}</span>
     <div className="min-h-[42px] rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800">
-      {value ?? <span className="text-gray-400 italic">Chua cap nhat</span>}
+      {value ?? <span className="text-gray-400 italic">Chưa cập nhật</span>}
     </div>
   </div>
 );
@@ -185,9 +185,13 @@ const AdminJobPostManagementPage: React.FC = () => {
   );
 
   const currentActionVerb = actionContext
-    ? (actionContext.post.status === 'Blocked' || actionContext.post.status === 'Archived')
-      ? 'mở khóa'
-      : 'khóa'
+    ? actionContext.type === 'employer'
+      ? actionContext.post.status === 'Blocked'
+        ? 'mở khóa'
+        : 'khóa'
+      : actionContext.post.status === 'Archived'
+        ? 'mở khóa'
+        : 'khóa'
     : '';
 
   const currentSubjectLabel = actionContext
@@ -195,10 +199,6 @@ const AdminJobPostManagementPage: React.FC = () => {
       ? 'bài đăng nhà tuyển dụng'
       : 'bài đăng ứng viên'
     : 'bài đăng';
-
-
-
-
 
   const fetchEmployerPosts = useCallback(
     async (page = employerPagination.current ?? 1, pageSize = employerPagination.pageSize ?? 10) => {
@@ -386,7 +386,7 @@ const AdminJobPostManagementPage: React.FC = () => {
       dataIndex: 'categoryName',
       key: 'categoryName',
       width: 180,
-      render: (value?: string | null) => value ?? 'Chua xac dinh'
+      render: (value?: string | null) => value ?? 'Chưa xác định'
     },
     {
       title: 'Trạng thái',
@@ -395,7 +395,7 @@ const AdminJobPostManagementPage: React.FC = () => {
       width: 130,
       render: (value: string) => (
         <Tag color={value === 'Blocked' ? 'red' : 'green'}>
-          {value === 'Blocked' ? 'Da khoa' : value === 'Deleted' ? 'Da xoa' : 'Dang hoat dong'}
+          {value === 'Blocked' ? 'Đã khóa' : value === 'Deleted' ? 'Đã xóa' : 'Đang hoạt động'}
         </Tag>
       )
     },
@@ -460,7 +460,7 @@ const AdminJobPostManagementPage: React.FC = () => {
       dataIndex: 'categoryName',
       key: 'categoryName',
       width: 180,
-      render: (value?: string | null) => value ?? 'Chua xac dinh'
+      render: (value?: string | null) => value ?? 'Chưa xác định'
     },
     {
       title: 'Trạng thái',
@@ -469,7 +469,7 @@ const AdminJobPostManagementPage: React.FC = () => {
       width: 130,
       render: (value: string) => (
         <Tag color={value === 'Archived' ? 'orange' : 'green'}>
-          {value === 'Archived' ? 'Da khoa' : 'Dang hoat dong'}
+          {value === 'Archived' ? 'Đã khóa' : 'Đang hoạt động'}
         </Tag>
       )
     },
@@ -522,7 +522,7 @@ const AdminJobPostManagementPage: React.FC = () => {
         <Space direction="vertical" size="middle" className="w-full">
           <Input
             prefix={<SearchOutlined />}
-            placeholder="Tim theo tieu de, mo ta, email..."
+            placeholder="Tìm theo tiêu đề, mô tả, email..."
             allowClear
             value={employerFilters.keyword}
             onChange={(event) => handleEmployerFilterChange('keyword', event.target.value)}
@@ -533,15 +533,15 @@ const AdminJobPostManagementPage: React.FC = () => {
               onChange={(value: EmployerStatusFilter) => handleEmployerFilterChange('status', value)}
               style={{ width: 220 }}
             >
-              <Option value="all">Tat ca trang thai</Option>
-              <Option value="Active">Dang hoat dong</Option>
-              <Option value="Blocked">Da khoa</Option>
-              <Option value="Deleted">Da xoa</Option>
+              <Option value="all">Tất cả trạng thái</Option>
+              <Option value="Active">Đang hoạt động</Option>
+              <Option value="Blocked">Đã khóa</Option>
+              <Option value="Deleted">Đã xóa</Option>
             </Select>
             <Select
               allowClear
               showSearch
-              placeholder="Chon nganh nghe"
+              placeholder="Chọn ngành nghề"
               value={employerFilters.categoryId}
               loading={categoryLoading}
               optionFilterProp="children"
@@ -578,7 +578,7 @@ const AdminJobPostManagementPage: React.FC = () => {
         <Space direction="vertical" size="middle" className="w-full">
           <Input
             prefix={<SearchOutlined />}
-            placeholder="Tim theo tieu de, mo ta, email..."
+            placeholder="Tìm theo tiêu đề, mô tả, email..."
             allowClear
             value={jobSeekerFilters.keyword}
             onChange={(event) => handleJobSeekerFilterChange('keyword', event.target.value)}
@@ -591,14 +591,14 @@ const AdminJobPostManagementPage: React.FC = () => {
               }
               style={{ width: 220 }}
             >
-              <Option value="all">Tat ca trang thai</Option>
-              <Option value="Active">Dang hoat dong</Option>
-              <Option value="Archived">Da khoa</Option>
+              <Option value="all">Tất cả trạng thái</Option>
+              <Option value="Active">Đang hoạt động</Option>
+              <Option value="Archived">Đã khóa</Option>
             </Select>
             <Select
               allowClear
               showSearch
-              placeholder="Chon nganh nghe"
+              placeholder="Chọn ngành nghề"
               value={jobSeekerFilters.categoryId}
               loading={categoryLoading}
               optionFilterProp="children"
@@ -633,14 +633,14 @@ const AdminJobPostManagementPage: React.FC = () => {
     <>
       <AdminSectionHeader
         title="Quản lý bài đăng"
-        description="Theo doi bai dang cua nha tuyen dung va ung vien, xu ly vi pham nhanh chong."
+        description="Theo dõi bài đăng của nhà tuyển dụng và ứng viên, xử lý vi phạm nhanh chóng."
         gradient="from-violet-600 via-purple-500 to-pink-500"
         extra={
           <Button
             icon={<ReloadOutlined />}
             onClick={() => (activeTab === 'employer' ? fetchEmployerPosts() : fetchJobSeekerPosts())}
           >
-            Tai lai
+            Tải lại
           </Button>
         }
       />
@@ -649,15 +649,23 @@ const AdminJobPostManagementPage: React.FC = () => {
         activeKey={activeTab}
         onChange={(key) => setActiveTab(key as 'employer' | 'jobseeker')}
         items={[
-          { key: 'employer', label: 'Bài đăng nhà tuyển dụng', children: renderEmployerTab() },
-          { key: 'jobseeker', label: 'Bài đăng ứng viên', children: renderJobSeekerTab() }
+          {
+            key: 'employer',
+            label: 'Bài đăng nhà tuyển dụng',
+            children: renderEmployerTab()
+          },
+          {
+            key: 'jobseeker',
+            label: 'Bài đăng ứng viên',
+            children: renderJobSeekerTab()
+          }
         ]}
       />
 
       <Drawer
         title="Chi tiết bài đăng"
         placement="right"
-        width={860}
+        width={720}
         open={detailOpen}
         onClose={() => {
           setDetailOpen(false);
@@ -666,46 +674,55 @@ const AdminJobPostManagementPage: React.FC = () => {
         destroyOnClose
       >
         {detailLoading ? (
-          <p>Dang tai...</p>
+          <p>Đang tải...</p>
         ) : detailState ? (
-          <div className="space-y-8">
-            <DetailSection title="Thong tin chung">
+          <div className="space-y-6">
+            <DetailSection title="Thông tin chung">
               <DetailField
-                label="Loai bai dang"
-                value={detailState.type === 'employer' ? 'Nha tuyen dung' : 'Ung vien'}
+                label="Loại bài đăng"
+                value={detailState.type === 'employer' ? 'Nhà tuyển dụng' : 'Ứng viên'}
               />
-              <DetailField label="Tieu de" value={detailState.data.title} span={2} />
-              <DetailField label="Chuyen muc" value={detailState.data.categoryName || undefined} />
+              <DetailField label="Tiêu đề" value={detailState.data.title} span={2} />
+              <DetailField label="Chuyên mục" value={detailState.data.categoryName || undefined} />
+            </DetailSection>
+
+            <DetailSection title="Trạng thái & thời gian">
+              <DetailField label="Trạng thái" value={detailState.data.status} />
+              <DetailField label="Tạo lúc" value={formatDateTime(detailState.data.createdAt)} />
             </DetailSection>
 
             {detailState.type === 'employer' ? (
               <>
-                <DetailSection title="Thong tin cong viec">
-                  <DetailField label="Luong" value={formatCurrency(detailState.data.salary)} />
-                  <DetailField label="Gio lam viec" value={detailState.data.workHours || undefined} />
+                <DetailSection title="Thông tin công việc">
                   <DetailField
-                    label="Dia diem"
+                    label="Lương"
+                    value={formatCurrency(detailState.data.salary)}
+                  />
+                  <DetailField
+                    label="Giờ làm việc"
+                    value={detailState.data.workHours || undefined}
+                  />
+                  <DetailField
+                    label="Địa điểm"
                     value={formatLocation(
                       detailState.data.provinceName,
                       detailState.data.districtName,
                       detailState.data.wardName
                     )}
-                    span={2}
                   />
                   <DetailField
-                    label="Mo ta cong viec"
+                    label="Mô tả công việc"
                     value={
                       detailState.data.description ? (
-                        <div
-                          className="leading-relaxed text-sm"
-                          dangerouslySetInnerHTML={{ __html: detailState.data.description }}
-                        />
+                        <div className="whitespace-pre-line leading-relaxed">
+                          {detailState.data.description}
+                        </div>
                       ) : undefined
                     }
                     span={2}
                   />
                   <DetailField
-                    label="Yeu cau"
+                    label="Yêu cầu"
                     value={
                       detailState.data.requirements ? (
                         <div className="whitespace-pre-line leading-relaxed">
@@ -717,32 +734,53 @@ const AdminJobPostManagementPage: React.FC = () => {
                   />
                 </DetailSection>
 
-                <DetailSection title="Thong tin lien he">
-                  <DetailField label="Nha tuyen dung" value={detailState.data.employerName || undefined} />
-                  <DetailField label="Email lien he" value={detailState.data.employerEmail || undefined} />
-                  <DetailField label="So dien thoai" value={detailState.data.phoneContact || undefined} />
+                <DetailSection title="Thông tin liên hệ">
+                  <DetailField
+                    label="Nhà tuyển dụng"
+                    value={detailState.data.employerName || undefined}
+                  />
+                  <DetailField
+                    label="Email liên hệ"
+                    value={detailState.data.employerEmail || undefined}
+                  />
+                  <DetailField
+                    label="Số điện thoại"
+                    value={detailState.data.phoneContact || undefined}
+                  />
                 </DetailSection>
               </>
             ) : (
               <>
-                <DetailSection title="Ho so ung vien">
-                  <DetailField label="Ho ten" value={detailState.data.fullName || undefined} />
-                  <DetailField label="Email" value={detailState.data.jobSeekerEmail || undefined} />
-                  <DetailField label="Gioi tinh" value={detailState.data.gender || undefined} />
+                <DetailSection title="Hồ sơ ứng viên">
                   <DetailField
-                    label="Khu vuc"
+                    label="Họ tên"
+                    value={detailState.data.fullName || undefined}
+                  />
+                  <DetailField
+                    label="Email"
+                    value={detailState.data.jobSeekerEmail || undefined}
+                  />
+                  <DetailField
+                    label="Giới tính"
+                    value={detailState.data.gender || undefined}
+                  />
+                  <DetailField
+                    label="Khu vực"
                     value={formatLocation(
                       detailState.data.provinceName,
                       detailState.data.districtName,
                       detailState.data.wardName
                     )}
                   />
-                  <DetailField label="Gio lam mong muon" value={detailState.data.preferredWorkHours || undefined} />
+                  <DetailField
+                    label="Giờ làm mong muốn"
+                    value={detailState.data.preferredWorkHours || undefined}
+                  />
                 </DetailSection>
 
-                <DetailSection title="Mo ta">
+                <DetailSection title="Mô tả">
                   <DetailField
-                    label="Thong tin"
+                    label="Thông tin"
                     value={
                       detailState.data.description ? (
                         <div className="whitespace-pre-line leading-relaxed">
@@ -756,13 +794,13 @@ const AdminJobPostManagementPage: React.FC = () => {
               </>
             )}
 
-            <DetailSection title="Trang thai & thoi gian">
-              <DetailField label="Trang thai" value={detailState.data.status} />
-              <DetailField label="Tao luc" value={formatDateTime(detailState.data.createdAt)} />
+            <DetailSection title="Trạng thái & thời gian">
+              <DetailField label="Trạng thái" value={detailState.data.status} />
+              <DetailField label="Tạo lúc" value={formatDateTime(detailState.data.createdAt)} />
             </DetailSection>
           </div>
         ) : (
-          <p>Khong co du lieu.</p>
+          <p>Không có dữ liệu.</p>
         )}
       </Drawer>
 

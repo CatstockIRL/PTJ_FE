@@ -3,8 +3,6 @@ export interface JobSeekerPostDtoOut {
   userID: number;
   title: string;
   description?: string;
-  avatarUrl?: string | null;
-  avatar?: string | null;
   age?: number;
   gender?: string;
   preferredWorkHours?: string;
