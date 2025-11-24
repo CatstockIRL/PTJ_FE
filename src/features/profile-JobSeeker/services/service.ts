@@ -22,12 +22,11 @@ export const updateJobSeekerProfile = async (profileData: JobSeekerProfileUpdate
     formData.append('FullName', profileData.fullName || '');
     formData.append('Gender', profileData.gender || '');
     formData.append('BirthYear', profileData.birthYear?.toString() || '');
-    formData.append('Skills', profileData.skills || '');
-    formData.append('Experience', profileData.experience || '');
-    formData.append('Education', profileData.education || '');
-    formData.append('PreferredJobType', profileData.preferredJobType || '');
-    formData.append('PreferredLocation', profileData.preferredLocation || '');
     formData.append('ContactPhone', profileData.contactPhone || '');
+    formData.append('ProvinceId', profileData.provinceId?.toString() || '0');
+    formData.append('DistrictId', profileData.districtId?.toString() || '0');
+    formData.append('WardId', profileData.wardId?.toString() || '0');
+    formData.append('FullLocation', profileData.fullLocation || '');
     
     if (profileData.imageFile) {
       formData.append('ImageFile', profileData.imageFile);

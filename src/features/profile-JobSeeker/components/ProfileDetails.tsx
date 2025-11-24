@@ -7,10 +7,15 @@ import {
   Button,
   Upload,
   message,
-  Card
+  Card,
 } from "antd";
-import { UserOutlined, UploadOutlined, DeleteOutlined } from "@ant-design/icons";
+import {
+  UserOutlined,
+  UploadOutlined,
+  DeleteOutlined,
+} from "@ant-design/icons";
 import ProfileField from "./ProfileField";
+import LocationEditField from "./LocationEditField";
 import { useAuth } from "../../auth/hooks";
 import { useDispatch } from "react-redux";
 import { updateJobSeekerProfile } from "../slice/profileSlice";
@@ -25,7 +30,11 @@ interface ProfileDetailsProps {
   error: string | null;
 }
 
-const ProfileDetails: React.FC<ProfileDetailsProps> = ({ profile, loading, error }) => {
+const ProfileDetails: React.FC<ProfileDetailsProps> = ({
+  profile,
+  loading,
+  error,
+}) => {
   const { user } = useAuth();
   const dispatch: AppDispatch = useDispatch();
 
@@ -33,119 +42,148 @@ const ProfileDetails: React.FC<ProfileDetailsProps> = ({ profile, loading, error
     field: keyof JobSeekerProfileUpdateDto,
     value: any
   ) => {
-    const profileData: JobSeekerProfileUpdateDto = { [field]: value };
+    if (!profile) return;
+
+    const profileData: JobSeekerProfileUpdateDto = {
+      fullName: profile.fullName,
+      gender: profile.gender,
+      birthYear: profile.birthYear,
+      contactPhone: profile.contactPhone,
+      fullLocation: profile.location,
+      [field]: value,
+    };
+
     try {
       await dispatch(updateJobSeekerProfile(profileData)).unwrap();
-      message.success("Cap nhat ho so thanh cong!");
+      message.success("Cập nhật hồ sơ thành công!");
     } catch (err) {
-      message.error("Cap nhat ho so that bai!");
+      message.error("Cập nhật hồ sơ thất bại!");
     }
   };
 
   const handleImageUpload = async (file: File) => {
-    const profileData: JobSeekerProfileUpdateDto = { imageFile: file };
+    if (!profile) return false;
+
+    const profileData: JobSeekerProfileUpdateDto = {
+      fullName: profile.fullName,
+      gender: profile.gender,
+      birthYear: profile.birthYear,
+      contactPhone: profile.contactPhone,
+      fullLocation: profile.location,
+      imageFile: file,
+    };
+
     try {
       await dispatch(updateJobSeekerProfile(profileData)).unwrap();
-      message.success("Cap nhat anh thanh cong!");
+      message.success("Cập nhật ảnh thành công!");
     } catch (err) {
-      message.error("Cap nhat anh that bai!");
+      message.error("Cập nhật ảnh thất bại!");
     }
     return false;
   };
 
+  const handleSaveLocation = async (data: {
+    provinceId: number;
+    districtId: number;
+    wardId: number;
+    location: string;
+  }) => {
+    if (!profile) return;
+
+    const profileData: JobSeekerProfileUpdateDto = {
+      fullName: profile.fullName,
+      gender: profile.gender,
+      birthYear: profile.birthYear,
+      contactPhone: profile.contactPhone,
+      provinceId: data.provinceId,
+      districtId: data.districtId,
+      wardId: data.wardId,
+      fullLocation: data.location,
+    };
+
+    try {
+      await dispatch(updateJobSeekerProfile(profileData)).unwrap();
+      message.success("Cập nhật địa chỉ thành công!");
+    } catch (err) {
+      message.error("Cập nhật địa chỉ thất bại!");
+    }
+  };
+
   if (error) {
-    return <Alert message="Loi" description={error} type="error" showIcon />;
+    return <Alert message="Lỗi" description={error} type="error" showIcon />;
   }
 
   if (!profile) {
     return (
       <Card className="shadow-md">
-        <Alert message="Khong tim thay ho so" type="warning" showIcon />
+        <Alert message="Không tìm thấy hồ sơ" type="warning" showIcon />
       </Card>
     );
   }
 
   return (
-    <Spin spinning={loading} tip="Dang cap nhat..." className="w-full">
+    <Spin spinning={loading} tip="Đang cập nhật..." className="w-full">
       <div className="space-y-6">
         <Card className="shadow-md">
           <div className="flex flex-col sm:flex-row gap-4 items-center">
-            <Avatar size={84} src={profile.profilePicture} icon={<UserOutlined />} />
+            <Avatar
+              size={84}
+              src={profile.profilePicture}
+              icon={<UserOutlined />}
+            />
             <div className="flex-1 w-full">
               <Title level={4} className="mb-1">
-                Tai khoan
+                Tài khoản
               </Title>
               <Paragraph type="secondary" className="mb-1">
-                Hay cap nhat thong tin moi nhat. Thong tin duoi day se duoc dien khi ban tao ho so.
+                Hãy cập nhật thông tin mới nhất. Thông tin dưới đây sẽ được điền
+                khi bạn tạo hồ sơ.
               </Paragraph>
               <Paragraph type="secondary" style={{ fontSize: "12px" }}>
-                (JPEG/PNG/GIF, duoi 1MB)
+                (JPEG/PNG/GIF, dưới 1MB)
               </Paragraph>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
               <Upload beforeUpload={handleImageUpload} showUploadList={false}>
-                <Button icon={<UploadOutlined />}>Doi anh</Button>
+                <Button icon={<UploadOutlined />}>Đổi ảnh</Button>
               </Upload>
               <Button icon={<DeleteOutlined />} danger>
-                Xoa tai khoan
+                Xóa tài khoản
               </Button>
             </div>
           </div>
         </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card title="Thong tin ca nhan" className="shadow-md">
+        <div className="grid gap-6">
+          <Card title="Thông tin cá nhân" className="shadow-md">
             <ProfileField
-              label="Ho va ten"
+              label="Họ và tên"
               value={profile.fullName}
               onSave={(value) => handleSaveField("fullName", value)}
             />
             <ProfileField label="Email" value={user?.username + "@gmail.com"} />
             <ProfileField
-              label="Gioi tinh"
+              label="Giới tính"
               value={profile.gender}
               onSave={(value) => handleSaveField("gender", value)}
             />
             <ProfileField
-              label="Nam sinh"
+              label="Năm sinh"
               value={profile.birthYear}
               onSave={(value) => handleSaveField("birthYear", Number(value))}
             />
             <ProfileField
-              label="So dien thoai"
+              label="Số điện thoại"
               value={profile.contactPhone}
               onSave={(value) => handleSaveField("contactPhone", value)}
             />
-            <ProfileField
-              label="Dia chi"
-              value={profile.preferredLocation}
-              onSave={(value) => handleSaveField("preferredLocation", value)}
-            />
-          </Card>
-
-          <Card title="Thong tin nghe nghiep" className="shadow-md">
-            <ProfileField
-              label="Ky nang"
-              value={profile.skills}
-              onSave={(value) => handleSaveField("skills", value)}
-              inputType="textarea"
-            />
-            <ProfileField
-              label="Kinh nghiem"
-              value={profile.experience}
-              onSave={(value) => handleSaveField("experience", value)}
-              inputType="textarea"
-            />
-            <ProfileField
-              label="Hoc van"
-              value={profile.education}
-              onSave={(value) => handleSaveField("education", value)}
-              inputType="textarea"
-            />
-            <ProfileField
-              label="Loai cong viec ua thich"
-              value={profile.preferredJobType}
-              onSave={(value) => handleSaveField("preferredJobType", value)}
+            <LocationEditField
+              label="Địa chỉ"
+              provinceId={profile.provinceId}
+              districtId={profile.districtId}
+              wardId={profile.wardId}
+              fullLocation={profile.location}
+              onSave={handleSaveLocation}
             />
           </Card>
         </div>

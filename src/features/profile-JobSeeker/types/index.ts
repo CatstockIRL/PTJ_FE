@@ -6,24 +6,22 @@ export interface JobSeekerProfileDto {
     gender: string | null;
     birthYear: number | null;
     profilePicture: string | null;
-    skills: string | null;
-    experience: string | null;
-    education: string | null;
-    preferredJobType: string | null;
-    preferredLocation: string | null;
     contactPhone: string | null;
+    location: string;
+    provinceId?: number;
+    districtId?: number;
+    wardId?: number;
 }
 
 export interface JobSeekerProfileUpdateDto {
     fullName?: string | null;
     gender?: string | null;
     birthYear?: number | null;
-    skills?: string | null;
-    experience?: string | null;
-    education?: string | null;
-    preferredJobType?: string | null;
-    preferredLocation?: string | null;
     contactPhone?: string | null;
+    provinceId?: number;
+    districtId?: number;
+    wardId?: number;
+    fullLocation?: string | null;
     imageFile?: File | null;
 }
 

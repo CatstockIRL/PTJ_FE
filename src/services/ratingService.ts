@@ -20,6 +20,10 @@ const ratingService = {
     }
     const response = await baseService.get<RatingAverageResponse>(`/Rating/user/${userId}/average`);
     return Number(response?.average ?? 0);
+  },
+
+  async createRating(data: { rateeId: number; submissionId: number; ratingValue: number; comment: string }): Promise<void> {
+    await baseService.post('/Rating', data);
   }
 };
 

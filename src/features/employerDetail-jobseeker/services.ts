@@ -16,6 +16,7 @@ export const getEmployerFullDetail = async (userId: number | string) => {
 
         const rawProfile = profileRes; 
         const profile: EmployerPublicProfile = {
+            userId: rawProfile.userId,
             displayName: rawProfile.displayName || "Nhà tuyển dụng ẩn danh",
             description: rawProfile.description || "",
             avatarUrl: rawProfile.avatarUrl || "",

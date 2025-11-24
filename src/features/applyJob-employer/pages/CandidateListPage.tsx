@@ -19,7 +19,9 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   DeleteOutlined,
+  StarOutlined,
 } from "@ant-design/icons";
+import RatingModal from "../../../components/RatingModal";
 import type { TableColumnsType } from "antd";
 import { jobApplicationService } from "../jobApplicationService";
 import { jobSeekerPostService } from "../../candidate/services";
@@ -51,7 +53,6 @@ const CandidateListPage: React.FC = () => {
     newNote: "",
   });
 
-  // (Giả định trong file gốc bạn đã có state cvModal + setCvModal)
   const [cvModal, setCvModal] = useState<{
     visible: boolean;
     loading: boolean;
@@ -62,6 +63,18 @@ const CandidateListPage: React.FC = () => {
     loading: false,
     cv: null,
     error: null,
+  });
+
+  const [ratingModal, setRatingModal] = useState<{
+    visible: boolean;
+    rateeId: number;
+    submissionId: number;
+    rateeName: string;
+  }>({
+    visible: false,
+    rateeId: 0,
+    submissionId: 0,
+    rateeName: "",
   });
 
   const savedIdSet = new Set(savedList.map((s) => s.jobSeekerId));
@@ -281,12 +294,9 @@ const CandidateListPage: React.FC = () => {
         const currentStatus = record.status?.toLowerCase();
         return (
           <Space>
-            {(currentStatus === "pending" ||
-              currentStatus === "rejected") && (
+            {(currentStatus === "pending" || currentStatus === "rejected") && (
               <Tooltip
-                title={
-                  currentStatus === "rejected" ? "Duyệt lại" : "Chấp nhận"
-                }
+                title={currentStatus === "rejected" ? "Duyệt lại" : "Chấp nhận"}
               >
                 <Button
                   type={currentStatus === "rejected" ? "dashed" : "text"}
@@ -302,8 +312,7 @@ const CandidateListPage: React.FC = () => {
                 </Button>
               </Tooltip>
             )}
-            {(currentStatus === "pending" ||
-              currentStatus === "accepted") && (
+            {(currentStatus === "pending" || currentStatus === "accepted") && (
               <Tooltip
                 title={currentStatus === "accepted" ? "Hủy duyệt" : "Từ chối"}
               >
@@ -318,6 +327,31 @@ const CandidateListPage: React.FC = () => {
               </Tooltip>
             )}
           </Space>
+        );
+      },
+    },
+    {
+      title: "Đánh giá",
+      key: "rating",
+      render: (_, record) => {
+        const currentStatus = record.status?.toLowerCase();
+        if (currentStatus !== "accepted" && currentStatus !== "completed")
+          return null;
+        return (
+          <Tooltip title="Đánh giá ứng viên">
+            <Button
+              type="text"
+              icon={<StarOutlined style={{ color: "#faad14", fontSize: 18 }} />}
+              onClick={() =>
+                setRatingModal({
+                  visible: true,
+                  rateeId: record.jobSeekerId,
+                  submissionId: record.candidateListId,
+                  rateeName: record.username,
+                })
+              }
+            />
+          </Tooltip>
         );
       },
     },
@@ -410,7 +444,9 @@ const CandidateListPage: React.FC = () => {
             Danh sách ứng viên
           </Title>
           {postTitle && (
-            <div className="text-gray-500 mt-1">Tin tuyển dụng: {postTitle}</div>
+            <div className="text-gray-500 mt-1">
+              Tin tuyển dụng: {postTitle}
+            </div>
           )}
         </div>
         <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>
@@ -525,6 +561,15 @@ const CandidateListPage: React.FC = () => {
           <p>Không có dữ liệu CV.</p>
         )}
       </Modal>
+
+      <RatingModal
+        visible={ratingModal.visible}
+        onCancel={() => setRatingModal({ ...ratingModal, visible: false })}
+        onSuccess={() => setRatingModal({ ...ratingModal, visible: false })}
+        rateeId={ratingModal.rateeId}
+        submissionId={ratingModal.submissionId}
+        rateeName={ratingModal.rateeName}
+      />
     </div>
   );
 };
