@@ -14,12 +14,12 @@ const JobSeekerProfilePage: React.FC = () => {
   const tabItems = [
     {
       key: 'overview',
-      label: 'Tong quan',
+      label: 'Tổng quan',
       children: <ProfileOverview profile={profile} loading={loading} email={email} />,
     },
     {
       key: 'edit',
-      label: 'Chinh sua ho so',
+      label: 'Chỉnh sửa hồ sơ',
       children: <ProfileDetails profile={profile} loading={loading} error={error} />,
     },
   ];

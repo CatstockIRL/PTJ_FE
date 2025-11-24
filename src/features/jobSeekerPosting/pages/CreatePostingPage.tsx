@@ -39,6 +39,7 @@ import locationService, {
 import { fetchMyCvs } from "../../jobSeekerCv/services";
 import type { JobSeekerCv } from "../../jobSeekerCv/types";
 import JobCard from "../../homepage-jobSeeker/components/JobCard";
+import "./CreatePostingPage.css";
 
 const { Title } = Typography;
 const { TextArea } = Input;
@@ -207,17 +208,31 @@ const CreatePostingPage: React.FC = () => {
         postDetail.preferredWorkHourEnd ?? fallbackEnd
       );
 
+      const normalizedCategoryId =
+        postDetail.categoryID !== undefined && postDetail.categoryID !== null
+          ? Number(postDetail.categoryID)
+          : undefined;
+      const normalizedSubCategoryId =
+        postDetail.subCategoryId !== undefined &&
+        postDetail.subCategoryId !== null
+          ? Number(postDetail.subCategoryId)
+          : undefined;
+
       form.setFieldsValue({
         ...postDetail,
+        categoryID: normalizedCategoryId,
+        subCategoryId: normalizedSubCategoryId,
+        provinceId: postDetail.provinceId ?? undefined,
+        districtId: postDetail.districtId ?? undefined,
+        wardId: postDetail.wardId ?? undefined,
         preferredWorkHourStart: startTime || undefined,
         preferredWorkHourEnd: endTime || undefined,
         locationDetail: postDetail.preferredLocation,
         selectedCvId: postDetail.selectedCvId ?? postDetail.cvId ?? undefined,
-        subCategoryId: postDetail.subCategoryId ?? undefined,
       });
 
       lastCategoryRef.current =
-        postDetail.categoryID ?? postDetail.categoryID ?? null;
+        normalizedCategoryId !== undefined ? normalizedCategoryId : null;
 
       (async () => {
         if (postDetail.provinceId) {
@@ -677,20 +692,8 @@ const CreatePostingPage: React.FC = () => {
             </Form.Item>
           )}
 
-          <Form.Item>
-            {isViewMode ? (
-              user &&
-              postDetail &&
-              user.id === postDetail.userID && (
-                <Button
-                  type="primary"
-                  block
-                  onClick={() => navigate(`/sua-bai-dang-tim-viec/${id}`)}
-                >
-                  Chỉnh sửa bài đăng
-                </Button>
-              )
-            ) : (
+          {!isViewMode && (
+            <Form.Item>
               <Button
                 type="primary"
                 htmlType="submit"
@@ -699,15 +702,19 @@ const CreatePostingPage: React.FC = () => {
               >
                 {buttonText}
               </Button>
-            )}
-          </Form.Item>
+            </Form.Item>
+          )}
         </Form>
       </Card>
     </Spin>
   );
 
   return (
-    <div className="p-8 bg-gray-50 min-h-screen">
+    <div
+      className={`p-8 bg-gray-50 min-h-screen ${
+        isViewMode ? "job-seeker-post-view" : ""
+      }`}
+    >
       <div className={`${isViewMode ? "max-w-7xl" : "max-w-2xl"} mx-auto`}>
         <Title level={2} className="mb-6 text-center">
           {pageTitle}

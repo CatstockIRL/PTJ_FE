@@ -63,10 +63,20 @@ const ManagePostingsPage: React.FC = () => {
               renderItem={(item, index) => (
                 <List.Item
                   actions={[
-                    <Link to={`/sua-bai-dang-tim-viec/${item.jobSeekerPostId}`}>
+                    <Link
+                      key="detail"
+                      to={`/xem-bai-dang-tim-viec/${item.jobSeekerPostId}`}
+                    >
+                      <Button type="link">Chi tiết</Button>
+                    </Link>,
+                    <Link
+                      key="edit"
+                      to={`/sua-bai-dang-tim-viec/${item.jobSeekerPostId}`}
+                    >
                       <Button type="link">Sửa</Button>
                     </Link>,
                     <Popconfirm
+                      key="delete"
                       title="Xóa bài đăng"
                       description="Bạn có chắc chắn muốn xóa bài đăng này không?"
                       onConfirm={() => dispatch(deletePosting(item.jobSeekerPostId))}
@@ -78,7 +88,7 @@ const ManagePostingsPage: React.FC = () => {
                 >
                   <div className="mr-4 text-gray-500 font-medium">{index + 1}.</div>
                   <List.Item.Meta
-                    title={<Link to={`/xem-bai-dang-tim-viec/${item.jobSeekerPostId}`}>{item.title}</Link>}
+                    title={<span className="font-medium text-gray-900">{item.title}</span>}
                     description={`Ngày tạo: ${format(new Date(item.createdAt), 'dd/MM/yyyy HH:mm')}`}
                   />
                   <div>
