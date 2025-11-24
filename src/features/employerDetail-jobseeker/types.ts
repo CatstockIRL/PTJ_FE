@@ -1,6 +1,7 @@
-import { Job } from "../../types";
+import type { Job } from "../../types";
 
 export interface EmployerPublicProfile {
+    userId: string;
     displayName: string;
     description: string;
     avatarUrl: string;
