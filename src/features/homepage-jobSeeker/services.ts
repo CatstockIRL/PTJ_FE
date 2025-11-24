@@ -12,6 +12,7 @@ interface BackendJob {
   phoneContact: string | null;
   categoryName: string | null;
   employerName: string | null;
+  companyLogo: string | null;
   createdAt: string;
   status: string;
 }
@@ -26,7 +27,7 @@ const mapBackendJobToFrontendJob = (backendJob: BackendJob): Job => {
   const salaryValue = backendJob.salary ?? null;
   const salaryText =
     salaryValue === null || salaryValue <= 0
-      ? "Thoa thuan"
+      ? "Thỏa thuận"
       : `${salaryValue.toLocaleString("vi-VN")} VND`;
 
   return {
@@ -39,7 +40,7 @@ const mapBackendJobToFrontendJob = (backendJob: BackendJob): Job => {
     location: backendJob.location ?? null,
     salary: salaryText,
     updatedAt: backendJob.createdAt,
-    companyLogo: "/src/assets/no-logo.png",
+    companyLogo: backendJob.companyLogo ?? "/src/assets/no-logo.png",
     isHot: true,
   };
 };

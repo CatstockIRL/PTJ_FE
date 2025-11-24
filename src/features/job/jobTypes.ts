@@ -12,6 +12,7 @@ export interface EmployerPostDto {
   wardId: number | null;
   detailAddress: string | null;
   categoryID: number | null;
+  subCategoryId?: number | null;
   phoneContact: string | null;
 }
 
@@ -30,6 +31,7 @@ export interface JobPostData {
   wardId: number | null;
   location: string;
   categoryID: number | null;
+  subCategoryId: number | null;
   contactPhone: string;
 }
 
@@ -51,12 +53,28 @@ export interface JobPostView {
   phoneContact: string | null;
   categoryId?: number | null;
   categoryName: string | null;
+  subCategoryId?: number | null;
+  subCategoryName?: string | null;
   employerName: string;
   employerAvatarUrl?: string | null;
   companyLogo?: string | null;
   avatarUrl?: string | null;
   createdAt: string;
   status: 'draft' | 'active' | 'expired' | string;
+  companyLogo?: string;
+}
+
+export interface JobAiSuggestion {
+  title?: string;
+  seekerName?: string;
+  preferredLocation?: string;
+  description?: string;
+  matchPercent?: number;
+}
+
+export interface JobSuggestionResponse {
+  success: boolean;
+  data: JobAiSuggestion[];
 }
 
 export interface PaginatedJobResponse {
@@ -80,4 +98,63 @@ export interface UpdateJobResponse {
 export interface DeleteJobResponse {
   success: boolean;
   message: string;
+}
+
+export interface JobApplicationResultDto {
+  id: number;
+  jobSeekerId: number;
+  username: string;
+  email: string;
+  phone: string;
+  cvUrl: string | null;
+  coverLetter: string | null;
+  status: string;
+  applicationDate: string;
+  note?: string;
+}
+
+export interface JobApplicationUpdateDto {
+  status: 'Accepted' | 'Rejected';
+  note?: string;
+}
+
+export interface ApplicationListResponse {
+  success: boolean;
+  data: JobApplicationResultDto[];
+}
+
+export interface ApplicationActionResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface EmployerApplicationDto {
+  submissionId: number;
+  jobSeekerId: number;
+  username: string;
+  email: string;
+  phone: string;
+  cvUrl: string | null;
+  coverLetter: string | null;
+  status: string;
+  applicationDate: string;
+  note?: string;
+}
+
+export interface EmployerApplicationListResponse {
+  success: boolean;
+  data: EmployerApplicationDto[];
+}
+
+export interface JobSuggestionDto {
+  employerPostId: number;
+  title: string;
+  location: string;
+  matchPercent: number;
+  phoneContact: string;
+  employerName: string;
+  createdAt: string;
+  categoryName?: string;
+  subCategoryName?: string;
+  requirements?: string;
 }

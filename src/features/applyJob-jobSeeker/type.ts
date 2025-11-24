@@ -2,6 +2,7 @@
 export interface ApplyJobPayload {
   jobSeekerId: number;
   employerPostId: number;
+  cvid: number;
   note?: string;
 }
 
@@ -9,6 +10,10 @@ export interface ApplyJobPayload {
 export interface JobApplicationResultDto {
   candidateListId: number;
   jobSeekerId: number;
+  jobSeekerPostId?: number;
+  cvId?: number | null;
+  selectedCvId?: number | null;
+  cvid?: number | null;
   username: string;
   status: string;
   applicationDate: string;
@@ -21,6 +26,7 @@ export interface JobApplicationResultDto {
   salary: number;
   workHours: string;
   phoneContact: string;
+  companyLogo?: string | null;
 }
 
 // Định nghĩa kiểu dữ liệu cho response của API

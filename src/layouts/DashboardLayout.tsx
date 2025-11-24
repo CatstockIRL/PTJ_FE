@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { EmployerHeader } from "./components/EmployerHeader";
-import { EmployerSidebar } from "./components/EmployerSidebar";
+import EmployerSidebar from "./components/EmployerSidebar";
 import AdminSidebar from "./components/AdminSidebar";
 
 export const DashboardLayout: React.FC = () => {

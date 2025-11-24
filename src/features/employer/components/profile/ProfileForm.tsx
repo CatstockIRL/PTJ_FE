@@ -1,17 +1,5 @@
-﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  Form,
-  Input,
-  Button,
-  Card,
-  message,
-  Row,
-  Col,
-  Upload,
-  Avatar,
-  Space,
-  Select
-} from 'antd';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Form, Input, Button, Card, message, Row, Col, Upload, Avatar, Space, Select } from 'antd';
 import type { UploadChangeParam } from 'antd/es/upload';
 import type { UploadFile } from 'antd/es/upload/interface';
 import { CameraOutlined, DeleteOutlined } from '@ant-design/icons';
@@ -35,110 +23,39 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
   const [form] = Form.useForm<ProfileUpdateRequest>();
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | undefined>(profile?.avatarUrl ?? undefined);
-  const [provinceOptions, setProvinceOptions] = useState<LocationOption[]>([]);
-  const [districtOptions, setDistrictOptions] = useState<LocationOption[]>([]);
-  const [wardOptions, setWardOptions] = useState<LocationOption[]>([]);
-  const [loadingProvinces, setLoadingProvinces] = useState(false);
-  const [loadingDistricts, setLoadingDistricts] = useState(false);
-  const [loadingWards, setLoadingWards] = useState(false);
+  const [provinces, setProvinces] = useState<LocationOption[]>([]);
+  const [districts, setDistricts] = useState<LocationOption[]>([]);
+  const [wards, setWards] = useState<LocationOption[]>([]);
+  const [locationLoading, setLocationLoading] = useState({
+    provinces: false,
+    districts: false,
+    wards: false
+  });
+  const autoLocationRef = useRef<string>('');
+  const provinceValue = Form.useWatch('provinceId', form);
+  const districtValue = Form.useWatch('districtId', form);
 
-  const fetchDistricts = useCallback(async (provinceId?: number) => {
-    if (!provinceId) {
-      setDistrictOptions([]);
-      return;
-    }
-    setLoadingDistricts(true);
-    try {
-      const data = await locationService.getDistricts(provinceId);
-      setDistrictOptions(data);
-    } catch {
-      message.error('Không thể tải danh sách quận/huyện');
-    } finally {
-      setLoadingDistricts(false);
-    }
-  }, []);
-
-  const fetchWards = useCallback(async (districtId?: number) => {
-    if (!districtId) {
-      setWardOptions([]);
-      return;
-    }
-    setLoadingWards(true);
-    try {
-      const data = await locationService.getWards(districtId);
-      setWardOptions(data);
-    } catch {
-      message.error('Không thể tải danh sách phường/xã');
-    } finally {
-      setLoadingWards(false);
-    }
-  }, []);
-
-  const handleProvinceChange = async (value?: number) => {
-    form.setFieldsValue({ districtId: undefined, wardId: undefined });
-    setDistrictOptions([]);
-    setWardOptions([]);
-    if (value) {
-      await fetchDistricts(value);
-    }
-  };
-
-  const handleDistrictChange = async (value?: number) => {
-    form.setFieldsValue({ wardId: undefined });
-    setWardOptions([]);
-    if (value) {
-      await fetchWards(value);
-    }
-  };
-
-  useEffect(() => {
-    const loadProvinces = async () => {
-      setLoadingProvinces(true);
-      try {
-        const data = await locationService.getProvinces();
-        setProvinceOptions(data);
-      } catch {
-        message.error('Không thể tải danh sách tỉnh/thành');
-      } finally {
-        setLoadingProvinces(false);
-      }
-    };
-
-    void loadProvinces();
-  }, []);
+  const normalizeLocationId = (value?: number | null) =>
+    value !== null && value !== undefined && value > 0 ? value : undefined;
 
   useEffect(() => {
     form.setFieldsValue({
       displayName: profile?.displayName ?? '',
       description: profile?.description ?? '',
       website: profile?.website ?? '',
+      location: profile?.location ?? '',
       fullLocation: profile?.fullLocation ?? '',
-      provinceId: profile?.provinceId,
-      districtId: profile?.districtId,
-      wardId: profile?.wardId,
+      provinceId: normalizeLocationId(profile?.provinceId ?? undefined),
+      districtId: normalizeLocationId(profile?.districtId ?? undefined),
+      wardId: normalizeLocationId(profile?.wardId ?? undefined),
       contactName: profile?.contactName ?? '',
       contactEmail: profile?.contactEmail ?? '',
       contactPhone: profile?.contactPhone ?? ''
     });
+    autoLocationRef.current = profile?.location ?? '';
     setPreviewUrl(profile?.avatarUrl ?? undefined);
     setAvatarFile(null);
-
-    const initLocations = async () => {
-      if (profile?.provinceId) {
-        await fetchDistricts(profile.provinceId);
-      } else {
-        setDistrictOptions([]);
-      }
-
-      if (profile?.districtId) {
-        await fetchWards(profile.districtId);
-      } else {
-        setWardOptions([]);
-      }
-    };
-
-    void initLocations();
-  }, [profile, form, fetchDistricts, fetchWards]);
+  }, [form, profile]);
 
   const canDeleteAvatar = useMemo(() => Boolean(profile?.avatarUrl), [profile?.avatarUrl]);
 
@@ -149,6 +66,145 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
       }
     };
   }, [previewUrl]);
+
+  useEffect(() => {
+    const loadProvinces = async () => {
+      setLocationLoading((prev) => ({ ...prev, provinces: true }));
+      try {
+        const data = await locationService.getProvinces();
+        setProvinces(data);
+      } catch {
+        message.error('Khong the tai danh sach tinh/thanh.');
+      } finally {
+        setLocationLoading((prev) => ({ ...prev, provinces: false }));
+      }
+    };
+
+    void loadProvinces();
+  }, []);
+
+  const loadDistricts = useCallback(async (provinceCode: number) => {
+    setLocationLoading((prev) => ({ ...prev, districts: true }));
+    try {
+      const data = await locationService.getDistricts(provinceCode);
+      setDistricts(data);
+    } catch {
+      message.error('Khong the tai danh sach quan/huyen.');
+    } finally {
+      setLocationLoading((prev) => ({ ...prev, districts: false }));
+    }
+  }, []);
+
+  const loadWards = useCallback(async (districtCode: number) => {
+    setLocationLoading((prev) => ({ ...prev, wards: true }));
+    try {
+      const data = await locationService.getWards(districtCode);
+      setWards(data);
+    } catch {
+      message.error('Khong the tai danh sach phuong/xa.');
+    } finally {
+      setLocationLoading((prev) => ({ ...prev, wards: false }));
+    }
+  }, []);
+
+  const findOptionName = (options: LocationOption[], code?: number | null) => {
+    if (code === null || code === undefined) {
+      return undefined;
+    }
+    return options.find((option) => option.code === code)?.name;
+  };
+
+  const updateLocationFromSelections = useCallback(
+    (provinceCode?: number | null, districtCode?: number | null, wardCode?: number | null) => {
+      const provinceName = findOptionName(provinces, provinceCode);
+      const districtName = findOptionName(districts, districtCode);
+      const wardName = findOptionName(wards, wardCode);
+      const autoValue = [wardName, districtName, provinceName].filter(Boolean).join(', ');
+      const currentValue = form.getFieldValue('location') ?? '';
+
+      if (!autoValue) {
+        if (autoLocationRef.current && currentValue === autoLocationRef.current) {
+          form.setFieldsValue({ location: '' });
+        }
+        autoLocationRef.current = '';
+        return;
+      }
+
+      if (!currentValue || currentValue === autoLocationRef.current) {
+        form.setFieldsValue({ location: autoValue });
+      }
+      autoLocationRef.current = autoValue;
+    },
+    [districts, form, provinces, wards]
+  );
+
+  useEffect(() => {
+    const provinceId = normalizeLocationId(profile?.provinceId ?? undefined);
+    if (provinceId) {
+      void loadDistricts(provinceId);
+    } else {
+      setDistricts([]);
+      form.setFieldsValue({ districtId: undefined, wardId: undefined });
+    }
+  }, [form, loadDistricts, profile?.provinceId]);
+
+  useEffect(() => {
+    const districtId = normalizeLocationId(profile?.districtId ?? undefined);
+    if (districtId) {
+      void loadWards(districtId);
+    } else {
+      setWards([]);
+      form.setFieldsValue({ wardId: undefined });
+    }
+  }, [form, loadWards, profile?.districtId]);
+
+  useEffect(() => {
+    const provinceId = form.getFieldValue('provinceId');
+    const districtId = form.getFieldValue('districtId');
+    const wardId = form.getFieldValue('wardId');
+    if (provinceId || districtId || wardId) {
+      updateLocationFromSelections(provinceId, districtId, wardId);
+    }
+  }, [districts, form, provinces, updateLocationFromSelections, wards]);
+
+  const handleProvinceSelect = async (value: number | null) => {
+    const selectedProvince = value ?? null;
+    form.setFieldsValue({
+      provinceId: selectedProvince ?? undefined,
+      districtId: undefined,
+      wardId: undefined
+    });
+    if (selectedProvince) {
+      await loadDistricts(selectedProvince);
+    } else {
+      setDistricts([]);
+      setWards([]);
+    }
+    updateLocationFromSelections(selectedProvince, null, null);
+  };
+
+  const handleDistrictSelect = async (value: number | null) => {
+    const selectedProvince = form.getFieldValue('provinceId') ?? null;
+    const selectedDistrict = value ?? null;
+    form.setFieldsValue({
+      districtId: selectedDistrict ?? undefined,
+      wardId: undefined
+    });
+    if (selectedDistrict) {
+      await loadWards(selectedDistrict);
+    } else {
+      setWards([]);
+    }
+    updateLocationFromSelections(selectedProvince, selectedDistrict, null);
+  };
+
+  const handleWardSelect = (value: number | null) => {
+    const selectedProvince = form.getFieldValue('provinceId') ?? null;
+    const selectedDistrict = form.getFieldValue('districtId') ?? null;
+    const selectedWard = value ?? null;
+    form.setFieldsValue({ wardId: selectedWard ?? undefined });
+    updateLocationFromSelections(selectedProvince, selectedDistrict, selectedWard);
+  };
 
   const handleAvatarChange = ({ fileList }: UploadChangeParam<UploadFile>) => {
     const file = (fileList.at(-1)?.originFileObj as File | undefined) ?? null;
@@ -170,7 +226,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
       setAvatarFile(null);
       setPreviewUrl(undefined);
       message.success('Đã xóa ảnh đại diện');
-    } catch {
+    } catch (error) {
       message.error('Không thể xóa ảnh');
     }
   };
@@ -179,7 +235,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
     try {
       await onSubmit({ ...values, imageFile: avatarFile });
       message.success('Cập nhật hồ sơ thành công');
-    } catch {
+    } catch (error) {
       message.error('Cập nhật hồ sơ thất bại');
     }
   };
@@ -266,68 +322,70 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
                   <Input placeholder="Số nhà, đường, khu vực" />
                 </Form.Item>
               </Col>
-              <Col xs={24} md={8}>
+              <Col xs={24} md={12}>
+                <Form.Item
+                  name="location"
+                  label="Địa điểm chính"
+                  rules={[{ required: true, message: 'Vui lòng nhập địa điểm!' }]}
+                >
+                  <Input placeholder="VD: Hà Nội, Việt Nam" />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12}>
                 <Form.Item
                   name="provinceId"
-                  label="Tỉnh/Thành phố"
-                  rules={[{ required: true, message: 'Vui lòng chọn tỉnh/thành phố!' }]}
+                  label="Tinh / thanh pho"
+                  rules={[{ required: true, message: 'Vui long chon tinh/thanh!' }]}
                 >
                   <Select
-                    showSearch
+                    placeholder="Chon tinh/thanh"
                     allowClear
-                    placeholder="Chọn tỉnh/thành"
-                    loading={loadingProvinces}
-                    options={provinceOptions.map((province) => ({
-                      label: province.name,
-                      value: province.code
-                    }))}
+                    showSearch
                     optionFilterProp="label"
-                    onChange={(value) => {
-                      void handleProvinceChange(value as number | undefined);
-                    }}
+                    loading={locationLoading.provinces}
+                    options={provinces.map((prov) => ({
+                      label: prov.name,
+                      value: prov.code
+                    }))}
+                    onChange={(value) =>
+                      handleProvinceSelect((value as number | undefined) ?? null)
+                    }
                   />
                 </Form.Item>
               </Col>
-              <Col xs={24} md={8}>
-                <Form.Item
-                  name="districtId"
-                  label="Quận/Huyện"
-                  rules={[{ required: true, message: 'Vui lòng chọn quận/huyện!' }]}
-                >
+              <Col xs={24} md={12}>
+                <Form.Item name="districtId" label="Quan / huyen">
                   <Select
-                    showSearch
+                    placeholder="Chon quan/huyen"
                     allowClear
-                    placeholder="Chọn quận/huyện"
-                    disabled={!form.getFieldValue('provinceId')}
-                    loading={loadingDistricts}
-                    options={districtOptions.map((district) => ({
+                    showSearch
+                    optionFilterProp="label"
+                    disabled={!provinceValue}
+                    loading={locationLoading.districts}
+                    options={districts.map((district) => ({
                       label: district.name,
                       value: district.code
                     }))}
-                    optionFilterProp="label"
-                    onChange={(value) => {
-                      void handleDistrictChange(value as number | undefined);
-                    }}
+                    onChange={(value) =>
+                      handleDistrictSelect((value as number | undefined) ?? null)
+                    }
                   />
                 </Form.Item>
               </Col>
-              <Col xs={24} md={8}>
-                <Form.Item
-                  name="wardId"
-                  label="Phường/Xã"
-                  rules={[{ required: true, message: 'Vui lòng chọn phường/xã!' }]}
-                >
+              <Col xs={24} md={12}>
+                <Form.Item name="wardId" label="Phuong / xa">
                   <Select
-                    showSearch
+                    placeholder="Chon phuong/xa"
                     allowClear
-                    placeholder="Chọn phường/xã"
-                    disabled={!form.getFieldValue('districtId')}
-                    loading={loadingWards}
-                    options={wardOptions.map((ward) => ({
+                    showSearch
+                    optionFilterProp="label"
+                    disabled={!districtValue}
+                    loading={locationLoading.wards}
+                    options={wards.map((ward) => ({
                       label: ward.name,
                       value: ward.code
                     }))}
-                    optionFilterProp="label"
+                    onChange={(value) => handleWardSelect((value as number | undefined) ?? null)}
                   />
                 </Form.Item>
               </Col>

@@ -13,11 +13,11 @@ export interface Profile {
   contactPhone?: string;
   contactEmail?: string;
   website?: string;
-  provinceId?: number;
-  districtId?: number;
-  wardId?: number;
-  fullLocation?: string;
   location?: string;
+  fullLocation?: string;
+  provinceId?: number | null;
+  districtId?: number | null;
+  wardId?: number | null;
   averageRating?: number;
   ratings?: Rating[];
 }
@@ -29,10 +29,11 @@ export interface ProfileUpdateRequest {
   contactPhone?: string;
   contactEmail?: string;
   website?: string;
-  provinceId?: number;
-  districtId?: number;
-  wardId?: number;
+  location?: string;
   fullLocation?: string;
+  provinceId?: number | null;
+  districtId?: number | null;
+  wardId?: number | null;
   imageFile?: File | null;
 }
 

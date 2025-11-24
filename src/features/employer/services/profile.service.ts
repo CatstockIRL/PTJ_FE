@@ -18,6 +18,9 @@ const buildFormData = (payload: ProfileUpdateRequest) => {
   if (payload.contactEmail !== undefined) {
     formData.append('ContactEmail', payload.contactEmail ?? '');
   }
+  if (payload.location !== undefined) {
+    formData.append('Location', payload.location ?? '');
+  }
   if (payload.provinceId !== undefined) {
     formData.append('ProvinceId', payload.provinceId?.toString() ?? '');
   }
