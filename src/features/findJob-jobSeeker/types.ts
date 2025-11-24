@@ -38,14 +38,23 @@ export interface EmployerPostDtoOut {
   companyLogo?: string;
 }
 
+export type SalaryFilter =
+  | "all"
+  | "hasValue"
+  | "negotiable"
+  | "0-10"
+  | "10-15"
+  | "15-20"
+  | "20-25"
+  | "25+";
+
 export interface JobSearchFilters {
   keyword: string;
   provinceId: number | null;
   categoryId: number | null;
   categoryName?: string | null;
   subCategoryId: number | null;
-  subCategoryName?: string | null;
-  salary: "all" | "hasValue" | "negotiable";
+  salary: SalaryFilter;
 }
 
 export type SalaryFilter =
