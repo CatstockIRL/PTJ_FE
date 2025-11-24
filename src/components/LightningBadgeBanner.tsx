@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import type { FC } from 'react';
+import { useEffect, useState } from 'react';
 
 const recentLightningJobs = [
   {
@@ -35,7 +36,7 @@ const stats = [
   { value: '1.540', label: 'Ứng viên mới trong tháng' }
 ];
 
-const LightningBadgeBanner: React.FC = () => {
+const LightningBadgeBanner: FC = () => {
   const [timeLeft, setTimeLeft] = useState<number>(UPDATE_CYCLE_SECONDS);
 
   useEffect(() => {

@@ -170,3 +170,5 @@ export const EmployerSidebar: React.FC<SidebarProps> = ({ isOpen }) => {
     </aside>
   );
 };
+
+export default EmployerSidebar;
