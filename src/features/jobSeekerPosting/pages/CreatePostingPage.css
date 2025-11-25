@@ -1,0 +1,44 @@
+.job-seeker-post-view .ant-card {
+  border: 1px solid #e2e8f0;
+}
+
+.job-seeker-post-view .ant-form-item-label > label {
+  color: #0f172a;
+  font-weight: 500;
+}
+
+.job-seeker-post-view .ant-input[readonly],
+.job-seeker-post-view .ant-input-number-disabled,
+.job-seeker-post-view .ant-picker-input input[readonly] {
+  background-color: #fff;
+  color: #111827;
+}
+
+.job-seeker-post-view .ant-select-disabled .ant-select-selector,
+.job-seeker-post-view .ant-picker-disabled,
+.job-seeker-post-view .ant-radio-group .ant-radio-disabled + span,
+.job-seeker-post-view .ant-input-number-disabled {
+  background-color: #fff;
+  color: #111827;
+}
+
+.job-seeker-post-view .ant-select-disabled .ant-select-selection-item,
+.job-seeker-post-view .ant-picker-disabled input {
+  color: #111827;
+}
+
+.job-seeker-post-view .ant-input,
+.job-seeker-post-view .ant-select-selector,
+.job-seeker-post-view .ant-picker,
+.job-seeker-post-view .ant-input-number,
+.job-seeker-post-view .ant-radio-inner {
+  border-color: #e2e8f0 !important;
+}
+
+.job-seeker-post-view .ant-input[readonly]:focus,
+.job-seeker-post-view .ant-select-disabled .ant-select-selector:focus,
+.job-seeker-post-view .ant-picker-disabled:focus,
+.job-seeker-post-view .ant-input-number-disabled:focus-visible {
+  border-color: #94a3b8;
+  box-shadow: none;
+}

@@ -290,6 +290,40 @@ const JobDetailPage: React.FC = () => {
     return duplicateMarkers.some((marker) => normalized.includes(marker));
   };
 
+  const verifyApplicationRecorded = async (
+    employerPostId: number,
+    expectedCvId?: number
+  ): Promise<boolean> => {
+    if (!jobSeekerId) return false;
+    const seekerId = jobSeekerId;
+    try {
+      const response = await applyJobService.getAppliedJobsBySeeker(seekerId);
+      const application = response?.data?.find(
+        (item) => item.employerPostId === employerPostId
+      );
+      if (!application) {
+        return false;
+      }
+      const recordedCvId =
+        application.cvId ?? application.cvid ?? application.selectedCvId;
+      if (
+        typeof expectedCvId === "number" &&
+        recordedCvId &&
+        recordedCvId !== expectedCvId
+      ) {
+        console.warn(
+          "Application recorded with different CV id",
+          recordedCvId,
+          expectedCvId
+        );
+      }
+      return true;
+    } catch (verifyError) {
+      console.error("Failed to verify application status", verifyError);
+      return false;
+    }
+  };
+
   const handleApplySubmit = async (values: { note: string; cvId?: number }) => {
     if (!job || !jobSeekerId) return;
     if (!values.cvId) {
@@ -316,9 +350,19 @@ const JobDetailPage: React.FC = () => {
         await handleApplySuccess(
           "Ban da nop don cong viec nay truoc do. Da cap nhat lai thong tin."
         );
-      } else {
-        message.error("Nop don that bai. Vui long thu lai sau.");
+        return;
       }
+
+      const recorded = await verifyApplicationRecorded(
+        job.employerPostId,
+        values.cvId
+      );
+      if (recorded) {
+        await handleApplySuccess("Nop don ung tuyen thanh cong!");
+        return;
+      }
+
+      message.error("Nop don that bai. Vui long thu lai sau.");
     } finally {
       setApplying(false);
       applyRequestLock.current = false;
