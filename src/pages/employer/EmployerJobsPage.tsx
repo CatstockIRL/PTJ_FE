@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   Button,
@@ -8,6 +8,7 @@ import {
   Space,
   message,
   Modal,
+  Drawer,
   Input,
   Row,
   Col,
@@ -16,6 +17,7 @@ import {
   Avatar,
   Typography,
   Tooltip,
+  Card,
 } from "antd";
 import type { TableProps, TableColumnsType } from "antd";
 import {
@@ -30,6 +32,9 @@ import {
   DeleteOutlined,
   UsergroupAddOutlined,
   EditOutlined,
+  SearchOutlined,
+  CheckCircleOutlined,
+  FileTextOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "../../features/auth/hooks";
 import jobPostService from "../../features/job/jobPostService";
@@ -42,7 +47,7 @@ import { JobPostDetailModal } from "../../features/job/components/employer/JobPo
 
 const { Option } = Select;
 const { Search } = Input;
-const { Text } = Typography;
+const { Text, Title } = Typography;
 
 const MOCK_API_RESPONSE = {
   success: true,
@@ -50,7 +55,7 @@ const MOCK_API_RESPONSE = {
   data: [
     {
       employerPostId: 9991,
-      title: "Trình Dược Viên Tại Tuyên Quang [Thu Nhập Không Giới Hạn] (Mẫu)",
+      title: "Trình Dược Viên tại Tuyên Quang [Thu nhập không giới hạn] (Mẫu)",
       location: "Phường Minh Xuân, TP Tuyên Quang, Tuyên Quang",
       matchPercent: 97,
       phoneContact: "0326397621",
@@ -59,7 +64,7 @@ const MOCK_API_RESPONSE = {
     },
     {
       employerPostId: 9992,
-      title: "Trình Dược Viên Tại Điện Biên (Đi làm ngay) (Mẫu)",
+      title: "Trình Dược Viên tại Điện Biên (Đi làm ngay) (Mẫu)",
       location: "Xã Mường Tùng, Huyện Mường Chà, Điện Biên",
       matchPercent: 82,
       phoneContact: "0326845871",
@@ -80,7 +85,7 @@ const MOCK_API_RESPONSE = {
 
 const formatCurrency = (value: number | null | undefined) => {
   if (value == null || value <= 0) return "Thỏa thuận";
-  return `${value.toLocaleString("vi-VN")} vnđ`;
+  return `${value.toLocaleString("vi-VN")} VND`;
 };
 
 const EmployerJobsPage: React.FC = () => {
@@ -88,34 +93,25 @@ const EmployerJobsPage: React.FC = () => {
   const { user } = useAuth();
   useCategories();
 
-  const { categories, status: categoryStatus } = useSelector(
-    (state: RootState) => state.category
-  );
+  const { categories, status: categoryStatus } = useSelector((state: RootState) => state.category);
 
   const [allJobs, setAllJobs] = useState<JobPostView[]>([]);
+  const [recentApps, setRecentApps] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedJob, setSelectedJob] = useState<JobPostView | null>(null);
 
-  const [isSuggestionModalVisible, setIsSuggestionModalVisible] =
-    useState(false);
+  const [isSuggestionModalVisible, setIsSuggestionModalVisible] = useState(false);
   const [suggestionList, setSuggestionList] = useState<any[]>([]);
   const [isSuggestionLoading, setIsSuggestionLoading] = useState(false);
   const [currentJobTitle, setCurrentJobTitle] = useState("");
 
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
-  const [selectedSubCategory, setSelectedSubCategory] = useState<number | null>(
-    null
-  );
-  const { subCategories, isLoading: isLoadingSubCategories } = useSubCategories(
-    selectedCategory
-  );
+  const [selectedSubCategory, setSelectedSubCategory] = useState<number | null>(null);
+  const { subCategories, isLoading: isLoadingSubCategories } = useSubCategories(selectedCategory);
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
-  const [sortInfo, setSortInfo] = useState<{
-    field: string;
-    order: "asc" | "desc";
-  }>({
+  const [sortInfo, setSortInfo] = useState<{ field: string; order: "asc" | "desc" }>({
     field: "createdAt",
     order: "desc",
   });
@@ -139,6 +135,8 @@ const EmployerJobsPage: React.FC = () => {
 
   useEffect(() => {
     fetchJobs();
+    // TODO: fetch recent applicants when service available
+    setRecentApps([]);
   }, [user]);
 
   const handleShowSuggestions = async (postId: number, jobTitle: string) => {
@@ -156,7 +154,7 @@ const EmployerJobsPage: React.FC = () => {
         setSuggestionList(MOCK_API_RESPONSE.data);
       }
     } catch (error) {
-      console.error("Lỗi tải gợi ý, sử dụng dữ liệu mẫu", error);
+      console.error("Lỗi tải gợi ý, dùng dữ liệu mẫu", error);
       setSuggestionList(MOCK_API_RESPONSE.data);
     } finally {
       setIsSuggestionLoading(false);
@@ -174,16 +172,14 @@ const EmployerJobsPage: React.FC = () => {
 
     if (selectedCategory) {
       filteredData = filteredData.filter((job) => {
-        const jobCategoryId =
-          job.categoryId ?? (job as any).categoryID ?? null;
+        const jobCategoryId = job.categoryId ?? (job as any).categoryID ?? null;
         return jobCategoryId === selectedCategory;
       });
     }
 
     if (selectedSubCategory) {
       filteredData = filteredData.filter((job) => {
-        const jobSubCategoryId =
-          job.subCategoryId ?? (job as any).subCategoryID ?? null;
+        const jobSubCategoryId = job.subCategoryId ?? (job as any).subCategoryID ?? null;
         return jobSubCategoryId === selectedSubCategory;
       });
     }
@@ -203,20 +199,18 @@ const EmployerJobsPage: React.FC = () => {
     }
 
     return filteredData;
-  }, [
-    allJobs,
-    searchTerm,
-    selectedCategory,
-    selectedSubCategory,
-    sortInfo,
-    categories,
-  ]);
+  }, [allJobs, searchTerm, selectedCategory, selectedSubCategory, sortInfo, categories]);
 
   const paginatedJobs = useMemo(() => {
     const { current, pageSize } = pagination;
     const startIndex = (current - 1) * pageSize;
     return processedJobs.slice(startIndex, startIndex + pageSize);
   }, [processedJobs, pagination]);
+
+  const activeJobsCount = useMemo(
+    () => allJobs.filter((job) => job.status?.toLowerCase() === "active").length,
+    [allJobs]
+  );
 
   const handleRefresh = () => {
     fetchJobs();
@@ -228,11 +222,11 @@ const EmployerJobsPage: React.FC = () => {
 
   const handleDelete = (id: number) => {
     Modal.confirm({
-      title: "Bạn có chắc muốn xóa bài đăng này?",
+      title: "Bạn có chắc muốn xoá bài đăng này?",
       content: "Hành động này không thể hoàn tác.",
-      okText: "Xác nhận xóa",
+      okText: "Xác nhận xoá",
       okType: "danger",
-      cancelText: "Hủy",
+      cancelText: "Huỷ",
       onOk: async () => {
         try {
           const res = await jobPostService.deleteJobPost(id);
@@ -243,7 +237,7 @@ const EmployerJobsPage: React.FC = () => {
             message.error(res.message);
           }
         } catch (err: any) {
-          message.error(err.response?.data?.message || "Xóa thất bại.");
+          message.error(err.response?.data?.message || "Xoá thất bại.");
         }
       },
     });
@@ -264,11 +258,7 @@ const EmployerJobsPage: React.FC = () => {
     setSelectedJob(null);
   };
 
-  const handleTableChange: TableProps<JobPostView>["onChange"] = (
-    newPagination,
-    _filters,
-    sorter: any
-  ) => {
+  const handleTableChange: TableProps<JobPostView>["onChange"] = (newPagination, _filters, sorter: any) => {
     setPagination({
       current: newPagination.current || 1,
       pageSize: newPagination.pageSize || 10,
@@ -276,11 +266,7 @@ const EmployerJobsPage: React.FC = () => {
 
     setSortInfo({
       field: sorter.field || "createdAt",
-      order: sorter.order
-        ? sorter.order === "ascend"
-          ? "asc"
-          : "desc"
-        : "desc",
+      order: sorter.order ? (sorter.order === "ascend" ? "asc" : "desc") : "desc",
     });
   };
 
@@ -338,7 +324,7 @@ const EmployerJobsPage: React.FC = () => {
       },
     },
     {
-      title: "Công việc",
+      title: "Công việc cần tuyển",
       dataIndex: "title",
       key: "title",
       width: "32%",
@@ -348,7 +334,7 @@ const EmployerJobsPage: React.FC = () => {
         <div className="max-w-full">
           <a
             onClick={() => handleViewDetails(record.employerPostId)}
-            className="font-semibold text-blue-600 hover:underline cursor-pointer"
+            className="font-semibold text-sky-700 hover:underline cursor-pointer"
           >
             {text}
           </a>
@@ -380,7 +366,7 @@ const EmployerJobsPage: React.FC = () => {
       ),
     },
     {
-      title: "Lương",
+      title: "Mức lương công việc",
       dataIndex: "salary",
       key: "salary",
       width: "15%",
@@ -408,9 +394,7 @@ const EmployerJobsPage: React.FC = () => {
                 borderColor: "#fadb14",
                 color: "#ad8b00",
               }}
-              onClick={() =>
-                handleShowSuggestions(record.employerPostId, record.title)
-              }
+              onClick={() => handleShowSuggestions(record.employerPostId, record.title)}
             >
               Gợi ý
             </Button>
@@ -424,9 +408,7 @@ const EmployerJobsPage: React.FC = () => {
                 borderColor: "#b7eb8f",
                 color: "#389e0d",
               }}
-              onClick={() =>
-                navigate(`/nha-tuyen-dung/ung-vien/${record.employerPostId}`)
-              }
+              onClick={() => navigate(`/nha-tuyen-dung/ung-vien/${record.employerPostId}`)}
             >
               Ứng viên
             </Button>
@@ -445,7 +427,7 @@ const EmployerJobsPage: React.FC = () => {
               Sửa
             </Button>
           </Tooltip>
-          <Tooltip title="Xóa bài đăng">
+          <Tooltip title="Xoá bài đăng">
             <Button
               type="default"
               size="small"
@@ -457,7 +439,7 @@ const EmployerJobsPage: React.FC = () => {
               }}
               onClick={() => handleDelete(record.employerPostId)}
             >
-              Xóa
+              Xoá
             </Button>
           </Tooltip>
         </Space>
@@ -467,37 +449,54 @@ const EmployerJobsPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">
-          Công việc của tôi ({allJobs.length})
-        </h1>
-        <div className="flex gap-2">
-          <Button
-            type="default"
-            icon={<SyncOutlined />}
-            size="large"
-            onClick={handleRefresh}
-            loading={isLoading}
-          >
-            Làm mới
-          </Button>
-          <NavLink to="/nha-tuyen-dung/dang-tin">
-            <Button type="primary" icon={<PlusOutlined />} size="large">
-              Đăng công việc mới
-            </Button>
-          </NavLink>
+      <Card className="bg-gradient-to-r from-sky-600 to-blue-700 text-white shadow-lg border-none">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="space-y-2">
+            <p className="text-sm uppercase tracking-[0.35em] text-white/80">
+              Quản lý bài tuyển dụng
+            </p>
+            <Title level={3} className="!text-white !mb-0">
+              Bài tuyển dụng công việc của tôi ({allJobs.length})
+            </Title>
+            <p className="text-white/80 max-w-2xl">
+              Theo dõi, lọc và cập nhật nhanh các tin tuyển dụng đang chạy. Đăng tin mới chỉ với một bước.
+            </p>
+            <div className="flex gap-2 flex-wrap">
+              <Button icon={<SyncOutlined />} onClick={handleRefresh} loading={isLoading}>
+                Làm mới
+              </Button>
+              <NavLink to="/nha-tuyen-dung/dang-tin">
+                <Button type="primary" icon={<PlusOutlined />} className="bg-emerald-400 border-none">
+                  Đăng công việc mới
+                </Button>
+              </NavLink>
+            </div>
+          </div>
+          <div className="bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-sm text-white/90 shadow-inner">
+            <div className="flex items-center gap-2">
+              <CheckCircleOutlined className="text-emerald-200" />
+              <span>
+                Đang hoạt động: <strong>{activeJobsCount}</strong>
+              </span>
+            </div>
+            <div className="flex items-center gap-2 mt-1">
+              <FileTextOutlined className="text-emerald-200" />
+              <span>
+                Ứng viên mới: <strong>{recentApps.length}</strong>
+              </span>
+            </div>
+          </div>
         </div>
-      </div>
+      </Card>
 
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 space-y-5">
-        {/* HÀNG FILTER DÀN ĐỀU 24 CỘT */}
+      <Card className="shadow-sm border border-slate-100 space-y-5">
         <Row gutter={[16, 16]}>
           <Col xs={24} md={12} lg={10}>
             <Search
-              placeholder="Tim kiem theo tieu de cong viec..."
+              placeholder="Tìm kiếm theo tiêu đề công việc..."
               onSearch={handleSearch}
               onChange={(e) => handleSearch(e.target.value)}
-              enterButton
+              enterButton={<SearchOutlined />}
               allowClear
               loading={isLoading}
               style={{ width: "100%" }}
@@ -505,7 +504,7 @@ const EmployerJobsPage: React.FC = () => {
           </Col>
           <Col xs={24} md={12} lg={7}>
             <Select
-              placeholder="Loc theo nganh nghe"
+              placeholder="Lọc theo ngành nghề"
               onChange={handleCategoryChange}
               allowClear
               style={{ width: "100%" }}
@@ -520,7 +519,7 @@ const EmployerJobsPage: React.FC = () => {
           </Col>
           <Col xs={24} md={12} lg={7}>
             <Select
-              placeholder="Loc theo nhom nghe"
+              placeholder="Lọc theo nhóm nghề"
               value={selectedSubCategory ?? undefined}
               onChange={handleSubCategoryChange}
               allowClear
@@ -553,36 +552,23 @@ const EmployerJobsPage: React.FC = () => {
           }}
         />
 
-        <JobPostDetailModal
-          jobPost={selectedJob}
-          visible={isModalVisible}
-          onClose={handleCloseModal}
-        />
+        <JobPostDetailModal jobPost={selectedJob} visible={isModalVisible} onClose={handleCloseModal} />
 
-        <Modal
+        <Drawer
           title={
             <div className="flex items-center gap-2">
-              <BulbOutlined style={{ color: "#faad14", fontSize: "20px" }} />
+              <BulbOutlined style={{ color: "#faad14", fontSize: 20 }} />
               <div>
                 <div className="font-bold">Gợi ý phù hợp</div>
-                <div className="text-xs text-gray-500 font-normal">
-                  Dành cho tin: {currentJobTitle}
-                </div>
+                <div className="text-xs text-gray-500 font-normal">Dành cho tin: {currentJobTitle}</div>
               </div>
             </div>
           }
+          placement="right"
+          width={520}
           open={isSuggestionModalVisible}
-          onCancel={() => setIsSuggestionModalVisible(false)}
-          footer={[
-            <Button
-              key="close"
-              onClick={() => setIsSuggestionModalVisible(false)}
-            >
-              Đóng
-            </Button>,
-          ]}
-          width={700}
-          centered
+          onClose={() => setIsSuggestionModalVisible(false)}
+          destroyOnClose
         >
           <List
             loading={isSuggestionLoading}
@@ -598,35 +584,17 @@ const EmployerJobsPage: React.FC = () => {
                       type="circle"
                       percent={item.matchPercent}
                       width={60}
-                      strokeColor={
-                        item.matchPercent >= 80
-                          ? "#52c41a"
-                          : item.matchPercent >= 50
-                          ? "#faad14"
-                          : "#ff4d4f"
-                      }
-                      format={(percent) => (
-                        <span className="text-sm font-bold">{percent}%</span>
-                      )}
+                      strokeColor={item.matchPercent >= 80 ? "#52c41a" : item.matchPercent >= 50 ? "#faad14" : "#ff4d4f"}
+                      format={(percent) => <span className="text-sm font-bold">{percent}%</span>}
                     />
-                    <span className="text-xs text-gray-500 mt-1">
-                      Độ phù hợp
-                    </span>
+                    <span className="text-xs text-gray-500 mt-1">Độ phù hợp</span>
                   </div>
                 }
               >
                 <List.Item.Meta
-                  avatar={
-                    <Avatar
-                      icon={<UserOutlined />}
-                      style={{ backgroundColor: "#1890ff" }}
-                    />
-                  }
+                  avatar={<Avatar icon={<UserOutlined />} style={{ backgroundColor: "#1890ff" }} />}
                   title={
-                    <a
-                      href="#"
-                      className="text-base font-semibold text-blue-700 hover:underline"
-                    >
+                    <a href="#" className="text-base font-semibold text-blue-700 hover:underline">
                       {item.title}
                     </a>
                   }
@@ -634,9 +602,7 @@ const EmployerJobsPage: React.FC = () => {
                     <div className="space-y-1 mt-1">
                       <div className="flex items-start gap-2 text-gray-600 text-sm">
                         <EnvironmentOutlined className="mt-1 shrink-0" />
-                        <span>
-                          {item.location || "Chưa cập nhật địa điểm"}
-                        </span>
+                        <span>{item.location || "Chưa cập nhật địa điểm"}</span>
                       </div>
                       <div className="flex items-center gap-2 text-gray-600 text-sm">
                         <PhoneOutlined />
@@ -649,9 +615,7 @@ const EmployerJobsPage: React.FC = () => {
                       </div>
                       <div className="text-xs text-gray-400 mt-2">
                         Đăng bởi: {item.employerName} •{" "}
-                        {item.createdAt
-                          ? new Date(item.createdAt).toLocaleDateString("vi-VN")
-                          : ""}
+                        {item.createdAt ? new Date(item.createdAt).toLocaleDateString("vi-VN") : ""}
                       </div>
                     </div>
                   }
@@ -659,8 +623,8 @@ const EmployerJobsPage: React.FC = () => {
               </List.Item>
             )}
           />
-        </Modal>
-      </div>
+        </Drawer>
+      </Card>
     </div>
   );
 };

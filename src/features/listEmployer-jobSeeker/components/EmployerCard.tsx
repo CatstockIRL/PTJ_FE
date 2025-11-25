@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Employer } from '../types';
+import NoLogo from '../../../assets/no-logo.png';
 
 
 interface EmployerCardProps {
@@ -7,14 +8,14 @@ interface EmployerCardProps {
 }
 
 const EmployerCard: React.FC<EmployerCardProps> = ({ employer }) => {
-  const logoSrc = employer.logo || '/src/assets/no-logo.png';
+  const logoSrc = employer.logo || NoLogo;
   const locationDisplay = employer.locations && employer.locations.length > 0 
       ? employer.locations.join(', ')
       : '...';
   
   return (
     <div className="p-2">
-      <div className="bg-white rounded-lg shadow-md overflow-hidden relative h-[320px] pb-4 flex flex-col">
+      <div className="bg-white rounded-lg shadow-md overflow-hidden relative h-[320px] pb-4 flex flex-col border border-gray-200 hover:border-blue-400 transition">
         <div className="absolute top-0 left-0 w-0 h-0 border-t-[20px] border-r-[20px] border-t-orange-500 border-r-transparent z-10"></div>
         <div
           className="w-full h-24 bg-cover bg-center"
