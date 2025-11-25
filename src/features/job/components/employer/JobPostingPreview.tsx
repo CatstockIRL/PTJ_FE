@@ -47,86 +47,86 @@ const JobPostingPreview: React.FC<JobPostingPreviewProps> = ({ data }) => {
   }, [data.subCategoryId, subCategories, isSubCategoriesLoading]);
 
   return (
-    <div className="p-6 bg-gradient-to-br from-slate-50 via-white to-slate-50 rounded-2xl shadow-lg border border-slate-200">
+    <div className="p-6 bg-white rounded-lg shadow-md border border-gray-200">
       <h2 className="text-2xl font-semibold mb-4 text-gray-800">
-        {data.jobTitle || "Chưa đặt tiêu đề"}
+        {data.jobTitle || "Chua dat tieu de?"}
       </h2>
 
       <div className="mb-4">
         <h3 className="text-lg font-medium text-gray-700 mb-1">
-          Mô tả công việc
+          Mo ta cong viec
         </h3>
         <p
-          className="text-gray-700 whitespace-pre-line font-medium"
+          className="text-gray-600 whitespace-pre-line"
           dangerouslySetInnerHTML={{
-            __html: data.jobDescription || "Chưa có mô tả",
+            __html: data.jobDescription || "Chua co mo ta",
           }}
         />
       </div>
 
       <div className="mb-4">
-        <h3 className="text-lg font-medium text-gray-700 mb-1">Yêu cầu công việc</h3>
-        <p className="text-gray-700 whitespace-pre-line font-medium">
-          {data.requirements || "Chưa có yêu cầu"}
+        <h3 className="text-lg font-medium text-gray-700 mb-1">Yeu cau</h3>
+        <p className="text-gray-600 whitespace-pre-line">
+          {data.requirements || "Chua co yeu cau"}
         </p>
       </div>
 
       <div className="grid grid-cols-2 gap-4 mt-6">
         <div>
           <h3 className="text-sm font-semibold text-gray-500 uppercase">
-            Mức lương (VND)
+            Muc luong
           </h3>
-          <p className="text-gray-800 font-semibold">
+          <p className="text-gray-700">
             {data.salaryText
               ? data.salaryText
               : data.salaryValue
               ? `${data.salaryValue.toLocaleString()} VND`
-              : "Chưa nhập mức lương"}
+              : "Chua nhap"}
           </p>
         </div>
 
         <div>
           <h3 className="text-sm font-semibold text-gray-500 uppercase">
-            Giờ làm việc
+            Gio lam viec
           </h3>
-          <p className="text-gray-800 font-semibold">{data.workHours || "Chưa nhập giờ làm việc"}</p>
+          <p className="text-gray-700">{data.workHours || "Chua nhap"}</p>
         </div>
 
         <div>
           <h3 className="text-sm font-semibold text-gray-500 uppercase">
-            Địa điểm
+            Dia diem
           </h3>
-          <p className="text-gray-800 font-semibold">
-            {data.location || data.detailAddress || "Chưa nhập địa điểm"}
+          <p className="text-gray-700">
+            {data.location || data.detailAddress || "Chua nhap"}
           </p>
         </div>
 
         <div>
           <h3 className="text-sm font-semibold text-gray-500 uppercase">
-            Ngành nghề
+            Danh muc
           </h3>
-          <p className="text-gray-800 font-semibold">
+          <p className="text-gray-700">
             {isCategoriesLoading
-              ? "Đang tải..."
+              ? "Dang tai..."
               : categoryName
               ? categoryName
-              : "Chưa chọn ngành nghề"}
+              : "Chua chon danh muc"}
           </p>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-500">
             {data.subCategoryId
               ? isSubCategoriesLoading
-                ? "Đang tải nhóm nghề..."
-                : subCategoryName || "Chưa chọn nhóm nghề"
-              : "Chưa chọn nhóm nghề"}
+                ? "Dang tai nhom nghe..."
+                : subCategoryName || "Chua chon nhom nghe"
+              : "Chua chon nhom nghe"}
           </p>
         </div>
 
         <div>
           <h3 className="text-sm font-semibold text-gray-500 uppercase">
-            Số điện thoại liên hệ
+            Lien he
           </h3>
-          <p className="text-gray-800 font-semibold">
-            {data.contactPhone || "Chưa có số điện thoại liên hệ"}
+          <p className="text-gray-700">
+            {data.contactPhone || "Chua co so dien thoai"}
           </p>
         </div>
       </div>

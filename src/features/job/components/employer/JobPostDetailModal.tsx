@@ -59,8 +59,7 @@ const JobPostDetailModal: React.FC<Props> = ({ jobPost, visible, onClose }) => {
           Đóng
         </Button>,
       ]}
-      width={1280}
-      bodyStyle={{ padding: 24 }}
+      width={1100}
     >
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         <div className="lg:col-span-3 space-y-6">

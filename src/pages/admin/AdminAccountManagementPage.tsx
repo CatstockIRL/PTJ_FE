@@ -14,7 +14,12 @@ import {
   Divider
 } from 'antd';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
-import { ReloadOutlined, SearchOutlined, EyeOutlined, UserSwitchOutlined } from '@ant-design/icons';
+import {
+  ReloadOutlined,
+  SearchOutlined,
+  EyeOutlined,
+  UserSwitchOutlined
+} from '@ant-design/icons';
 import adminUserService from '../../features/admin/services/adminUser.service';
 import type { AdminUser, AdminUserDetail } from '../../features/admin/types/user';
 import AdminSectionHeader from './components/AdminSectionHeader';
@@ -142,7 +147,6 @@ const AdminAccountManagementPage: React.FC = () => {
       current: newPagination.current,
       pageSize: newPagination.pageSize
     }));
-    void fetchUsers(newPagination.current, newPagination.pageSize);
   };
 
   const openDetail = async (userId: number) => {
@@ -164,7 +168,9 @@ const AdminAccountManagementPage: React.FC = () => {
     setToggleLoadingId(user.userId);
     try {
       await adminUserService.toggleActive(user.userId);
-      message.success(`Đã ${user.isActive ? 'khóa' : 'mở khóa'} tài khoản ${user.username}`);
+      message.success(
+        `Đã ${user.isActive ? 'vô hiệu hóa' : 'kích hoạt'} tài khoản ${user.username}`
+      );
       await fetchUsers();
       if (selectedUser?.userId === user.userId) {
         const detail = await adminUserService.getUserDetail(user.userId);
@@ -253,8 +259,6 @@ const AdminAccountManagementPage: React.FC = () => {
       render: (_, record) => (
         <Space>
           <Button
-            type="primary"
-            ghost
             icon={<EyeOutlined />}
             size="small"
             onClick={() => openDetail(record.userId)}
@@ -296,7 +300,7 @@ const AdminAccountManagementPage: React.FC = () => {
         <Space direction="vertical" size="middle" className="w-full">
           <Input
             prefix={<SearchOutlined />}
-            placeholder="Tìm theo email, username, số điện thoại..."
+            placeholder="Tìm theo email, username, địa chỉ..."
             allowClear
             value={filters.keyword}
             onChange={(event) => handleFilterChange('keyword', event.target.value)}
@@ -341,12 +345,8 @@ const AdminAccountManagementPage: React.FC = () => {
           loading={loading}
           dataSource={users}
           columns={columns}
-          pagination={{
-            ...pagination,
-            showTotal: (total, range) => `${range[0]}-${range[1]} / ${total}`,
-            pageSizeOptions: ['10', '20', '50', '100']
-          }}
-          scroll={{ x: 1100, y: 'calc(100vh - 320px)' }}
+          pagination={pagination}
+          scroll={{ x: 1000 }}
           onChange={handleTableChange}
         />
       </Card>
@@ -399,7 +399,10 @@ const AdminAccountManagementPage: React.FC = () => {
             >
               {selectedUser.role === 'Employer' ? (
                 <>
-                  <DetailFieldBox label="Tên nhà tuyển dụng" value={selectedUser.companyName || undefined} />
+                  <DetailFieldBox
+                    label="Tên nhà tuyển dụng"
+                    value={selectedUser.companyName || undefined}
+                  />
                   <DetailFieldBox label="Website" value={selectedUser.website || undefined} />
                   <DetailFieldBox
                     label="Số điện thoại liên hệ"
@@ -423,7 +426,11 @@ const AdminAccountManagementPage: React.FC = () => {
             </DetailSection>
 
             <DetailSection title="Địa chỉ">
-              <DetailFieldBox label="Địa chỉ đầy đủ" value={selectedUser.fullLocation || undefined} span={2} />
+              <DetailFieldBox
+                label="Địa chỉ đầy đủ"
+                value={selectedUser.fullLocation || undefined}
+                span={2}
+              />
               <DetailFieldBox label="Tỉnh / Thành phố" value={selectedUser.provinceName || undefined} />
               <DetailFieldBox label="Quận / Huyện" value={selectedUser.districtName || undefined} />
               <DetailFieldBox label="Phường / Xã" value={selectedUser.wardName || undefined} />

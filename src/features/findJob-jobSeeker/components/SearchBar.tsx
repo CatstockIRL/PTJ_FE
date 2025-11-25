@@ -4,7 +4,15 @@ import { SearchOutlined } from "@ant-design/icons";
 import locationService, {
   type LocationOption,
 } from "../../location/locationService";
+import { useCategories } from "../../category/hook";
+import { useSubCategories } from "../../subcategory/hook";
 import type { JobSearchFilters } from "../types";
+
+const SALARY_OPTIONS = [
+  { value: "all", label: "Tat ca muc luong" },
+  { value: "hasValue", label: "Co thong tin luong" },
+  { value: "negotiable", label: "Thoa thuan" },
+];
 
 const normalizeNumberValue = (
   value: number | string | null | undefined
@@ -24,6 +32,11 @@ interface SearchBarProps {
 export const SearchBar: React.FC<SearchBarProps> = ({ value, onSearch }) => {
   const [formState, setFormState] = useState<JobSearchFilters>(value);
   const [provinces, setProvinces] = useState<LocationOption[]>([]);
+
+  const { categories, isLoading: isLoadingCategories } = useCategories();
+  const { subCategories, isLoading: isLoadingSubCategories } = useSubCategories(
+    formState.categoryId ?? null
+  );
 
   useEffect(() => {
     const fetchProvinces = async () => {
@@ -46,6 +59,30 @@ export const SearchBar: React.FC<SearchBarProps> = ({ value, onSearch }) => {
     field: T,
     newValue: JobSearchFilters[T]
   ) => {
+    if (field === "categoryId") {
+      const selectedCat = categories.find(
+        (c: any) => c.categoryId === newValue
+      );
+      setFormState((prev) => ({
+        ...prev,
+        categoryId: newValue as number | null,
+        categoryName: selectedCat ? (selectedCat as any).name : null,
+        subCategoryId: null,
+        subCategoryName: null,
+      }));
+      return;
+    }
+    if (field === "subCategoryId") {
+      const selectedSub = subCategories.find(
+        (s: any) => s.subCategoryId === newValue
+      );
+      setFormState((prev) => ({
+        ...prev,
+        subCategoryId: newValue as number | null,
+        subCategoryName: selectedSub ? (selectedSub as any).name : null,
+      }));
+      return;
+    }
     setFormState((prev) => ({ ...prev, [field]: newValue }));
   };
 
@@ -54,46 +91,84 @@ export const SearchBar: React.FC<SearchBarProps> = ({ value, onSearch }) => {
   };
 
   return (
-    <Card className="shadow-xl rounded-2xl p-4 md:p-5 border-none">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center">
-        <div className="flex-1">
-          <Input
-            prefix={<SearchOutlined className="text-gray-400 mr-2" />}
-            placeholder="Nhap vi tri, cong viec, ky nang..."
-            value={formState.keyword}
-            onChange={(e) => handleChange("keyword", e.target.value)}
-            onPressEnter={handleSearch}
-            allowClear
-            size="large"
-            className="h-12 rounded-xl"
-          />
-        </div>
-        <div className="w-full md:w-60">
-          <Select
-            placeholder="Tat ca tinh thanh"
-            value={formState.provinceId ?? undefined}
-            onChange={(value) =>
-              handleChange("provinceId", normalizeNumberValue(value))
-            }
-            allowClear
-            showSearch
-            optionFilterProp="children"
-            size="large"
-            className="w-full h-12 rounded-xl"
-          >
-            {provinces.map((prov) => (
-              <Select.Option key={prov.code} value={prov.code}>
-                {prov.name}
-              </Select.Option>
-            ))}
-          </Select>
-        </div>
-        <Button
-          type="primary"
+    <Card className="shadow-lg rounded-2xl mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_1fr_auto] gap-4 items-center">
+        <Input
+          prefix={<SearchOutlined className="text-gray-400 mr-1" />}
+          placeholder="Nhap ten cong viec"
+          value={formState.keyword}
+          onChange={(e) => handleChange("keyword", e.target.value)}
+          onPressEnter={handleSearch}
+          allowClear
           size="large"
-          className="h-12 px-8 bg-emerald-500 border-emerald-500 hover:bg-emerald-600 hover:border-emerald-600 rounded-xl"
-          onClick={handleSearch}
+        />
+        <Select
+          placeholder="Chon thanh pho"
+          value={formState.provinceId ?? undefined}
+          onChange={(value) =>
+            handleChange("provinceId", normalizeNumberValue(value))
+          }
+          allowClear
+          showSearch
+          optionFilterProp="children"
+          size="large"
         >
+          {provinces.map((prov) => (
+            <Select.Option key={prov.code} value={prov.code}>
+              {prov.name}
+            </Select.Option>
+          ))}
+        </Select>
+        <Select
+          placeholder="Nganh nghe"
+          value={formState.categoryId ?? undefined}
+          onChange={(value) =>
+            handleChange("categoryId", normalizeNumberValue(value))
+          }
+          allowClear
+          showSearch
+          optionFilterProp="children"
+          size="large"
+          loading={isLoadingCategories}
+        >
+          {categories.map((cat: any) => (
+            <Select.Option key={cat.categoryId} value={cat.categoryId}>
+              {cat.name}
+            </Select.Option>
+          ))}
+        </Select>
+        <Select
+          placeholder="Nhom nghe"
+          value={formState.subCategoryId ?? undefined}
+          onChange={(value) =>
+            handleChange("subCategoryId", normalizeNumberValue(value))
+          }
+          allowClear
+          showSearch
+          optionFilterProp="children"
+          size="large"
+          loading={isLoadingSubCategories}
+          disabled={!formState.categoryId}
+        >
+          {subCategories.map((sub: any) => (
+            <Select.Option key={sub.subCategoryId} value={sub.subCategoryId}>
+              {sub.name}
+            </Select.Option>
+          ))}
+        </Select>
+        <Select
+          placeholder="Muc luong"
+          value={formState.salary}
+          onChange={(value) => handleChange("salary", value)}
+          size="large"
+        >
+          {SALARY_OPTIONS.map((option) => (
+            <Select.Option key={option.value} value={option.value}>
+              {option.label}
+            </Select.Option>
+          ))}
+        </Select>
+        <Button type="primary" size="large" onClick={handleSearch}>
           Tim kiem
         </Button>
       </div>

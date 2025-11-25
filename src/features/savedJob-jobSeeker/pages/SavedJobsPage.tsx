@@ -1,25 +1,19 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import type { AppDispatch, RootState } from "../../../app/store";
-import { fetchSavedJobs, removeSavedJob } from "../slice";
-import SavedJobCard from "../components/SavedJobCard";
-import { Pagination, Modal, message, Spin, Empty, Alert, Button } from "antd";
-import { HeartFilled } from "@ant-design/icons";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState, useCallback } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import type { AppDispatch, RootState } from '../../../app/store';
+import { fetchSavedJobs, removeSavedJob } from '../slice';
+import SavedJobCard from '../components/SavedJobCard';
+import { Pagination, Modal, message } from 'antd';
 
 const SavedJobsPage: React.FC = () => {
   const dispatch: AppDispatch = useDispatch();
-  const { jobs, status, error, total } = useSelector(
-    (state: RootState) => state.savedJobs
-  );
-  const jobSeekerId = useSelector(
-    (state: RootState) => state.auth.user?.id
-  );
+  const { jobs, status, error, total } = useSelector((state: RootState) => state.savedJobs);
+  const jobSeekerId = useSelector((state: RootState) => state.auth.user?.id);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [jobToDelete, setJobToDelete] = useState<string | null>(null);
-  const pageSize = 6;
+  const pageSize = 5;
 
   const fetchJobs = useCallback(() => {
     if (jobSeekerId) {
@@ -39,12 +33,12 @@ const SavedJobsPage: React.FC = () => {
   const handleConfirmDelete = async () => {
     if (jobToDelete && jobSeekerId) {
       try {
-        await dispatch(
-          removeSavedJob({ jobId: jobToDelete, jobSeekerId })
-        ).unwrap();
-        message.success("Đã xoá công việc khỏi danh sách lưu");
+        await dispatch(removeSavedJob({ jobId: jobToDelete, jobSeekerId })).unwrap();
+        message.success('Xóa công việc đã lưu thành công!');
+        // Optionally, re-fetch the list if the slice doesn't handle removal automatically
+        // fetchJobs();
       } catch (err) {
-        message.error("Xoá công việc thất bại. Thử lại.");
+        message.error('Xóa công việc thất bại. Vui lòng thử lại.');
       }
     }
     setIsModalVisible(false);
@@ -64,71 +58,26 @@ const SavedJobsPage: React.FC = () => {
   const endIndex = startIndex + pageSize;
   const currentJobs = jobs.slice(startIndex, endIndex);
 
-  const renderContent = () => {
-    if (status === "loading") {
-      return (
-        <div className="py-12 flex justify-center">
-          <Spin size="large" />
-        </div>
-      );
-    }
-
-    if (status === "failed") {
-      return (
-        <Alert
-          message="Lỗi"
-          description={error}
-          type="error"
-          showIcon
-          className="mb-4"
-        />
-      );
-    }
-
-    if (currentJobs.length === 0) {
-      return (
-        <div className="py-12 flex flex-col items-center gap-4">
-          <Empty description="Bạn chưa lưu công việc nào" />
-          <Link to="/viec-lam">
-            <Button type="primary">Tìm việc ngay</Button>
-          </Link>
-        </div>
-      );
-    }
-
-    return (
-      <div className="grid grid-cols-1 gap-4">
-        {currentJobs.map((job) => (
-          <SavedJobCard key={job.id} job={job} onDelete={showDeleteConfirm} />
-        ))}
-      </div>
-    );
-  };
-
   return (
-    <div className="bg-slate-50 min-h-screen">
-      <div className="bg-gradient-to-r from-emerald-600 to-sky-500 text-white">
-        <div className="max-w-5xl mx-auto px-6 py-10 flex flex-col gap-2">
-          <div className="flex items-center gap-3">
-            <HeartFilled className="text-2xl" />
-            <p className="text-sm uppercase tracking-wide text-emerald-100">
-              Việc làm đã lưu
-            </p>
-          </div>
-          <h1 className="text-3xl md:text-4xl font-bold">
-            Danh sách việc làm yêu thích
-          </h1>
-          <p className="text-emerald-50 max-w-2xl">
-            Quay lại nhanh các cơ hội bạn đã lưu, so sánh và ứng tuyển khi sẵn sàng.
-          </p>
-        </div>
-      </div>
-
-      <div className="max-w-5xl mx-auto px-6 py-10">
-        <div className="bg-white rounded-2xl shadow-lg border border-slate-100 p-6 space-y-6">
-          {renderContent()}
-          {total > pageSize && (
-            <div className="flex justify-center">
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">Công việc đã lưu ({total})</h1>
+      
+      {status === 'loading' && <p>Đang tải...</p>}
+      {status === 'failed' && <p className="text-red-500">{error}</p>}
+      
+      {status === 'succeeded' && (
+        <div className="max-w-4xl mx-auto">
+          {currentJobs.length > 0 ? (
+            <div className="space-y-4">
+              {currentJobs.map(job => (
+                <SavedJobCard key={job.id} job={job} onDelete={showDeleteConfirm} />
+              ))}
+            </div>
+          ) : (
+            <p>Bạn chưa lưu công việc nào.</p>
+          )}
+          {total > 0 && (
+            <div className="flex justify-center mt-6">
               <Pagination
                 current={currentPage}
                 pageSize={pageSize}
@@ -139,18 +88,17 @@ const SavedJobsPage: React.FC = () => {
             </div>
           )}
         </div>
-      </div>
-
+      )}
       <Modal
-        title="Xoá công việc đã lưu?"
+        title="Xác nhận xóa"
         open={isModalVisible}
         onOk={handleConfirmDelete}
         onCancel={handleCancelDelete}
-        okText="Xoá"
-        cancelText="Huỷ"
+        okText="Xóa"
+        cancelText="Hủy"
         okButtonProps={{ danger: true }}
       >
-        <p>Bạn chắc chắn muốn xoá công việc này khỏi danh sách đã lưu?</p>
+        <p>Bạn có chắc chắn muốn xóa công việc đã lưu này không?</p>
       </Modal>
     </div>
   );
