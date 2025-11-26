@@ -45,3 +45,11 @@ export interface EmployerFilter {
   page?: number;
   pageSize?: number;
 }
+
+export interface EmployerRanking {
+  employerId: number;
+  companyName: string;
+  logoUrl?: string | null;
+  totalApplyCount: number;
+  activePostCount: number;
+}

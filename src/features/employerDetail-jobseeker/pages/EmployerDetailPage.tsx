@@ -139,7 +139,7 @@ const EmployerDetailPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="container mx-auto -mt-10 px-4">
+      <div className="container mx-auto mt-6 px-4">
         <Row gutter={[24, 24]}>
           <Col xs={24} lg={16}>
             <div className="space-y-6">

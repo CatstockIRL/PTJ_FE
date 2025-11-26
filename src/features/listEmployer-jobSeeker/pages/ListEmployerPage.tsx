@@ -111,7 +111,7 @@ const ListEmployerPage: React.FC = () => {
         </div>
       </section>
 
-      <main className="relative z-10 -mt-16 pb-14">
+      <main className="relative z-10 mt-10 pb-14">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="rounded-3xl bg-white p-6 shadow-xl ring-1 ring-slate-100">
             {loading ? (

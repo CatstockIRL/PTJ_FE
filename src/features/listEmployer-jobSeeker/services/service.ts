@@ -1,5 +1,5 @@
 import baseService from '../../../services/baseService';
-import type { Employer, EmployerFilter } from '../types';
+import type { Employer, EmployerFilter, EmployerRanking } from '../types';
 import type { PaginatedJobResponse, JobPostView } from '../../job/jobTypes';
 
 const JOB_LIST_API_URL = '/EmployerPost/all';
@@ -11,9 +11,7 @@ interface EmployerPublicProfileApi {
 
 type EmployerJobPostView = JobPostView & { employerId?: number };
 
-const getPlaceholderLogo = (username: string) => {
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=random&color=fff`;
-};
+const getPlaceholderLogo = () => "/src/assets/no-logo.png";
 
 const extractProvince = (fullAddress: string): string => {
   if (!fullAddress) return '';
@@ -28,14 +26,11 @@ const enrichWithProfile = async (employer: Employer): Promise<Employer> => {
     return {
       ...employer,
       name: profile.displayName || employer.name,
-      logo: profile.avatarUrl || employer.logo || getPlaceholderLogo(profile.displayName || employer.name),
+      logo: profile.avatarUrl || employer.logo || "",
     };
   } catch (error) {
     console.warn(`Khong the tai profile cho nha tuyen dung ${employer.id}`, error);
-    if (!employer.logo) {
-      return { ...employer, logo: getPlaceholderLogo(employer.name) };
-    }
-    return employer;
+    return { ...employer, logo: employer.logo || "" };
   }
 };
 
@@ -111,5 +106,18 @@ export const getEmployers = async (
   } catch (error) {
     console.error('Loi khi tai danh sach nha tuyen dung:', error);
     return { employers: [], totalRecords: 0 };
+  }
+};
+
+export const getTopEmployersByApply = async (top = 10): Promise<EmployerRanking[]> => {
+  try {
+    // baseService đã set baseURL = https://localhost:7100/api, nên không thêm /api ở đây để tránh đúp đường dẫn
+    const response = await baseService.get<EmployerRanking[]>(`/employers/top`, {
+      params: { top },
+    });
+    return response ?? [];
+  } catch (error) {
+    console.error('Loi khi tai top nha tuyen dung:', error);
+    return [];
   }
 };
