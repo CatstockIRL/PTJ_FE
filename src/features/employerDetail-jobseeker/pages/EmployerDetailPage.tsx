@@ -148,7 +148,7 @@ const EmployerDetailPage: React.FC = () => {
 
               {jobs.length > 0 ? (
                 <div className="flex flex-col gap-4">
-                  {jobs.map((job) => (
+                  {jobs.map((job: any) => (
                     <div
                       key={job.id}
                       className="hover:shadow-md transition-shadow"

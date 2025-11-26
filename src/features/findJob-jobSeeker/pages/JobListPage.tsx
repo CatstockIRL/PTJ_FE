@@ -1,30 +1,32 @@
-import React from 'react';
-import { useParams } from 'react-router-dom';
-import JobCard from '../../homepage-jobSeeker/components/JobCard';
-import { mockJobs } from '../mockData';
-import { Breadcrumb, Select, Pagination } from 'antd';
-import { SearchBar } from '../components/SearchBar';
-import type { JobSearchFilters } from '../types';
+import { useParams } from "react-router-dom";
+import { Breadcrumb, Select, Pagination } from "antd";
+import JobCard from "../../homepage-jobSeeker/components/JobCard";
+import { mockJobs } from "../mockData";
+import { SearchBar } from "../components/SearchBar";
+import type { JobSearchFilters } from "../types";
 
 const { Option } = Select;
 
-// Mock data for job list
 const JobListPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
 
-  const title = slug ? slug.replace(/-/g, ' ').replace(/^(nganh|tai) /, '') : 'Việc làm';
+  const title = slug
+    ? slug.replace(/-/g, " ").replace(/^(nganh|tai)\s*/i, "")
+    : "Việc làm";
 
   const handlePageChange = (page: number) => {
-    console.log('Page changed to:', page);
-    // Implement pagination logic here
+    console.log("Page changed to:", page);
   };
 
   const placeholderFilters: JobSearchFilters = {
-    keyword: '',
+    keyword: "",
     provinceId: null,
     categoryId: null,
+    categoryName: null,
     subCategoryId: null,
-    salary: 'all',
+    subCategoryName: null,
+    salary: "all",
+    salaryRange: "all",
   };
 
   return (
@@ -38,11 +40,9 @@ const JobListPage: React.FC = () => {
 
       <h1 className="text-2xl font-bold mb-4 capitalize">Việc làm {title}</h1>
 
-      {/* Main Content - Job List */}
       <div className="max-w-4xl mx-auto">
-        {/* Filters and Result Count */}
         <div className="bg-white p-4 rounded-lg shadow-md mb-6 flex items-center justify-between">
-          <div>
+          <div className="text-gray-700">
             <span>Sắp xếp theo: </span>
             <Select defaultValue="newest" style={{ width: 150 }}>
               <Option value="newest">Mới nhất</Option>
@@ -54,15 +54,19 @@ const JobListPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Job List */}
         <div className="space-y-4">
           {mockJobs.map((job) => (
             <JobCard key={job.id} job={job} />
           ))}
         </div>
-        {/* Pagination */}
+
         <div className="flex justify-center mt-6">
-          <Pagination defaultCurrent={1} total={mockJobs.length * 2} pageSize={mockJobs.length} onChange={handlePageChange} />
+          <Pagination
+            defaultCurrent={1}
+            total={mockJobs.length * 2}
+            pageSize={mockJobs.length}
+            onChange={handlePageChange}
+          />
         </div>
       </div>
     </div>

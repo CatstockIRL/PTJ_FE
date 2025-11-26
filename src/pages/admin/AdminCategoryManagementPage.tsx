@@ -39,6 +39,12 @@ interface FilterState {
   status: 'all' | 'active' | 'inactive';
 }
 
+type AdminCategoryFilters = {
+  keyword?: string;
+  type?: string;
+  isActive?: boolean;
+};
+
 const normalizeVietnamese = (text?: string | null) =>
   text ? text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() : '';
 

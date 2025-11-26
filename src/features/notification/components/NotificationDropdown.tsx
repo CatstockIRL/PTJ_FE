@@ -9,12 +9,10 @@ import {
   setConnectionStatus,
 } from "../slice";
 import { signalRService } from "../signalRService";
-import { useNavigate } from "react-router-dom";
 import type { Notification } from "../types";
 
 const NotificationDropdown: React.FC = () => {
   const dispatch = useAppDispatch();
-  const navigate = useNavigate();
   const { notifications, unreadCount } = useAppSelector(
     (state) => state.notification
   );

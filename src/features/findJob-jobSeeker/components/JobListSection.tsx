@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Card, Select, Pagination, Spin, Empty, message } from "antd";
+import { useEffect, useMemo, useState } from "react";
+import { Card, Select, Pagination, Spin, Empty, message, Tag, Button } from "antd";
 import { useNavigate } from "react-router-dom";
 import jobPostService from "../../job/jobPostService";
 import type { JobPostView } from "../../job/jobTypes";
@@ -24,47 +24,96 @@ const normalizeNumericId = (value: unknown): number | null => {
   return Number.isNaN(parsed) ? null : parsed;
 };
 
+const salaryToMillions = (salary: number): number => {
+  if (salary <= 0) return 0;
+  return salary > 1_000_000 ? Math.round(salary / 1_000_000) : Math.round(salary);
+};
+
+const getInitial = (text?: string | null) => {
+  if (!text) return "J";
+  return text.trim().charAt(0).toUpperCase() || "J";
+};
+
 const JobListCard: React.FC<{ job: JobPostView }> = ({ job }) => {
   const navigate = useNavigate();
   const salaryText =
     job.salary && job.salary > 0
       ? `${job.salary.toLocaleString("vi-VN")} VND`
-      : job.salaryText || "Thoa thuan";
-  const timeLabel = job.createdAt
-    ? formatTimeAgo(job.createdAt)
-    : "Chua co thoi gian";
+      : job.salaryText || "Thoả thuận";
+  const timeLabel = job.createdAt ? formatTimeAgo(job.createdAt) : "Chưa cập nhật";
+
+  const descriptionText =
+    job.description?.replaceAll(/<[^>]+>/g, "").slice(0, 180) || "";
 
   return (
     <Card
       key={job.employerPostId}
-      className="shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer"
+      className="shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer rounded-xl"
       onClick={() => navigate(`/viec-lam/chi-tiet/${job.employerPostId}`)}
     >
-      <div className="flex flex-col gap-2">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900">{job.title}</h3>
-            <p className="text-sm text-gray-500">
-              {job.categoryName || "Chưa rõ ngành nghề"}
-            </p>
+      <div className="flex flex-col gap-3">
+        <div className="flex items-start gap-4">
+          <div className="h-12 w-12 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center text-lg font-semibold">
+            {getInitial(job.employerName)}
           </div>
-          <span className="text-xs text-gray-400">{timeLabel}</span>
+          <div className="flex-1">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+              <div>
+                <p className="text-sm text-emerald-600 font-medium">
+                  {job.employerName || "Nhà tuyển dụng"}
+                </p>
+                <h3 className="text-lg font-semibold text-gray-900 leading-tight">
+                  {job.title}
+                </h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-400 whitespace-nowrap">{timeLabel}</span>
+                <Button
+                  type="primary"
+                  size="middle"
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/viec-lam/chi-tiet/${job.employerPostId}`);
+                  }}
+                >
+                  Xem chi tiết
+                </Button>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-sm text-gray-700 mt-3">
+              {job.location && (
+                <Tag color="default" className="px-2 py-1 rounded-full text-gray-700">
+                  {job.location}
+                </Tag>
+              )}
+              {job.workHours && (
+                <Tag color="blue" className="px-2 py-1 rounded-full">
+                  {job.workHours}
+                </Tag>
+              )}
+              <Tag color="green" className="px-2 py-1 rounded-full font-semibold">
+                {salaryText}
+              </Tag>
+              {job.categoryName && (
+                <Tag color="default" className="px-2 py-1 rounded-full text-gray-700">
+                  {job.categoryName}
+                </Tag>
+              )}
+              {job.subCategoryName && (
+                <Tag color="default" className="px-2 py-1 rounded-full text-gray-700">
+                  {job.subCategoryName}
+                </Tag>
+              )}
+            </div>
+            {descriptionText && (
+              <p className="text-sm text-gray-600 mt-2">
+                {descriptionText}
+                {job.description && job.description.length > 180 ? "..." : ""}
+              </p>
+            )}
+          </div>
         </div>
-
-        <div className="text-sm text-gray-700 flex flex-wrap gap-4">
-          <span>
-            <i className="fas fa-map-marker-alt mr-1 text-indigo-500" />
-            {job.location || "Chua cap nhat dia diem"}
-          </span>
-          <span className="text-red-600 font-semibold">{salaryText}</span>
-        </div>
-
-        {job.description && (
-          <p className="text-sm text-gray-600 line-clamp-2">
-            {job.description.replaceAll(/<[^>]+>/g, "").slice(0, 200)}
-            {job.description.length > 200 ? "..." : ""}
-          </p>
-        )}
       </div>
     </Card>
   );
@@ -85,7 +134,8 @@ const JobListSection: React.FC<JobListSectionProps> = ({
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const { keyword, provinceId, categoryId, subCategoryId, salary } = filters;
+  const { keyword, provinceId, categoryId, subCategoryId, salary, salaryRange } =
+    filters;
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -95,11 +145,11 @@ const JobListSection: React.FC<JobListSectionProps> = ({
         if (res.success) {
           setJobs(res.data || []);
         } else {
-          message.error("Khong the tai danh sach viec lam.");
+          message.error("Không thể tải danh sách việc làm.");
         }
       } catch (err: any) {
         message.error(
-          err.response?.data?.message || "Khong the tai danh sach viec lam."
+          err.response?.data?.message || "Không thể tải danh sách việc làm."
         );
       } finally {
         setLoading(false);
@@ -121,22 +171,55 @@ const JobListSection: React.FC<JobListSectionProps> = ({
       const provinceMatch =
         provinceId === null ||
         provinceId === undefined ||
-        job.provinceId === provinceId;
+        job.provinceId === provinceId ||
+        normalizeNumericId(job.provinceId) === normalizeNumericId(provinceId);
 
       const categoryMatch =
         !categoryId ||
-        (filters.categoryName && job.categoryName === filters.categoryName);
+        job.categoryId === categoryId ||
+        (filters.categoryName &&
+          job.categoryName?.toLowerCase() === filters.categoryName.toLowerCase());
 
       const subCategoryMatch =
         !subCategoryId ||
+        job.subCategoryId === subCategoryId ||
         (filters.subCategoryName &&
-          job.subCategoryName === filters.subCategoryName);
+          job.subCategoryName?.toLowerCase() ===
+            filters.subCategoryName.toLowerCase());
 
-      let salaryMatch = true;
+      let salaryPresenceMatch = true;
       if (salary === "hasValue") {
-        salaryMatch = !!job.salary && job.salary > 0;
+        salaryPresenceMatch = !!job.salary && job.salary > 0;
       } else if (salary === "negotiable") {
-        salaryMatch = !job.salary || job.salary <= 0;
+        salaryPresenceMatch = !job.salary || job.salary <= 0;
+      }
+
+      const numericSalary =
+        typeof job.salary === "number" && job.salary > 0 ? job.salary : null;
+      const salaryMillions = numericSalary ? salaryToMillions(numericSalary) : null;
+
+      let salaryRangeMatch = true;
+      switch (salaryRange) {
+        case "under10":
+          salaryRangeMatch = !!salaryMillions && salaryMillions < 10;
+          break;
+        case "10-15":
+          salaryRangeMatch = !!salaryMillions && salaryMillions >= 10 && salaryMillions <= 15;
+          break;
+        case "15-20":
+          salaryRangeMatch = !!salaryMillions && salaryMillions > 15 && salaryMillions <= 20;
+          break;
+        case "20-25":
+          salaryRangeMatch = !!salaryMillions && salaryMillions > 20 && salaryMillions <= 25;
+          break;
+        case "25plus":
+          salaryRangeMatch = !!salaryMillions && salaryMillions > 25;
+          break;
+        case "negotiable":
+          salaryRangeMatch = !numericSalary || numericSalary <= 0;
+          break;
+        default:
+          salaryRangeMatch = true;
       }
 
       return (
@@ -144,10 +227,21 @@ const JobListSection: React.FC<JobListSectionProps> = ({
         provinceMatch &&
         categoryMatch &&
         subCategoryMatch &&
-        salaryMatch
+        salaryPresenceMatch &&
+        salaryRangeMatch
       );
     });
-  }, [jobs, keyword, provinceId, categoryId, subCategoryId, salary]);
+  }, [
+    jobs,
+    keyword,
+    provinceId,
+    categoryId,
+    subCategoryId,
+    salary,
+    salaryRange,
+    filters.categoryName,
+    filters.subCategoryName,
+  ]);
 
   const sortedJobs = useMemo(() => {
     const getSalaryValue = (job: JobPostView) =>
@@ -173,24 +267,43 @@ const JobListSection: React.FC<JobListSectionProps> = ({
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [keyword, provinceId, categoryId, subCategoryId, salary, sortOrder]);
+  }, [
+    keyword,
+    provinceId,
+    categoryId,
+    subCategoryId,
+    salary,
+    salaryRange,
+    sortOrder,
+  ]);
 
   const paginatedJobs = useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize;
     return sortedJobs.slice(startIndex, startIndex + pageSize);
   }, [sortedJobs, currentPage]);
 
+  const startDisplay = sortedJobs.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const endDisplay = Math.min(currentPage * pageSize, sortedJobs.length);
+
   return (
-    <div className="mt-10">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 gap-3 mb-4">
-        <h2 className="text-2xl font-bold text-gray-900">Việc làm hiện hành</h2>
-        <div className="w-full sm:w-auto">
+    <div className="mt-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <div className="text-gray-700">
+          <span className="font-semibold">{sortedJobs.length}</span> việc làm được tìm thấy{" "}
+          {sortedJobs.length > 0 && (
+            <span className="text-sm text-gray-500">
+              (Hiển thị {startDisplay}-{endDisplay})
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-500">Sắp xếp theo:</span>
           <Select
             value={sortOrder}
             onChange={(value) => onSortChange(value as SortOrder)}
             options={sortOptions}
-            className="w-full sm:w-48"
-            size="large"
+            className="w-44"
+            size="middle"
           />
         </div>
       </div>
@@ -198,7 +311,7 @@ const JobListSection: React.FC<JobListSectionProps> = ({
         {paginatedJobs.length === 0 ? (
           <Empty description="Chưa có việc làm nào." />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-3">
             {paginatedJobs.map((job) => (
               <JobListCard key={job.employerPostId} job={job} />
             ))}

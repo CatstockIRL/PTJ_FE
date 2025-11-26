@@ -8,6 +8,8 @@ import {
   Tag,
   Input,
   Select,
+  Card,
+  Typography,
 } from "antd";
 import type { TableColumnsType, TableProps } from "antd";
 import {
@@ -490,11 +492,41 @@ const JobSeekerPostsPage: React.FC = () => {
     },
   ];
 
+  const totalPosts = filteredPosts.length;
+  const startDisplay =
+    totalPosts === 0 ? 0 : (pagination.current - 1) * pagination.pageSize + 1;
+  const endDisplay = Math.min(
+    pagination.current * pagination.pageSize,
+    totalPosts
+  );
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-800">
-        Danh sách bài đăng tìm việc
-      </h1>
+      <Card className="bg-gradient-to-r from-sky-600 to-blue-700 text-white shadow-lg border-none rounded-2xl">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 p-4 md:p-5">
+          <div className="space-y-2">
+            <p className="text-sm uppercase tracking-[0.35em] text-white/80">
+              Ứng viên
+            </p>
+            <Typography.Title level={3} className="!text-white !mb-0">
+              Danh sách bài đăng tìm việc của ứng viên
+            </Typography.Title>
+            <p className="text-white/85 max-w-3xl">
+              Khám phá hồ sơ ứng viên, xem nhanh mô tả và CV đính kèm để kết nối nhanh chóng.
+            </p>
+            <div className="flex gap-2 flex-wrap">
+              <span className="px-3 py-1 rounded-md bg-white/15 border border-white/20 text-sm font-semibold">
+                Tổng bài đăng: <strong>{totalPosts}</strong>
+              </span>
+              {totalPosts > 0 && (
+                <span className="px-3 py-1 rounded-md bg-white/15 border border-white/20 text-sm font-semibold">
+                  Hiển thị {startDisplay}-{endDisplay}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </Card>
 
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
         <div className="flex flex-col md:flex-row md:items-center gap-3 mb-4">
@@ -540,7 +572,7 @@ const JobSeekerPostsPage: React.FC = () => {
     loading={provinceLoading}
     className="w-full md:w-1/4"
     filterOption={(input, option) =>
-      (option?.children as string)
+      String(option?.children ?? "")
         .toLowerCase()
         .includes(input.toLowerCase())
     }

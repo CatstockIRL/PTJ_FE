@@ -19,6 +19,7 @@ import type { JobSeekerCv } from "../../jobSeekerCv/types";
 import jobPostService from "../../job/jobPostService";
 import type { Job } from "../../../types";
 import { formatSalaryText, getCompanyLogoSrc, getJobDetailCached } from "../../../utils/jobPostHelpers";
+import followService from "../../follow/followService";
 
 const { TextArea } = Input;
 
@@ -44,6 +45,8 @@ const JobDetailPage: React.FC = () => {
   const [isApplyModalVisible, setIsApplyModalVisible] = useState(false);
   const [applying, setApplying] = useState(false);
   const [hasApplied, setHasApplied] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
   const [cvOptions, setCvOptions] = useState<JobSeekerCv[]>([]);
   const [cvLoading, setCvLoading] = useState(false);
   const [similarJobs, setSimilarJobs] = useState<Job[]>([]);
@@ -167,6 +170,7 @@ const JobDetailPage: React.FC = () => {
   useEffect(() => {
     if (!job || !jobSeekerId) {
       setHasApplied(false);
+      setIsFollowing(false);
       return;
     }
     const applied = appliedJobs.some(
@@ -176,6 +180,19 @@ const JobDetailPage: React.FC = () => {
     );
     setHasApplied(applied);
   }, [appliedJobs, job, jobSeekerId]);
+
+  useEffect(() => {
+    const fetchFollowState = async () => {
+      if (!job?.employerId || !jobSeekerId) return;
+      try {
+        const followed = await followService.checkFollow(job.employerId, jobSeekerId);
+        setIsFollowing(followed);
+      } catch {
+        setIsFollowing(false);
+      }
+    };
+    void fetchFollowState();
+  }, [job?.employerId, jobSeekerId]);
 
   useEffect(() => {
     const fetchSimilarJobs = async () => {
@@ -516,6 +533,43 @@ const JobDetailPage: React.FC = () => {
               disabled={hasApplied}
             >
               {hasApplied ? "Đã nộp đơn" : "Nộp đơn ngay"}
+            </Button>
+            <Button
+              size="large"
+              loading={followLoading}
+              onClick={async () => {
+                const employerId = job?.employerId;
+                const seekerId = jobSeekerId ? Number(jobSeekerId) : null;
+                if (!employerId || Number.isNaN(Number(employerId))) {
+                  message.error("Thiếu thông tin nhà tuyển dụng, không thể theo dõi.");
+                  return;
+                }
+                if (!seekerId) {
+                  message.info("Vui lòng đăng nhập để theo dõi nhà tuyển dụng.");
+                  navigate("/login");
+                  return;
+                }
+                setFollowLoading(true);
+                try {
+                  if (isFollowing) {
+                    await followService.unfollow(Number(employerId), seekerId);
+                    setIsFollowing(false);
+                    message.success("Đã bỏ theo dõi nhà tuyển dụng.");
+                  } else {
+                    await followService.follow(Number(employerId), seekerId);
+                    setIsFollowing(true);
+                    message.success("Đã theo dõi nhà tuyển dụng.");
+                  }
+                } catch (err: any) {
+                  message.error(
+                    err.response?.data?.message || "Không thể cập nhật theo dõi."
+                  );
+                } finally {
+                  setFollowLoading(false);
+                }
+              }}
+            >
+              {isFollowing ? "Bỏ theo dõi" : "Theo dõi nhà tuyển dụng"}
             </Button>
             <Button
               size="large"

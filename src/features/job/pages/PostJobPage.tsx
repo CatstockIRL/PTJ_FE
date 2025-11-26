@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Button } from 'antd';
+import { Button, Card, Typography } from 'antd';
 import { toast } from 'sonner';
 import { useAuth } from '../../auth/hooks';
 import { JobPostingForm } from '../components/employer/JobPostingForm';
@@ -55,8 +55,20 @@ const PostJobPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-800">Đăng công việc</h1>
-      
+      <Card className="bg-gradient-to-r from-sky-600 to-blue-700 text-white shadow-lg border-none">
+        <div className="space-y-2 p-4 md:p-5">
+          <p className="text-sm uppercase tracking-[0.3em] text-white/80">
+            PTJ for Business
+          </p>
+          <Typography.Title level={3} className="!text-white !mb-0">
+            Đăng bài tuyển dụng việc làm
+          </Typography.Title>
+          <p className="text-white/85 max-w-3xl">
+            Thu hút ứng viên phù hợp bằng mô tả rõ ràng, mức lương minh bạch và thông tin liên hệ đầy đủ.
+          </p>
+        </div>
+      </Card>
+
       <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
         <main className="md:col-span-3 space-y-6">
           <JobPostingForm 

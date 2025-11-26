@@ -1,6 +1,6 @@
 import React from 'react';
-import { Input, Pagination, Row, Col, Spin, Typography, Empty, Breadcrumb } from 'antd';
-import { SearchOutlined, HomeOutlined } from '@ant-design/icons';
+import { Input, Pagination, Row, Col, Spin, Typography, Empty } from 'antd';
+import { SearchOutlined } from '@ant-design/icons';
 import { useNewsList } from '../hooks';
 import NewsCard from '../components/NewsCardComponent';
 

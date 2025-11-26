@@ -60,5 +60,3 @@ export const adaptPagedResult = <T>(payload: RawPagedResponse<T> | undefined): P
     pageSize
   };
 };
-
-export type { PagedResult };

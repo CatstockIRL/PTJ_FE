@@ -16,8 +16,8 @@ const SavedJobsPage: React.FC = () => {
   const pageSize = 5;
 
   const fetchJobs = useCallback(() => {
-    if (jobSeekerId) {
-      dispatch(fetchSavedJobs(jobSeekerId));
+    if (jobSeekerId !== undefined && jobSeekerId !== null) {
+      dispatch(fetchSavedJobs(String(jobSeekerId)));
     }
   }, [dispatch, jobSeekerId]);
 
@@ -31,9 +31,9 @@ const SavedJobsPage: React.FC = () => {
   };
 
   const handleConfirmDelete = async () => {
-    if (jobToDelete && jobSeekerId) {
+    if (jobToDelete && jobSeekerId !== undefined && jobSeekerId !== null) {
       try {
-        await dispatch(removeSavedJob({ jobId: jobToDelete, jobSeekerId })).unwrap();
+        await dispatch(removeSavedJob({ jobId: jobToDelete, jobSeekerId: String(jobSeekerId) })).unwrap();
         message.success('Xóa công việc đã lưu thành công!');
         // Optionally, re-fetch the list if the slice doesn't handle removal automatically
         // fetchJobs();

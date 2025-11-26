@@ -30,9 +30,10 @@ export interface ShortlistedCandidateDto {
   jobSeekerName: string;
   note: string | null;
   addedAt: string;
-  jobSeekerPostId?: number | null;
+  jobSeekerPostId?: number;
   cvId?: number | null;
   selectedCvId?: number | null;
+  postTitle?: string;
 }
 
 export interface ShortlistedResponse {

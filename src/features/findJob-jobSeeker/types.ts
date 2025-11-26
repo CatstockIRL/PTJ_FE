@@ -52,4 +52,13 @@ export interface JobSearchFilters {
   subCategoryId: number | null;
   subCategoryName?: string | null;
   salary: "all" | "hasValue" | "negotiable";
+  salaryRange?:
+    | "all"
+    | "under10"
+    | "10-15"
+    | "15-20"
+    | "20-25"
+    | "25plus"
+    | "negotiable"
+    | null;
 }

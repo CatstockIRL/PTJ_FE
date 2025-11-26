@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom"; // Dùng useLocation thay vì useSearchParams
 import { fetchFindJobData } from "../slice";
 import type { AppDispatch } from "../../../app/store";
 import { SearchBar } from "../components/SearchBar";
+import { JobFilters } from "../components/JobFilters";
 import JobListSection from "../components/JobListSection";
 import type { JobSearchFilters } from "../types";
 
@@ -15,6 +16,7 @@ const DEFAULT_FILTERS: JobSearchFilters = {
   subCategoryId: null,
   subCategoryName: null,
   salary: "all",
+  salaryRange: "all",
 };
 
 const FindJobPage = () => {
@@ -43,17 +45,43 @@ const FindJobPage = () => {
   }, []);
 
   const handleSearch = (newFilters: JobSearchFilters) => {
-    setFilters(newFilters);
+    setFilters((prev) => ({ ...prev, ...newFilters }));
+  };
+
+  const handleFilterChange = (partial: Partial<JobSearchFilters>) => {
+    setFilters((prev) => ({ ...prev, ...partial }));
+  };
+
+  const handleClearFilters = () => {
+    setFilters(DEFAULT_FILTERS);
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <SearchBar value={filters} onSearch={handleSearch} />
-      <JobListSection
-        filters={filters}
-        sortOrder={sortOrder}
-        onSortChange={setSortOrder}
-      />
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-emerald-700 pt-8 pb-16">
+        <div className="container mx-auto px-4">
+          <SearchBar value={filters} onSearch={handleSearch} />
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 mt-6">
+        <div className="flex flex-col lg:flex-row gap-6">
+          <div className="lg:w-72">
+            <JobFilters
+              filters={filters}
+              onChange={handleFilterChange}
+              onClear={handleClearFilters}
+            />
+          </div>
+          <div className="flex-1">
+            <JobListSection
+              filters={filters}
+              sortOrder={sortOrder}
+              onSortChange={setSortOrder}
+            />
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

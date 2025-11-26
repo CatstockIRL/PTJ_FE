@@ -61,7 +61,7 @@ const SlideSecondary: React.FC = () => (
 
 const HeroSection: React.FC = () => {
   const [provinces, setProvinces] = useState([]);
-  const [selectedProvinces, setSelectedProvinces] = useState<string[]>([]);
+  // const [selectedProvinces, setSelectedProvinces] = useState<string[]>([]);
 
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
@@ -82,9 +82,8 @@ const HeroSection: React.FC = () => {
     dispatch(fetchCategories());
   }, [dispatch]);
 
-  const handleProvinceChange = (values: string[]) => {
-    setSelectedProvinces(values);
-    console.log("Selected provinces:", values);
+  const handleProvinceChange = (_values: string[]) => {
+    // no-op: selected provinces not used currently
   };
 
   return (

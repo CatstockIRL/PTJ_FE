@@ -1,8 +1,6 @@
 import React from 'react';
 
 // TODO: Thay thế bằng ảnh thật
-const largeImageUrl = 'https://via.placeholder.com/500x300?text=Interview';
-
 interface ArticleCardLargeProps {
   title: string;
   description: string;

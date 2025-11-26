@@ -11,8 +11,10 @@ export const useEmployerDetail = () => {
     const { profile, jobs, loading, error } = useAppSelector((state: any) => state.employerDetail);
 
     useEffect(() => {
-        if (id) {
+        if (id && id !== 'undefined') {
             dispatch(fetchEmployerDetailById(id));
+        } else {
+            dispatch(clearEmployerDetail());
         }
 
         return () => {

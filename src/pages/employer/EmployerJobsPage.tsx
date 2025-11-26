@@ -30,6 +30,8 @@ import {
   DeleteOutlined,
   UsergroupAddOutlined,
   EditOutlined,
+  CheckCircleOutlined,
+  FileTextOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "../../features/auth/hooks";
 import jobPostService from "../../features/job/jobPostService";
@@ -467,25 +469,43 @@ const EmployerJobsPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">
-          Công việc của tôi ({allJobs.length})
-        </h1>
-        <div className="flex gap-2">
-          <Button
-            type="default"
-            icon={<SyncOutlined />}
-            size="large"
-            onClick={handleRefresh}
-            loading={isLoading}
-          >
-            Làm mới
-          </Button>
-          <NavLink to="/nha-tuyen-dung/dang-tin">
-            <Button type="primary" icon={<PlusOutlined />} size="large">
-              Đăng công việc mới
-            </Button>
-          </NavLink>
+      <div className="bg-gradient-to-r from-sky-600 to-blue-700 text-white shadow-lg border-none rounded-2xl">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 p-5 md:p-6">
+          <div className="space-y-2">
+            <p className="text-sm uppercase tracking-[0.35em] text-white/80">
+              Quản lý bài tuyển dụng
+            </p>
+            <Typography.Title level={3} className="!text-white !mb-0">
+              Bài tuyển dụng công việc của tôi ({allJobs.length})
+            </Typography.Title>
+            <p className="text-white/80 max-w-2xl">
+              Theo dõi, lọc và cập nhật nhanh các tin tuyển dụng đang chạy. Đăng tin mới chỉ với một bước.
+            </p>
+            <div className="flex gap-2 flex-wrap">
+              <Button icon={<SyncOutlined />} onClick={handleRefresh} loading={isLoading}>
+                Làm mới
+              </Button>
+              <NavLink to="/nha-tuyen-dung/dang-tin">
+                <Button type="primary" icon={<PlusOutlined />} className="bg-emerald-400 border-none">
+                  Đăng công việc mới
+                </Button>
+              </NavLink>
+            </div>
+          </div>
+          <div className="bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-sm text-white/90 shadow-inner">
+            <div className="flex items-center gap-2">
+              <CheckCircleOutlined className="text-emerald-200" />
+              <span>
+                Đang hoạt động: <strong>{allJobs.filter((job) => (job.status || "").toLowerCase() === "active").length}</strong>
+              </span>
+            </div>
+            <div className="flex items-center gap-2 mt-1">
+              <FileTextOutlined className="text-emerald-200" />
+              <span>
+                Ứng viên mới: <strong>{suggestionList.length}</strong>
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 

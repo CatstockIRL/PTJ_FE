@@ -7,10 +7,8 @@ import {
   Tag,
   Space,
   Card,
-  message,
   Spin,
   Modal,
-  Pagination,
 } from "antd";
 import type { TableColumnsType } from "antd";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";

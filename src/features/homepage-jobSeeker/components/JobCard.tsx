@@ -44,7 +44,8 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
     const jobSeekerId = user.id;
     const jobId = job.id;
 
-    const action = isSaved ? removeSavedJob({ jobSeekerId, jobId }) : addSavedJob({ jobSeekerId, jobId });
+  const seekerId = String(jobSeekerId);
+  const action = isSaved ? removeSavedJob({ jobSeekerId: seekerId, jobId }) : addSavedJob({ jobSeekerId: seekerId, jobId });
 
     dispatch(action)
       .unwrap()
@@ -54,7 +55,7 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
         setIsSaved(!isSaved); 
 
         if (!isSaved) {
-          dispatch(fetchSavedJobs(jobSeekerId));
+          dispatch(fetchSavedJobs(seekerId));
         }
       })
       .catch((error) => {

@@ -125,7 +125,8 @@ const CandidateListPage: React.FC = () => {
 
       if (applicationsRes.success) {
         setApplications(applicationsRes.data);
-        const titleFromApplicants = applicationsRes.data[0]?.postTitle || "";
+        const titleFromApplicants =
+          (applicationsRes.data[0] as any)?.postTitle || "";
         setPostTitle(titleFromApplicants);
       } else {
         message.error("Tải danh sách ứng viên thất bại.");
@@ -133,8 +134,9 @@ const CandidateListPage: React.FC = () => {
 
       if (savedRes.success) {
         setSavedList(savedRes.data);
-        if (!postTitle && savedRes.data[0]?.postTitle) {
-          setPostTitle(savedRes.data[0].postTitle);
+        const fallbackTitle = (savedRes.data[0] as any)?.postTitle || "";
+        if (!postTitle && fallbackTitle) {
+          setPostTitle(fallbackTitle);
         }
       }
     } catch (err: any) {
@@ -336,7 +338,7 @@ const CandidateListPage: React.FC = () => {
       },
     },
     {
-      title: "??nh gi?",
+      title: "Đánh giá",
       key: "rating",
       render: (_, record) => {
         const currentStatus = record.status?.toLowerCase();
@@ -344,7 +346,7 @@ const CandidateListPage: React.FC = () => {
           return null;
         }
         return (
-          <Tooltip title="??nh gi? ?ng vi?n">
+          <Tooltip title="Đánh giá ứng viên">
             <Button
               type="text"
               icon={<StarOutlined style={{ color: "#faad14", fontSize: 18 }} />}

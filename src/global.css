@@ -25,3 +25,25 @@
 .prose ol > li {
   list-style-type: decimal;
 }
+
+.employer-menu .ant-menu-item,
+.employer-menu .ant-menu-submenu-title {
+  margin: 6px 0;
+  padding: 12px 16px !important;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.employer-menu .ant-menu-item-selected,
+.employer-menu .ant-menu-submenu-selected > .ant-menu-submenu-title {
+  background: #e6f4ff !important;
+  border-left: 4px solid #1677ff;
+  color: #0a3d91 !important;
+}
+
+.employer-menu .ant-menu-submenu-title .ant-menu-title-content,
+.employer-menu .ant-menu-item .ant-menu-title-content {
+  display: flex;
+  align-items: center;
+}

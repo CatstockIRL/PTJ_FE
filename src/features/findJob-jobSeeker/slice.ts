@@ -55,6 +55,6 @@ export const fetchFindJobData = (): AppThunk => async (dispatch) => {
     await new Promise((resolve) => setTimeout(resolve, 500));
     dispatch(fetchDataSuccess({ majors: jobMajors, popular: popularLocations, byAlphabet: locationsByAlphabet }));
   } catch (error) {
-    dispatch(fetchDataFailure(error.message));
+    dispatch(fetchDataFailure((error as any).message));
   }
 };

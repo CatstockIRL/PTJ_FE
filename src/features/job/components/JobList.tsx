@@ -4,7 +4,7 @@ import { useSelector } from 'react-redux';
 import type { RootState } from '../../../app/store';
 
 const JobList: React.FC = () => {
-  const jobs = useSelector((state: RootState) => state.jobs.jobs);
+  const jobs = useSelector((state: RootState) => state.homepage.featuredJobs || []);
 
   return (
     <div>

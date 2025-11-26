@@ -46,6 +46,7 @@ import JobSeekerCvPage from "../features/jobSeekerCv/pages/JobSeekerCvPage";
 import EmployerDetailPage from "../features/employerDetail-jobseeker/pages/EmployerDetailPage";
 import NewsListPage from "../features/listNew-JobSeeker/pages/NewsListPage";
 import NewsDetailPage from "../features/newsDetail-JobSeeker/pages/NewsDetailPage";
+import FollowedEmployersPage from "../features/follow/pages/FollowedEmployersPage";
 
 export const AppRoutes: React.FC = () => {
   return (
@@ -87,6 +88,7 @@ export const AppRoutes: React.FC = () => {
           />
           <Route path="viec-lam-da-luu" element={<SavedJobsPage />} />
           <Route path="viec-da-ung-tuyen" element={<AppliedJobsPage />} />
+          <Route path="nha-tuyen-dung-theo-doi" element={<FollowedEmployersPage />} />
           <Route path="tai-khoan" element={<JobSeekerProfilePage />} />
           <Route path="cv-cua-toi" element={<JobSeekerCvPage />} />
           <Route path="doi-mat-khau" element={<ChangePasswordPage />} />

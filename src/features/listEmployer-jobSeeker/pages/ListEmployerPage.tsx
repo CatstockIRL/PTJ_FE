@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React from 'react';
 import { Row, Col, Input, Typography, Spin, Pagination, Empty } from 'antd';
 import { useEmployers } from '../hooks/useEmployers';
 import EmployerCard from '../components/EmployerCard';
