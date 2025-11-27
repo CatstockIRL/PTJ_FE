@@ -33,6 +33,7 @@ export interface ShortlistedCandidateDto {
   jobSeekerPostId?: number | null;
   cvId?: number | null;
   selectedCvId?: number | null;
+  postTitle?: string | null;
 }
 
 export interface ShortlistedResponse {
