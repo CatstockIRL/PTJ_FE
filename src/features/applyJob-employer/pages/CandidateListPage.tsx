@@ -6,7 +6,6 @@ import {
   Typography,
   Tag,
   Button,
-  Space,
   Tooltip,
   Modal,
   Input,
@@ -22,6 +21,7 @@ import {
   DeleteOutlined,
   StarOutlined,
   DownOutlined,
+  ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import type { TableColumnsType } from "antd";
 import { jobApplicationService } from "../jobApplicationService";
@@ -32,6 +32,8 @@ import type { JobApplicationResultDto } from "../../applyJob-jobSeeker/type";
 import type { ShortlistedCandidateDto } from "../../candidate/type";
 import type { JobSeekerCv } from "../../jobSeekerCv/types";
 import RatingModal from "../../../components/RatingModal";
+import reportService from "../../report/reportService";
+import type { PostReportType } from "../../report/types";
 
 const { Title } = Typography;
 const { TextArea } = Input;
@@ -124,6 +126,22 @@ const CandidateListPage: React.FC = () => {
     rateeName: "",
   });
 
+  const [reportModal, setReportModal] = useState<{
+    visible: boolean;
+    postId: number | null;
+    subjectName: string;
+    reason: string;
+    submitting: boolean;
+    postType: PostReportType;
+  }>({
+    visible: false,
+    postId: null,
+    subjectName: "",
+    reason: "",
+    submitting: false,
+    postType: "JobSeekerPost",
+  });
+
   const savedIdSet = new Set(savedList.map((s) => s.jobSeekerId));
 
   const getCvIdFromRecord = (
@@ -150,6 +168,57 @@ const CandidateListPage: React.FC = () => {
       });
     }
   }, []);
+
+  const openReportModal = (
+    postId: number | undefined | null,
+    subjectName: string
+  ) => {
+    if (!postId) {
+      message.warning("Ứng viên chưa có bài đăng để báo cáo.");
+      return;
+    }
+    setReportModal({
+      visible: true,
+      postId,
+      subjectName,
+      reason: "",
+      submitting: false,
+      postType: "JobSeekerPost",
+    });
+  };
+
+  const handleSubmitReport = async () => {
+    if (!reportModal.postId) {
+      return;
+    }
+    const reason = reportModal.reason.trim();
+    if (!reason) {
+      message.warning("Vui lòng nhập lý do báo cáo.");
+      return;
+    }
+    setReportModal((prev) => ({ ...prev, submitting: true }));
+    try {
+      await reportService.reportPost({
+        postId: reportModal.postId,
+        postType: reportModal.postType,
+        reason,
+      });
+      message.success("Đã gửi báo cáo tới quản trị viên.");
+      setReportModal({
+        visible: false,
+        postId: null,
+        subjectName: "",
+        reason: "",
+        submitting: false,
+        postType: "JobSeekerPost",
+      });
+    } catch (error: any) {
+      message.error(
+        error?.response?.data?.message || "Gửi báo cáo thất bại. Vui lòng thử lại."
+      );
+      setReportModal((prev) => ({ ...prev, submitting: false }));
+    }
+  };
 
   useEffect(() => {
     if (!employerPostId) {
@@ -308,12 +377,43 @@ const CandidateListPage: React.FC = () => {
       title: "Tên ứng viên",
       dataIndex: "username",
       key: "username",
-      render: (text: string, record) => (
-        <div>
-          <div className="font-medium">{text}</div>
-          <div className="text-xs text-gray-500">{record.username}</div>
-        </div>
-      ),
+      render: (text: string, record) => {
+        const canReport = Boolean(record.jobSeekerPostId);
+        return (
+          <div className="flex items-center gap-2">
+            <div>
+              <div className="font-medium">{text}</div>
+              <div className="text-xs text-gray-500">{record.username}</div>
+            </div>
+            <Tooltip
+              title={
+                canReport
+                  ? "Báo cáo bài đăng của ứng viên"
+                  : "Ứng viên chưa có bài đăng để báo cáo"
+              }
+            >
+              <Button
+                type="text"
+                shape="circle"
+                icon={
+                  <ExclamationCircleOutlined
+                    style={{
+                      color: canReport ? "#dc2626" : "#d1d5db",
+                      fontSize: 18,
+                    }}
+                  />
+                }
+                onClick={() =>
+                  canReport &&
+                  openReportModal(record.jobSeekerPostId, record.username || "")
+                }
+                disabled={!canReport}
+                aria-label="Báo cáo ứng viên"
+              />
+            </Tooltip>
+          </div>
+        );
+      },
     },
     {
       title: "Ngày nộp",
@@ -448,6 +548,46 @@ const CandidateListPage: React.FC = () => {
       title: "Ứng viên",
       dataIndex: "jobSeekerName",
       key: "jobSeekerName",
+      render: (text, record) => {
+        const canReport = Boolean(record.jobSeekerPostId);
+        return (
+          <div className="flex items-center gap-2">
+            <div>
+              <div className="font-medium">{text}</div>
+              <div className="text-xs text-gray-500">{record.jobSeekerName}</div>
+            </div>
+            <Tooltip
+              title={
+                canReport
+                  ? "Báo cáo bài đăng của ứng viên"
+                  : "Ứng viên chưa có bài đăng để báo cáo"
+              }
+            >
+              <Button
+                type="text"
+                shape="circle"
+                icon={
+                  <ExclamationCircleOutlined
+                    style={{
+                      color: canReport ? "#dc2626" : "#d1d5db",
+                      fontSize: 18,
+                    }}
+                  />
+                }
+                onClick={() =>
+                  canReport &&
+                  openReportModal(
+                    record.jobSeekerPostId,
+                    record.jobSeekerName || "Ứng viên"
+                  )
+                }
+                disabled={!canReport}
+                aria-label="Báo cáo ứng viên"
+              />
+            </Tooltip>
+          </div>
+        );
+      },
     },
     {
       title: "Ghi chú",
@@ -598,6 +738,37 @@ const CandidateListPage: React.FC = () => {
         submissionId={ratingModal.submissionId}
         rateeName={ratingModal.rateeName}
       />
+
+      <Modal
+        title={`Báo cáo ứng viên ${
+          reportModal.subjectName ? `- ${reportModal.subjectName}` : ""
+        }`}
+        open={reportModal.visible}
+        onCancel={() =>
+          setReportModal((prev) => ({
+            ...prev,
+            visible: false,
+            submitting: false,
+          }))
+        }
+        onOk={handleSubmitReport}
+        okText="Gửi báo cáo"
+        cancelText="Hủy"
+        confirmLoading={reportModal.submitting}
+      >
+        <p className="text-sm text-gray-600 mb-3">
+          Hãy mô tả ngắn gọn lý do bạn muốn báo cáo bài đăng tìm việc này. Thông
+          tin sẽ được gửi tới quản trị viên để xử lý.
+        </p>
+        <TextArea
+          rows={4}
+          value={reportModal.reason}
+          onChange={(e) =>
+            setReportModal((prev) => ({ ...prev, reason: e.target.value }))
+          }
+          placeholder="Ví dụ: Bài đăng có nội dung không phù hợp..."
+        />
+      </Modal>
     </div>
   );
 };

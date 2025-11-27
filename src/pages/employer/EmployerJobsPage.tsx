@@ -16,8 +16,9 @@ import {
   Avatar,
   Typography,
   Tooltip,
+  Dropdown,
 } from "antd";
-import type { TableProps, TableColumnsType } from "antd";
+import type { TableProps, TableColumnsType, MenuProps } from "antd";
 import {
   PlusOutlined,
   SyncOutlined,
@@ -32,6 +33,9 @@ import {
   EditOutlined,
   CheckCircleOutlined,
   FileTextOutlined,
+  LockOutlined,
+  UnlockOutlined,
+  MoreOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "../../features/auth/hooks";
 import jobPostService from "../../features/job/jobPostService";
@@ -109,6 +113,9 @@ const EmployerJobsPage: React.FC = () => {
   const [applicationSummary, setApplicationSummary] =
     useState<ApplicationSummaryDto | null>(null);
   const [isSummaryLoading, setIsSummaryLoading] = useState(false);
+  const [statusActionLoadingId, setStatusActionLoadingId] = useState<
+    number | null
+  >(null);
 
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
@@ -249,6 +256,38 @@ const EmployerJobsPage: React.FC = () => {
     navigate(`/nha-tuyen-dung/sua-tin/${id}`);
   };
 
+  const handlePostStatusChange = async (
+    postId: number,
+    action: "close" | "reopen"
+  ) => {
+    if (statusActionLoadingId) return;
+    setStatusActionLoadingId(postId);
+    const nextStatus = action === "close" ? "Archived" : "Active";
+    try {
+      const response =
+        action === "close"
+          ? await jobPostService.closeEmployerPost(postId)
+          : await jobPostService.reopenEmployerPost(postId);
+      const fallbackMessage =
+        action === "close"
+          ? "Đã khóa tin tuyển dụng."
+          : "Đã mở tin tuyển dụng.";
+      message.success(response?.message || fallbackMessage);
+      setAllJobs((prev) =>
+        prev.map((job) =>
+          job.employerPostId === postId ? { ...job, status: nextStatus } : job
+        )
+      );
+    } catch (err: any) {
+      message.error(
+        err?.response?.data?.message ||
+          "Cập nhật trạng thái tin tuyển dụng thất bại."
+      );
+    } finally {
+      setStatusActionLoadingId(null);
+    }
+  };
+
   const handleDelete = (id: number) => {
     Modal.confirm({
       title: "Bạn có chắc muốn xóa bài đăng này?",
@@ -331,7 +370,7 @@ const EmployerJobsPage: React.FC = () => {
       width: "12%",
       sorter: true,
       render: (status: string) => {
-        const normalized = status?.toLowerCase();
+        const normalized = (status || "").toLowerCase();
         if (normalized === "draft") {
           return (
             <Tag color="default" style={{ fontSize: 12, padding: "2px 8px" }}>
@@ -343,6 +382,13 @@ const EmployerJobsPage: React.FC = () => {
           return (
             <Tag color="green" style={{ fontSize: 12, padding: "2px 8px" }}>
               Đang đăng
+            </Tag>
+          );
+        }
+        if (normalized === "archived") {
+          return (
+            <Tag color="orange" style={{ fontSize: 12, padding: "2px 8px" }}>
+              Đã khóa
             </Tag>
           );
         }
@@ -397,7 +443,9 @@ const EmployerJobsPage: React.FC = () => {
             <AppstoreOutlined /> {category || "N/A"}
           </Space>
           {record.subCategoryName && (
-            <div className="text-xs text-gray-500">{record.subCategoryName}</div>
+            <div className="text-xs text-gray-500">
+              {record.subCategoryName}
+            </div>
           )}
         </div>
       ),
@@ -468,20 +516,62 @@ const EmployerJobsPage: React.FC = () => {
               Sửa
             </Button>
           </Tooltip>
-          <Tooltip title="Xóa bài đăng">
-            <Button
-              type="default"
-              size="small"
-              icon={<DeleteOutlined />}
-              style={{
-                backgroundColor: "#fff1f0",
-                borderColor: "#ffccc7",
-                color: "#cf1322",
+          <Tooltip title="Sửa trạng thái bài đăng">
+            <Dropdown
+              trigger={["click"]}
+              menu={{
+                items: ((): MenuProps["items"] => {
+                  const normalized = (record.status || "").toLowerCase();
+                  const isArchived = normalized === "archived";
+                  const isActive = normalized === "active";
+                  const isUpdating =
+                    statusActionLoadingId === record.employerPostId;
+                  return [
+                    {
+                      key: "close",
+                      label: "Khóa tin",
+                      icon: <LockOutlined />,
+                      disabled: isArchived || isUpdating,
+                    },
+                    {
+                      key: "reopen",
+                      label: "Mở tin",
+                      icon: <UnlockOutlined />,
+                      disabled: isActive || isUpdating,
+                    },
+                    {
+                      key: "delete",
+                      label: <span className="text-red-600">Xóa tin</span>,
+                      icon: <DeleteOutlined style={{ color: "#dc2626" }} />,
+                    },
+                  ];
+                })(),
+                onClick: ({ key }) => {
+                  if (key === "close" || key === "reopen") {
+                    handlePostStatusChange(
+                      record.employerPostId,
+                      key as "close" | "reopen"
+                    );
+                  } else if (key === "delete") {
+                    handleDelete(record.employerPostId);
+                  }
+                },
               }}
-              onClick={() => handleDelete(record.employerPostId)}
             >
-              Xóa
-            </Button>
+              <Button
+                type="default"
+                size="small"
+                icon={<MoreOutlined />}
+                style={{
+                  backgroundColor: "#fff1f0",
+                  borderColor: "#ffccc7",
+                  color: "#cf1322",
+                }}
+                loading={statusActionLoadingId === record.employerPostId}
+              >
+              Khác
+              </Button>
+            </Dropdown>
           </Tooltip>
         </Space>
       ),
@@ -500,14 +590,23 @@ const EmployerJobsPage: React.FC = () => {
               Bài tuyển dụng công việc của tôi ({allJobs.length})
             </Typography.Title>
             <p className="text-white/80 max-w-2xl">
-              Theo dõi, lọc và cập nhật nhanh các tin tuyển dụng đang chạy. Đăng tin mới chỉ với một bước.
+              Theo dõi, lọc và cập nhật nhanh các tin tuyển dụng đang chạy. Đăng tin
+              mới chỉ với một bước.
             </p>
             <div className="flex gap-2 flex-wrap">
-              <Button icon={<SyncOutlined />} onClick={handleRefresh} loading={isLoading}>
+              <Button
+                icon={<SyncOutlined />}
+                onClick={handleRefresh}
+                loading={isLoading}
+              >
                 Làm mới
               </Button>
               <NavLink to="/nha-tuyen-dung/dang-tin">
-                <Button type="primary" icon={<PlusOutlined />} className="bg-emerald-400 border-none">
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  className="bg-emerald-400 border-none"
+                >
                   Đăng công việc mới
                 </Button>
               </NavLink>
@@ -517,7 +616,14 @@ const EmployerJobsPage: React.FC = () => {
             <div className="flex items-center gap-2">
               <CheckCircleOutlined className="text-emerald-200" />
               <span>
-                Đang hoạt động: <strong>{allJobs.filter((job) => (job.status || "").toLowerCase() === "active").length}</strong>
+                Đang hoạt động:{" "}
+                <strong>
+                  {
+                    allJobs.filter(
+                      (job) => (job.status || "").toLowerCase() === "active"
+                    ).length
+                  }
+                </strong>
               </span>
             </div>
             <div className="flex items-center gap-2 mt-1">
@@ -540,7 +646,7 @@ const EmployerJobsPage: React.FC = () => {
         <Row gutter={[16, 16]}>
           <Col xs={24} md={12} lg={10}>
             <Search
-              placeholder="Tim kiem theo tieu de cong viec..."
+              placeholder="Tìm kiếm theo tiêu đề công việc..."
               onSearch={handleSearch}
               onChange={(e) => handleSearch(e.target.value)}
               enterButton
@@ -551,7 +657,7 @@ const EmployerJobsPage: React.FC = () => {
           </Col>
           <Col xs={24} md={12} lg={7}>
             <Select
-              placeholder="Loc theo nganh nghe"
+              placeholder="Lọc theo ngành nghề"
               onChange={handleCategoryChange}
               allowClear
               style={{ width: "100%" }}
@@ -566,7 +672,7 @@ const EmployerJobsPage: React.FC = () => {
           </Col>
           <Col xs={24} md={12} lg={7}>
             <Select
-              placeholder="Loc theo nhom nghe"
+              placeholder="Lọc theo nhóm nghề"
               value={selectedSubCategory ?? undefined}
               onChange={handleSubCategoryChange}
               allowClear
@@ -696,7 +802,9 @@ const EmployerJobsPage: React.FC = () => {
                       <div className="text-xs text-gray-400 mt-2">
                         Đăng bởi: {item.employerName} •{" "}
                         {item.createdAt
-                          ? new Date(item.createdAt).toLocaleDateString("vi-VN")
+                          ? new Date(item.createdAt).toLocaleDateString(
+                              "vi-VN"
+                            )
                           : ""}
                       </div>
                     </div>

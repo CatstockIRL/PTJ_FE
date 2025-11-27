@@ -1,9 +1,8 @@
-
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import axios from "axios";
 import DOMPurify from "dompurify";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { Button, Card, message, Modal, Form, Input, Select } from "antd";
+import { Button, Card, message, Modal, Form, Input, Select, Tooltip } from "antd";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
 import type { RootState } from "../../../app/store";
 import JobCard from "../../homepage-jobSeeker/components/JobCard";
@@ -25,6 +24,8 @@ import {
   getJobDetailCached,
 } from "../../../utils/jobPostHelpers";
 import followService from "../../follow/followService";
+import { ExclamationCircleOutlined } from "@ant-design/icons";
+import reportService from "../../report/reportService";
 
 const { TextArea } = Input;
 
@@ -56,6 +57,15 @@ const JobDetailPage: React.FC = () => {
   const [cvLoading, setCvLoading] = useState(false);
   const [similarJobs, setSimilarJobs] = useState<Job[]>([]);
   const [similarLoading, setSimilarLoading] = useState(false);
+  const [reportModal, setReportModal] = useState<{
+    visible: boolean;
+    submitting: boolean;
+    reason: string;
+  }>({
+    visible: false,
+    submitting: false,
+    reason: "",
+  });
 
   const navRef = useRef<HTMLDivElement>(null);
   const applyRequestLock = useRef(false);
@@ -294,6 +304,45 @@ const JobDetailPage: React.FC = () => {
     } catch (err) {
       message.error("Đã có lỗi xảy ra. Vui lòng thử lại.");
       console.error("Failed to save/unsave the job: ", err);
+    }
+  };
+
+  const openReportModal = () => {
+    if (!jobSeekerId) {
+      message.info("Vui lòng đăng nhập để báo cáo công việc.");
+      navigate("/login");
+      return;
+    }
+    if (!job) {
+      return;
+    }
+    setReportModal({ visible: true, submitting: false, reason: "" });
+  };
+
+  const submitJobReport = async () => {
+    if (!job) {
+      return;
+    }
+    const reason = reportModal.reason.trim();
+    if (!reason) {
+      message.warning("Vui lòng nhập lý do báo cáo.");
+      return;
+    }
+    setReportModal((prev) => ({ ...prev, submitting: true }));
+    try {
+      await reportService.reportPost({
+        postId: job.employerPostId,
+        postType: "EmployerPost",
+        reason,
+      });
+      message.success("Đã gửi báo cáo tới quản trị viên.");
+      setReportModal({ visible: false, submitting: false, reason: "" });
+    } catch (error: any) {
+      message.error(
+        error?.response?.data?.message ||
+          "Không thể gửi báo cáo. Vui lòng thử lại."
+      );
+      setReportModal((prev) => ({ ...prev, submitting: false }));
     }
   };
 
@@ -682,6 +731,20 @@ const JobDetailPage: React.FC = () => {
                 >
                   {isSaved ? "Đã lưu" : "Lưu tin"}
                 </Button>
+                <Tooltip title="Báo cáo tin tuyển dụng">
+                  <Button
+                    size="large"
+                    type="text"
+                    shape="circle"
+                    icon={
+                      <ExclamationCircleOutlined
+                        style={{ color: "#dc2626", fontSize: 20 }}
+                      />
+                    }
+                    aria-label="Báo cáo tin tuyển dụng"
+                    onClick={openReportModal}
+                  />
+                </Tooltip>
               </div>
             </div>
 
@@ -810,7 +873,6 @@ const JobDetailPage: React.FC = () => {
               )}
             </section>
 
-
             <section
               id="yeu-cau"
               className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm"
@@ -870,7 +932,6 @@ const JobDetailPage: React.FC = () => {
                 ))}
               </div>
             </section>
-
           </div>
 
           <aside className="space-y-5">
@@ -920,7 +981,11 @@ const JobDetailPage: React.FC = () => {
             </Card>
 
             <Card
-              title={<span className="font-semibold text-slate-900">Công việc tương tự</span>}
+              title={
+                <span className="font-semibold text-slate-900">
+                  Công việc tương tự
+                </span>
+              }
               className="rounded-2xl border border-slate-100 shadow-sm"
             >
               {similarLoading ? (
@@ -963,6 +1028,20 @@ const JobDetailPage: React.FC = () => {
               >
                 {isSaved ? "Đã lưu" : "Lưu tin"}
               </Button>
+              <Tooltip title="Báo cáo tin tuyển dụng">
+                <Button
+                  size="large"
+                  type="text"
+                  shape="circle"
+                  icon={
+                    <ExclamationCircleOutlined
+                      style={{ color: "#dc2626", fontSize: 20 }}
+                    />
+                  }
+                  aria-label="Báo cáo tin tuyển dụng"
+                  onClick={openReportModal}
+                />
+              </Tooltip>
               <Button
                 type="primary"
                 size="large"
@@ -976,6 +1055,31 @@ const JobDetailPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      <Modal
+        title="Báo cáo tin tuyển dụng"
+        open={reportModal.visible}
+        onCancel={() =>
+          setReportModal({ visible: false, submitting: false, reason: "" })
+        }
+        onOk={submitJobReport}
+        okText="Gửi báo cáo"
+        cancelText="Hủy"
+        confirmLoading={reportModal.submitting}
+      >
+        <p className="text-sm text-slate-600 mb-3">
+          Bạn hãy chia sẻ lý do báo cáo để chúng tôi có thể xử lý tin tuyển dụng
+          này nhanh nhất có thể.
+        </p>
+        <TextArea
+          rows={4}
+          value={reportModal.reason}
+          onChange={(e) =>
+            setReportModal((prev) => ({ ...prev, reason: e.target.value }))
+          }
+          placeholder="Ví dụ: Tin đăng có dấu hiệu lừa đảo, nội dung không phù hợp..."
+        />
+      </Modal>
 
       <Modal
         title={`Ứng tuyển: ${job.title}`}

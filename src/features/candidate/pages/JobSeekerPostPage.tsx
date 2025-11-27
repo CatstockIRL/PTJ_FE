@@ -10,12 +10,14 @@ import {
   Select,
   Card,
   Typography,
+  Tooltip,
 } from "antd";
 import type { TableColumnsType, TableProps } from "antd";
 import {
   EnvironmentOutlined,
   ClockCircleOutlined,
   PhoneOutlined,
+  ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import { jobSeekerPostService } from "../services";
 import jobSeekerCvService from "../../jobSeekerCv/services";
@@ -25,6 +27,7 @@ import { useCategories } from "../../category/hook";
 import locationService, {
   type LocationOption,
 } from "../../location/locationService";
+import reportService from "../../report/reportService";
 
 const trimText = (value?: string | null): string => (value ?? "").trim();
 
@@ -85,7 +88,7 @@ const getCvIdFromPost = (post: JobSeekerPostDtoOut): number | null => {
   return extended.selectedCvId ?? extended.cvId ?? null;
 };
 
-const { Search } = Input;
+const { Search, TextArea } = Input;
 const { Option } = Select;
 
 const JobSeekerPostsPage: React.FC = () => {
@@ -119,6 +122,19 @@ const JobSeekerPostsPage: React.FC = () => {
   >(null);
   const [provinceOptions, setProvinceOptions] = useState<LocationOption[]>([]);
   const [provinceLoading, setProvinceLoading] = useState(false);
+  const [reportModal, setReportModal] = useState<{
+    visible: boolean;
+    postId: number | null;
+    postTitle: string;
+    reason: string;
+    submitting: boolean;
+  }>({
+    visible: false,
+    postId: null,
+    postTitle: "",
+    reason: "",
+    submitting: false,
+  });
 
   const { categories, status: categoryStatus } = useCategories();
 
@@ -317,6 +333,49 @@ const JobSeekerPostsPage: React.FC = () => {
     []
   );
 
+  const openReportModal = (post: JobSeekerPostDtoOut) => {
+    setReportModal({
+      visible: true,
+      postId: post.jobSeekerPostId,
+      postTitle: post.title,
+      reason: "",
+      submitting: false,
+    });
+  };
+
+  const handleSubmitReport = async () => {
+    if (!reportModal.postId) {
+      return;
+    }
+    const reason = reportModal.reason.trim();
+    if (!reason) {
+      message.warning("Vui lòng nhập lý do báo cáo.");
+      return;
+    }
+    setReportModal((prev) => ({ ...prev, submitting: true }));
+    try {
+      await reportService.reportPost({
+        postId: reportModal.postId,
+        postType: "JobSeekerPost",
+        reason,
+      });
+      message.success("Đã gửi báo cáo bài đăng tìm việc.");
+      setReportModal({
+        visible: false,
+        postId: null,
+        postTitle: "",
+        reason: "",
+        submitting: false,
+      });
+    } catch (error: any) {
+      message.error(
+        error?.response?.data?.message ||
+          "Không thể gửi báo cáo. Vui lòng thử lại."
+      );
+      setReportModal((prev) => ({ ...prev, submitting: false }));
+    }
+  };
+
   const columns: TableColumnsType<JobSeekerPostDtoOut> = [
     {
       title: "Tên bài đăng",
@@ -479,14 +538,29 @@ const JobSeekerPostsPage: React.FC = () => {
       render: (_, record) => {
         const cvId = getCvIdFromPost(record);
         return (
-          <Button
-            type="link"
-            size="small"
-            disabled={!cvId}
-            onClick={() => handleViewCv(record)}
-          >
-            Xem CV
-          </Button>
+          <Space>
+            <Button
+              type="link"
+              size="small"
+              disabled={!cvId}
+              onClick={() => handleViewCv(record)}
+            >
+              Xem CV
+            </Button>
+            <Tooltip title="Báo cáo bài đăng tìm việc">
+              <Button
+                type="text"
+                size="small"
+                shape="circle"
+                icon={
+                  <ExclamationCircleOutlined
+                    style={{ color: "#dc2626", fontSize: 16 }}
+                  />
+                }
+                onClick={() => openReportModal(record)}
+              />
+            </Tooltip>
+          </Space>
         );
       },
     },
@@ -726,6 +800,41 @@ const JobSeekerPostsPage: React.FC = () => {
           ) : (
             <p>Không tìm thấy CV.</p>
           )}
+        </Modal>
+
+        <Modal
+          title={
+            reportModal.postTitle
+              ? `Báo cáo bài đăng: ${reportModal.postTitle}`
+              : "Báo cáo bài đăng"
+          }
+          open={reportModal.visible}
+          onCancel={() =>
+            setReportModal({
+              visible: false,
+              postId: null,
+              postTitle: "",
+              reason: "",
+              submitting: false,
+            })
+          }
+          onOk={handleSubmitReport}
+          okText="Gửi báo cáo"
+          cancelText="Hủy"
+          confirmLoading={reportModal.submitting}
+        >
+          <p className="text-sm text-gray-600 mb-3">
+            Vui lòng mô tả lý do bạn muốn báo cáo bài đăng tìm việc này. Thông
+            tin sẽ được gửi tới quản trị viên.
+          </p>
+          <TextArea
+            rows={4}
+            value={reportModal.reason}
+            placeholder="Ví dụ: Bài đăng có nội dung không phù hợp..."
+            onChange={(e) =>
+              setReportModal((prev) => ({ ...prev, reason: e.target.value }))
+            }
+          />
         </Modal>
       </div>
     </div>

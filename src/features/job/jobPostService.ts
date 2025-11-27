@@ -8,6 +8,7 @@ import type {
   PaginatedJobResponse,
   UpdateJobResponse,
   JobSuggestionResponse,
+  JobStatusToggleResponse,
 } from './jobTypes';
 
 const appendIfDefined = (formData: FormData, key: string, value?: string | number | null) => {
@@ -96,6 +97,14 @@ export const getSuggestions = async (postId: number): Promise<JobSuggestionRespo
   return getJobSuggestions(postId);
 };
 
+export const closeEmployerPost = async (id: number): Promise<JobStatusToggleResponse> => {
+  return await baseService.put<JobStatusToggleResponse>(`/EmployerPost/${id}/close`, {});
+};
+
+export const reopenEmployerPost = async (id: number): Promise<JobStatusToggleResponse> => {
+  return await baseService.put<JobStatusToggleResponse>(`/EmployerPost/${id}/reopen`, {});
+};
+
 export const jobPostService = {
   createJobPost,
   getJobsByUser,
@@ -106,6 +115,8 @@ export const jobPostService = {
   updateStatus,
   getJobSuggestions,
   getSuggestions,
+  closeEmployerPost,
+  reopenEmployerPost,
 };
 
 export default jobPostService;

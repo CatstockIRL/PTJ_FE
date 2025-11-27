@@ -110,6 +110,10 @@ export interface DeleteJobResponse {
   message: string;
 }
 
+export interface JobStatusToggleResponse {
+  message: string;
+}
+
 export interface JobApplicationResultDto {
   id: number;
   jobSeekerId: number;
