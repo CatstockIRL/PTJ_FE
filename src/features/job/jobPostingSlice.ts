@@ -27,6 +27,9 @@ const initialState: EmployerJobPostingState = {
     categoryID: null,
     subCategoryId: null,
     contactPhone: '',
+    images: [],
+    existingImages: [],
+    deleteImageIds: [],
   },
   status: 'idle',
 };

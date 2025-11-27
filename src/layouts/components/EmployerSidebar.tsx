@@ -55,8 +55,8 @@ const EmployerSidebar: React.FC<SidebarProps> = ({ isOpen }) => {
       <SearchOutlined />
     ),
     getItem(
-      <NavLink to="/nha-tuyen-dung/cam-nang">Cẩm nang tuyển dụng</NavLink>,
-      '/nha-tuyen-dung/cam-nang',
+      <NavLink to="/news">Tin tức</NavLink>,
+      '/news',
       <ReadOutlined />
     )
   ];

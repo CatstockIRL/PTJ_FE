@@ -11,6 +11,10 @@ import {
   Modal,
   Input,
   Tabs,
+  Descriptions, // Import thêm
+  Divider,      // Import thêm
+  Empty,        // Import thêm
+  Spin,         // Import thêm
 } from "antd";
 import {
   ArrowLeftOutlined,
@@ -20,6 +24,10 @@ import {
   CloseCircleOutlined,
   DeleteOutlined,
   StarOutlined,
+  PhoneOutlined,
+  EnvironmentOutlined,
+  ClockCircleOutlined,
+  ExperimentOutlined,
 } from "@ant-design/icons";
 import RatingModal from "../../../components/RatingModal";
 import type { TableColumnsType } from "antd";
@@ -31,7 +39,7 @@ import type { JobApplicationResultDto } from "../../applyJob-jobSeeker/type";
 import type { ShortlistedCandidateDto } from "../../candidate/type";
 import type { JobSeekerCv } from "../../jobSeekerCv/types";
 
-const { Title } = Typography;
+const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
 const CandidateListPage: React.FC = () => {
@@ -227,6 +235,80 @@ const CandidateListPage: React.FC = () => {
     if (s === "rejected") return <Tag color="error">Đã từ chối</Tag>;
     if (s === "pending") return <Tag color="processing">Chờ duyệt</Tag>;
     return <Tag>Chưa xem</Tag>;
+  };
+
+  // --- HÀM RENDER CV MỚI ---
+  const renderCvContent = (cv: JobSeekerCv) => {
+    const skillsArray = cv.skills
+      ? cv.skills.split(",").map((s) => s.trim())
+      : [];
+
+    return (
+      <div className="p-2">
+        {/* Header CV */}
+        <div className="mb-6 text-center border-b pb-4">
+          <Title level={3} className="text-blue-600 mb-1">
+            {cv.cvTitle}
+          </Title>
+          <Text type="secondary" className="text-sm">
+            Cập nhật lần cuối: {new Date(cv.updatedAt).toLocaleDateString("vi-VN")}
+          </Text>
+        </div>
+
+        {/* Thông tin chung */}
+        <Descriptions
+          title={<span className="text-lg font-semibold"><StarOutlined /> Thông tin hồ sơ</span>}
+          bordered
+          column={1}
+          size="small"
+          labelStyle={{ width: '180px', fontWeight: 'bold' }}
+        >
+          <Descriptions.Item label="Vị trí mong muốn">
+            {cv.preferredJobType || "Chưa cập nhật"}
+          </Descriptions.Item>
+          <Descriptions.Item label="Khu vực làm việc">
+            <Space>
+               <EnvironmentOutlined /> {cv.preferredLocationName || "Chưa cập nhật"}
+            </Space>
+          </Descriptions.Item>
+          <Descriptions.Item label="Số điện thoại liên hệ">
+             <Space>
+               <PhoneOutlined /> {cv.contactPhone || "Chưa cập nhật"}
+             </Space>
+          </Descriptions.Item>
+        </Descriptions>
+
+        <Divider />
+
+        {/* Tóm tắt kỹ năng */}
+        <div className="mb-6">
+          <Title level={5}><ExperimentOutlined /> Tóm tắt chuyên môn</Title>
+          <div className="bg-gray-50 p-4 rounded-md border text-gray-700 whitespace-pre-wrap">
+            {cv.skillSummary ? (
+              cv.skillSummary
+            ) : (
+              <Text type="secondary" italic>Ứng viên chưa nhập tóm tắt kỹ năng.</Text>
+            )}
+          </div>
+        </div>
+
+        {/* Danh sách kỹ năng */}
+        <div>
+          <Title level={5}><CheckCircleOutlined /> Kỹ năng chi tiết</Title>
+          {skillsArray.length > 0 ? (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {skillsArray.map((skill, index) => (
+                <Tag key={index} color="blue" className="text-sm py-1 px-3">
+                  {skill}
+                </Tag>
+              ))}
+            </div>
+          ) : (
+            <Text type="secondary" italic>Chưa cập nhật kỹ năng chi tiết.</Text>
+          )}
+        </div>
+      </div>
+    );
   };
 
   const applicantColumns: TableColumnsType<JobApplicationResultDto> = [
@@ -539,26 +621,33 @@ const CandidateListPage: React.FC = () => {
         </div>
       </Modal>
 
-      {/* Modal CV – nếu bạn đã có UI riêng thì giữ lại, đây chỉ là ví dụ */}
+      {/* --- CẬP NHẬT MODAL VIEW CV --- */}
       <Modal
-        title={cvModal.cv?.cvTitle || "CV ứng viên"}
         open={cvModal.visible}
-        footer={null}
+        footer={[
+          <Button key="close" onClick={() => setCvModal({ visible: false, loading: false, cv: null, error: null })}>
+            Đóng
+          </Button>
+        ]}
         onCancel={() =>
           setCvModal({ visible: false, loading: false, cv: null, error: null })
         }
         width={800}
+        centered
       >
         {cvModal.loading ? (
-          <p>Đang tải CV...</p>
+          <div className="flex justify-center items-center py-10">
+            <Spin tip="Đang tải dữ liệu CV..." size="large" />
+          </div>
         ) : cvModal.error ? (
-          <p className="text-red-500">{cvModal.error}</p>
+          <div className="text-center py-10">
+            <CloseCircleOutlined style={{ fontSize: 40, color: 'red' }} />
+            <p className="text-red-500 mt-2">{cvModal.error}</p>
+          </div>
         ) : cvModal.cv ? (
-          <pre className="whitespace-pre-wrap text-sm">
-            {JSON.stringify(cvModal.cv, null, 2)}
-          </pre>
+          renderCvContent(cvModal.cv)
         ) : (
-          <p>Không có dữ liệu CV.</p>
+          <Empty description="Không có dữ liệu CV" />
         )}
       </Modal>
 

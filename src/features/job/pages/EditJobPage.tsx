@@ -1,3 +1,4 @@
+// fileName: EditJobPage.tsx
 import React, { useState, useEffect } from 'react';
 import { Button } from 'antd';
 import { toast } from 'sonner';
@@ -6,9 +7,9 @@ import { JobPostingForm } from '../components/employer/JobPostingForm';
 import JobPostingPreview from '../components/employer/JobPostingPreview';
 import { useParams, useNavigate } from 'react-router-dom';
 import jobPostService from '../jobPostService';
-import type { JobPostData, JobPostView } from '../jobTypes';
-import { transformToEmployerPostDto } from './PostJobPage';
+import type { JobPostData, JobPostView, EmployerPostDto } from '../jobTypes';
 
+// Helper transform
 const transformDtoToFormData = (dto: JobPostView): JobPostData => {
   return {
     jobTitle: dto.title,
@@ -27,8 +28,32 @@ const transformDtoToFormData = (dto: JobPostView): JobPostData => {
     categoryID: dto.categoryId ?? null,
     subCategoryId: dto.subCategoryId ?? null,
     contactPhone: dto.phoneContact || '',
+    images: [],
+    existingImages: dto.imageUrls || [], 
+    deleteImageIds: [],
   };
 };
+
+// Helper transform ngược lại để gửi đi
+const transformToEmployerPostUpdateDto = (data: JobPostData, userId: number): EmployerPostDto => ({
+  userID: userId,
+  title: data.jobTitle,
+  description: data.jobDescription,
+  salary: data.salaryValue,
+  salaryText: data.salaryText,
+  requirements: data.requirements,
+  workHourStart: data.workHourStart,
+  workHourEnd: data.workHourEnd,
+  provinceId: data.provinceId,
+  districtId: data.districtId,
+  wardId: data.wardId,
+  detailAddress: data.detailAddress,
+  categoryID: data.categoryID,
+  subCategoryId: data.subCategoryId ?? null,
+  phoneContact: data.contactPhone,
+  images: data.images, // File[]
+  deleteImageIds: data.deleteImageIds // number[]
+});
 
 const emptyState: JobPostData = {
   jobTitle: '',
@@ -47,6 +72,9 @@ const emptyState: JobPostData = {
   categoryID: null,
   subCategoryId: null,
   contactPhone: '',
+  images: [],
+  existingImages: [],
+  deleteImageIds: [],
 };
 
 const EditJobPage: React.FC = () => {
@@ -97,7 +125,9 @@ const EditJobPage: React.FC = () => {
 
     setStatus('submitting');
     const userIdAsNumber = user.id;
-    const dto = transformToEmployerPostDto(jobData, userIdAsNumber);
+    
+    // Sử dụng hàm transform mới có chứa Images
+    const dto = transformToEmployerPostUpdateDto(jobData, userIdAsNumber);
 
     try {
       const res = await jobPostService.updateJobPost(jobId, dto);
@@ -122,6 +152,7 @@ const EditJobPage: React.FC = () => {
           <JobPostingForm 
             data={jobData} 
             onDataChange={handleDataChange} 
+            isEditMode={true}
           />
           <div className="flex justify-end p-4 bg-white rounded-lg shadow-sm border border-gray-200">
             <Button 

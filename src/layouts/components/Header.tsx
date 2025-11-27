@@ -6,7 +6,6 @@ import {
   UserOutlined,
   DownOutlined,
   LogoutOutlined,
-  MenuOutlined,
   SearchOutlined,
   BankOutlined,
   BookOutlined,
@@ -15,6 +14,7 @@ import {
   SendOutlined,
   FileDoneOutlined,
   LockOutlined,
+  MenuOutlined,
 } from "@ant-design/icons";
 import { FaBriefcase } from "react-icons/fa";
 import { useAuth } from "../../features/auth/hooks";
@@ -201,6 +201,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
     message.success("Đăng xuất thành công!");
   };
 
+  // 🔥 CHECK LOGIC: NẾU LÀ EMPLOYER HOẶC ADMIN -> RENDER EMPLOYER HEADER
   if (
     user &&
     (user.roles.includes(ROLES.EMPLOYER) || user.roles.includes(ROLES.ADMIN))
@@ -366,7 +367,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           </NavLink>
         ) : (
           <NavLink
-            to="/nha-tuyen-dung/dashboard"
+            to="/login"
             className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
           >
             Nhà tuyển dụng

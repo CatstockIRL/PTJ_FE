@@ -64,8 +64,8 @@ export const AppRoutes: React.FC = () => {
         <Route path="verify-email" element={<EmailVerifyPage />} />
         <Route path="forgot-password" element={<ForgotPasswordPage />} />
         <Route path="reset-password" element={<ResetPasswordPage />} />
-        <Route path="account/confirm-change-password" element={<ConfirmChangePasswordPage />} />
-        <Route path="set-new-password" element={<ConfirmChangePasswordPage />} />
+        {/* <Route path="account/confirm-change-password" element={<ConfirmChangePasswordPage />} /> */}
+        <Route path="/set-new-password" element={<ConfirmChangePasswordPage />} />
         <Route path="google/select-role" element={<GoogleRoleSelectionPage />} />
         <Route path="unauthorized" element={<UnauthorizedPage />} />
         <Route path="verify-success" element={<VerifySuccessPage />} />

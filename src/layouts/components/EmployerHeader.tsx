@@ -12,6 +12,7 @@ import { ROLES } from "../../constants/roles";
 import { useDispatch } from "react-redux";
 import { logout } from "../../features/auth/slice";
 import { removeAccessToken } from "../../services/baseService";
+import NotificationDropdown from "../../features/notification/components/NotificationDropdown";
 
 const LogoWhite = "/vite.svg";
 
@@ -76,6 +77,7 @@ export const EmployerHeader: React.FC<EmployerHeaderProps> = ({
       </div>
 
       <div className="flex items-center space-x-5">
+      <NotificationDropdown />
 
         {/* USER DROPDOWN */}
         {user &&

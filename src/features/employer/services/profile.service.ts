@@ -22,13 +22,24 @@ const buildFormData = (payload: ProfileUpdateRequest) => {
     formData.append('Location', payload.location ?? '');
   }
   if (payload.provinceId !== undefined) {
-    formData.append('ProvinceId', payload.provinceId?.toString() ?? '');
+    formData.append('ProvinceId', payload.provinceId ? payload.provinceId.toString() : '0');
+  } else {
+
+    formData.append('ProvinceId', '0');
   }
   if (payload.districtId !== undefined) {
-    formData.append('DistrictId', payload.districtId?.toString() ?? '');
+    formData.append('DistrictId', payload.districtId ? payload.districtId.toString() : '0');
+  } else {
+     formData.append('DistrictId', '0');
   }
   if (payload.wardId !== undefined) {
-    formData.append('WardId', payload.wardId?.toString() ?? '');
+    formData.append('WardId', payload.wardId ? payload.wardId.toString() : '0');
+  } else {
+     formData.append('WardId', '0');
+  }
+
+  if (payload.imageFile) {
+    formData.append('ImageFile', payload.imageFile);
   }
   if (payload.fullLocation !== undefined) {
     formData.append('FullLocation', payload.fullLocation ?? '');
@@ -36,10 +47,6 @@ const buildFormData = (payload: ProfileUpdateRequest) => {
   if (payload.website !== undefined) {
     formData.append('Website', payload.website ?? '');
   }
-  if (payload.imageFile) {
-    formData.append('ImageFile', payload.imageFile);
-  }
-
   return formData;
 };
 

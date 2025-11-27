@@ -1,3 +1,4 @@
+// fileName: PostJobPage.tsx
 import React, { useEffect } from 'react';
 import { Button } from 'antd';
 import { toast } from 'sonner';
@@ -5,10 +6,11 @@ import { useAuth } from '../../auth/hooks';
 import { JobPostingForm } from '../components/employer/JobPostingForm';
 import JobPostingPreview from '../components/employer/JobPostingPreview';
 import { useEmployerJobPosting } from '../employerJobHooks';
-import type { JobPostData } from '../jobTypes';
+import type { JobPostData, EmployerPostDto } from '../jobTypes';
 import { useNavigate } from 'react-router-dom';
 
-export const transformToEmployerPostDto = (data: JobPostData, userId: number) => ({
+// Transform data bao gồm cả Images
+export const transformToEmployerPostDto = (data: JobPostData, userId: number): EmployerPostDto => ({
   userID: userId,
   title: data.jobTitle,
   description: data.jobDescription,
@@ -24,6 +26,7 @@ export const transformToEmployerPostDto = (data: JobPostData, userId: number) =>
   categoryID: data.categoryID,
   subCategoryId: data.subCategoryId ?? null,
   phoneContact: data.contactPhone,
+  images: data.images, // <-- Quan trọng: Gửi mảng File[]
 });
 
 const PostJobPage: React.FC = () => {

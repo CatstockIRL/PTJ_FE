@@ -1,3 +1,5 @@
+// fileName: jobTypes.ts
+
 export interface EmployerPostDto {
   userID: number;
   title: string;
@@ -14,6 +16,9 @@ export interface EmployerPostDto {
   categoryID: number | null;
   subCategoryId?: number | null;
   phoneContact: string | null;
+  // --- MỚI: Hỗ trợ upload ảnh và xóa ảnh ---
+  images?: File[];           // Dùng cho Create & Update
+  deleteImageIds?: number[]; // Dùng cho Update
 }
 
 export interface JobPostData {
@@ -33,6 +38,9 @@ export interface JobPostData {
   categoryID: number | null;
   subCategoryId: number | null;
   contactPhone: string;
+  images: File[];           
+  existingImages: string[];  
+  deleteImageIds: number[];  
 }
 
 export interface JobPostView {
@@ -59,6 +67,102 @@ export interface JobPostView {
   createdAt: string;
   status: 'draft' | 'active' | 'expired' | string;
   companyLogo?: string;
+  imageUrls?: string[]; 
+}
+
+export interface JobAiSuggestion {
+  title?: string;
+  seekerName?: string;
+  preferredLocation?: string;
+  description?: string;
+  matchPercent?: number;
+}
+
+export interface JobSuggestionResponse {
+  success: boolean;
+  data: JobAiSuggestion[];
+}
+
+export interface PaginatedJobResponse {
+  success: boolean;
+  total: number;
+  data: JobPostView[];
+}
+
+export interface JobPostResponse {
+  success: boolean;
+  message: string;
+  data: any;
+}
+
+export interface UpdateJobResponse {
+  success: boolean;
+  message: string;
+  data: JobPostView; 
+}
+
+export interface DeleteJobResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface JobApplicationResultDto {
+  id: number;
+  jobSeekerId: number;
+  username: string;
+  email: string;
+  phone: string;
+  cvUrl: string | null;
+  coverLetter: string | null;
+  status: string;
+  applicationDate: string;
+  note?: string;
+}
+
+export interface JobApplicationUpdateDto {
+  status: 'Accepted' | 'Rejected';
+  note?: string;
+}
+
+export interface ApplicationListResponse {
+  success: boolean;
+  data: JobApplicationResultDto[];
+}
+
+export interface ApplicationActionResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface EmployerApplicationDto {
+  submissionId: number;
+  jobSeekerId: number;
+  username: string;
+  email: string;
+  phone: string;
+  cvUrl: string | null;
+  coverLetter: string | null;
+  status: string;
+  applicationDate: string;
+  note?: string;
+}
+
+export interface EmployerApplicationListResponse {
+  success: boolean;
+  data: EmployerApplicationDto[];
+}
+
+export interface JobSuggestionDto {
+  employerPostId: number;
+  title: string;
+  location: string;
+  matchPercent: number;
+  phoneContact: string;
+  employerName: string;
+  createdAt: string;
+  categoryName?: string;
+  subCategoryName?: string;
+  requirements?: string;
 }
 
 export interface JobAiSuggestion {
