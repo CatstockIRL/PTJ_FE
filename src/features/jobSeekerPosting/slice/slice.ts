@@ -60,8 +60,19 @@ export const createPosting = createAsyncThunk(
       const response = await createJobSeekerPost(payload);
       return response; // Dữ liệu trả về từ API khi thành công
     } catch (error: any) {
+      const defaultMessage = 'Tạo bài đăng thất bại';
+      let friendlyMessage = error.response?.data?.message || defaultMessage;
+      const serverErrors = error.response?.data?.errors;
+      if (serverErrors && typeof serverErrors === 'object') {
+        const flattened = Object.values(serverErrors)
+          .flat()
+          .filter((msg): msg is string => typeof msg === 'string');
+        if (flattened.length > 0) {
+          friendlyMessage = flattened.join('\n');
+        }
+      }
       return rejectWithValue({
-        message: error.response?.data?.message || 'Tạo bài đăng thất bại',
+        message: friendlyMessage,
         status: error.response?.status ?? null,
       });
     }

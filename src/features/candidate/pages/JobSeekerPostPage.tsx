@@ -408,12 +408,21 @@ const JobSeekerPostsPage: React.FC = () => {
       title: "Ngành nghề",
       dataIndex: "categoryName",
       key: "categoryName",
-      width: 140,
+      width: 180,
       ellipsis: true,
       sorter: (a, b) =>
         trimText(a.categoryName).localeCompare(trimText(b.categoryName)),
       sortDirections: ["ascend", "descend"],
-      render: (cat) => cat || "Chưa chọn",
+      render: (_, record) => (
+        <div>
+          <span className="font-medium text-gray-800">
+            {record.categoryName || "Chưa chọn"}
+          </span>
+          {record.subCategoryName && (
+            <div className="text-xs text-gray-500">{record.subCategoryName}</div>
+          )}
+        </div>
+      ),
     },
     {
       title: "Địa điểm",

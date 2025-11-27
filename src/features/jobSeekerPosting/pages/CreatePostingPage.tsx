@@ -88,6 +88,7 @@ const CreatePostingPage: React.FC = () => {
   const { categories, isLoading: isLoadingCategories } = useCategories();
   const selectedCategoryId = Form.useWatch("categoryID", form);
   const lastCategoryRef = useRef<number | null>(null);
+  const prefillingCategoryRef = useRef(false);
   const { subCategories, isLoading: isLoadingSubCategories } = useSubCategories(
     selectedCategoryId ?? null
   );
@@ -188,6 +189,12 @@ const CreatePostingPage: React.FC = () => {
         : selectedCategoryId
         ? Number(selectedCategoryId)
         : null;
+
+    if (prefillingCategoryRef.current) {
+      lastCategoryRef.current = normalized;
+      return;
+    }
+
     if (lastCategoryRef.current !== normalized) {
       lastCategoryRef.current = normalized;
       form.setFieldsValue({ subCategoryId: undefined });
@@ -218,6 +225,7 @@ const CreatePostingPage: React.FC = () => {
           ? Number(postDetail.subCategoryId)
           : undefined;
 
+      prefillingCategoryRef.current = true;
       form.setFieldsValue({
         ...postDetail,
         categoryID: normalizedCategoryId,
@@ -233,6 +241,7 @@ const CreatePostingPage: React.FC = () => {
 
       lastCategoryRef.current =
         normalizedCategoryId !== undefined ? normalizedCategoryId : null;
+      prefillingCategoryRef.current = false;
 
       (async () => {
         if (postDetail.provinceId) {
@@ -330,8 +339,12 @@ const CreatePostingPage: React.FC = () => {
     const startTime = (preferredWorkHourStart as Dayjs).format(timeFormat);
     const endTime = (preferredWorkHourEnd as Dayjs).format(timeFormat);
 
+    const normalizeText = (text?: string | null) => (text ?? "").trim();
     const payload: CreateJobSeekerPostPayload = {
       ...rest,
+      title: normalizeText(rest.title),
+      description: normalizeText(rest.description),
+      phoneContact: normalizeText(rest.phoneContact),
       preferredLocation,
       userID: user.id,
       age: Number(rest.age),

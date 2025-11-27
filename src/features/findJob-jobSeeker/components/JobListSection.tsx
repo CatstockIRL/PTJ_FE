@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card, Select, Pagination, Spin, Empty, message, Tag, Button } from "antd";
 import { useNavigate } from "react-router-dom";
 import jobPostService from "../../job/jobPostService";
@@ -6,6 +6,7 @@ import type { JobPostView } from "../../job/jobTypes";
 import { formatTimeAgo } from "../../../utils/date";
 import { getCompanyLogoSrc, getJobDetailCached } from "../../../utils/jobPostHelpers";
 import type { JobSearchFilters } from "../types";
+import matchService from "../../match/matchService";
 
 const pageSize = 12;
 type SortOrder = "newest" | "oldest" | "salaryDesc" | "salaryAsc";
@@ -139,6 +140,7 @@ const JobListSection: React.FC<JobListSectionProps> = ({
   const [jobs, setJobs] = useState<JobPostView[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const matchProvinceDisabledRef = useRef(true);
 
   const { keyword, provinceId, categoryId, subCategoryId, salary, salaryRange } =
     filters;
@@ -147,23 +149,50 @@ const JobListSection: React.FC<JobListSectionProps> = ({
     const fetchJobs = async () => {
       setLoading(true);
       try {
-        const res = await jobPostService.getAllJobs();
-        if (res.success) {
-          const data = res.data || [];
-          const enriched = await Promise.all(
-            data.map(async (job) => {
-              let logo = job.companyLogo;
-              if (!logo || !logo.trim()) {
-                const detail = await getJobDetailCached(String(job.employerPostId));
-                logo = detail?.companyLogo || undefined;
-              }
-              return { ...job, companyLogo: logo };
-            })
-          );
-          setJobs(enriched);
+        let data: JobPostView[] = [];
+        const normalizedProvinceId =
+          typeof provinceId === "number" && provinceId > 0 ? provinceId : null;
+
+        const fetchAllJobs = async () => {
+          const res = await jobPostService.getAllJobs();
+          if (!res.success || !res.data) {
+            setJobs([]);
+            throw new Error("Không thể tải danh sách việc làm.");
+          }
+          return res.data;
+        };
+
+        const shouldUseMatchApi = Boolean(
+          normalizedProvinceId && !matchProvinceDisabledRef.current
+        );
+
+        if (shouldUseMatchApi) {
+          try {
+            data = await matchService.searchJobsByProvince(normalizedProvinceId);
+            if (!data || data.length === 0) {
+              // fallback to all jobs if API returns nothing
+              data = await fetchAllJobs();
+            }
+          } catch (provinceError) {
+            console.warn("Match API failed, falling back to all jobs", provinceError);
+            matchProvinceDisabledRef.current = true;
+            data = await fetchAllJobs();
+          }
         } else {
-          message.error("Không thể tải danh sách việc làm.");
+          data = await fetchAllJobs();
         }
+
+        const enriched = await Promise.all(
+          data.map(async (job) => {
+            let logo = job.companyLogo;
+            if (!logo || !logo.trim()) {
+              const detail = await getJobDetailCached(String(job.employerPostId));
+              logo = detail?.companyLogo || undefined;
+            }
+            return { ...job, companyLogo: logo };
+          })
+        );
+        setJobs(enriched);
       } catch (err: any) {
         message.error(
           err.response?.data?.message || "Không thể tải danh sách việc làm."
@@ -174,7 +203,7 @@ const JobListSection: React.FC<JobListSectionProps> = ({
     };
 
     fetchJobs();
-  }, []);
+  }, [provinceId]);
 
   const filteredJobs = useMemo(() => {
     const keywordLower = keyword.trim().toLowerCase();

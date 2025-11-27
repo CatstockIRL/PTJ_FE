@@ -15,10 +15,13 @@ import type { JobPostView } from "../../features/job/jobTypes";
 import { JobPostDetailModal } from "../../features/job/components/employer/JobPostDetailModal";
 import { jobApplicationService } from "../../features/applyJob-employer/jobApplicationService";
 import type { ApplicationSummaryDto } from "../../features/applyJob-jobSeeker/type";
-import { useAppSelector } from "../../app/hooks";
+import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import NotificationDropdown from "../../features/notification/components/NotificationDropdown";
+import { fetchNotifications } from "../../features/notification/slice";
 
 const EmployerDashboard: React.FC = () => {
   const { user } = useAuth();
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
   const [activeJobs, setActiveJobs] = useState<JobPostView[]>([]);
@@ -70,6 +73,12 @@ const EmployerDashboard: React.FC = () => {
     fetchJobs();
     fetchSummary();
   }, [user]);
+
+  useEffect(() => {
+    if (user?.id) {
+      dispatch(fetchNotifications(undefined));
+    }
+  }, [dispatch, user?.id]);
 
   const statCards = [
     {
@@ -224,7 +233,10 @@ const EmployerDashboard: React.FC = () => {
 
         <div className="space-y-4">
           <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">Thông báo</h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-semibold text-gray-900">Thông báo</h3>
+              <NotificationDropdown />
+            </div>
             {notifications.length === 0 ? (
               <p className="text-sm text-gray-500">Chưa có thông báo mới.</p>
             ) : (

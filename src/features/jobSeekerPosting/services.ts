@@ -10,13 +10,41 @@ interface ApiResponse<T> {
     data: T;
 }
 
+const appendIfDefined = (formData: FormData, key: string, value?: string | number | null) => {
+  if (value === null || value === undefined) return;
+  formData.append(key, String(value));
+};
+
+const buildJobSeekerPostFormData = (payload: CreateJobSeekerPostPayload): FormData => {
+  const formData = new FormData();
+  appendIfDefined(formData, 'UserID', payload.userID);
+  formData.append('Title', payload.title ?? '');
+  formData.append('Description', payload.description ?? '');
+  appendIfDefined(formData, 'Age', payload.age);
+  formData.append('Gender', payload.gender ?? '');
+  formData.append('PreferredWorkHourStart', payload.preferredWorkHourStart ?? '');
+  formData.append('PreferredWorkHourEnd', payload.preferredWorkHourEnd ?? '');
+  appendIfDefined(formData, 'ProvinceId', payload.provinceId);
+  appendIfDefined(formData, 'DistrictId', payload.districtId);
+  appendIfDefined(formData, 'WardId', payload.wardId);
+  formData.append('PreferredLocation', payload.preferredLocation ?? '');
+  appendIfDefined(formData, 'CategoryID', payload.categoryID);
+  appendIfDefined(formData, 'SubCategoryId', payload.subCategoryId ?? null);
+  formData.append('PhoneContact', payload.phoneContact ?? '');
+  appendIfDefined(formData, 'SelectedCvId', payload.selectedCvId ?? null);
+  return formData;
+};
+
 /**
  * Gửi yêu cầu tạo một bài đăng tìm việc mới của Job Seeker.
  * @param payload - Dữ liệu của bài đăng cần tạo.
  * @returns - Promise chứa dữ liệu trả về từ server.
  */
 export const createJobSeekerPost = (payload: CreateJobSeekerPostPayload) => {
-  return baseService.post('/JobSeekerPost/create', payload);
+  const formData = buildJobSeekerPostFormData(payload);
+  return baseService.post('/JobSeekerPost/create', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
 };
 
 /**
@@ -24,7 +52,10 @@ export const createJobSeekerPost = (payload: CreateJobSeekerPostPayload) => {
  * @param payload - Dữ liệu của bài đăng cần cập nhật.
  */
 export const updateJobSeekerPost = (payload: UpdateJobSeekerPostPayload) => {
-  return baseService.put(`/JobSeekerPost/${payload.jobSeekerPostId}`, payload);
+  const formData = buildJobSeekerPostFormData(payload);
+  return baseService.put(`/JobSeekerPost/${payload.jobSeekerPostId}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
 };
 
 /**

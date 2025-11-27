@@ -180,8 +180,10 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
     }
   }, [dispatch, isJobSeeker, jobSeekerProfile, jobSeekerProfileLoading]);
 
-  const displayName = user && isJobSeeker ? jobSeekerProfile?.fullName || user.username : user?.username;
-  const avatarSrc = user && isJobSeeker ? jobSeekerProfile?.profilePicture || user.avatar : user?.avatar;
+  const displayName =
+    user && isJobSeeker ? jobSeekerProfile?.fullName || user.username : user?.username;
+  const baseAvatar = (user as any)?.avatarUrl || user?.avatar || undefined;
+  const avatarSrc = user && isJobSeeker ? jobSeekerProfile?.profilePicture || baseAvatar : baseAvatar;
 
   const handleLogout = () => {
     dispatch(logout());
