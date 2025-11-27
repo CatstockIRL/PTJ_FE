@@ -35,7 +35,7 @@ const EmployerSidebar: React.FC<SidebarProps> = ({ isOpen }) => {
 
   const employerItems: MenuItem[] = [
     getItem(
-      <NavLink to="/nha-tuyen-dung/dashboard" className="text-base font-semibold text-gray-800">
+      <NavLink to="/nha-tuyen-dung/dashboard" className="text-sm font-semibold text-gray-800">
         Trang chính
       </NavLink>,
       "/nha-tuyen-dung/dashboard",
@@ -43,30 +43,30 @@ const EmployerSidebar: React.FC<SidebarProps> = ({ isOpen }) => {
     ),
     getItem("Công việc", "sub-cong-viec", <FileTextOutlined />, [
       getItem(
-        <NavLink to="/nha-tuyen-dung/cong-viec" className="text-base font-semibold text-gray-800">
+        <NavLink to="/nha-tuyen-dung/cong-viec" className="text-sm font-semibold text-gray-800">
           Quản lí bài đăng tuyển dụng
         </NavLink>,
         "/nha-tuyen-dung/cong-viec"
       ),
       getItem(
-        <NavLink to="/nha-tuyen-dung/dang-tin" className="text-base font-semibold text-gray-800">
+        <NavLink to="/nha-tuyen-dung/dang-tin" className="text-sm font-semibold text-gray-800">
           Đăng bài tuyển dụng công việc
         </NavLink>,
         "/nha-tuyen-dung/dang-tin"
       ),
     ]),
     getItem(
-      <NavLink to="/nha-tuyen-dung/tim-kiem" className="text-base font-semibold text-gray-800">
-        Danh sách bài đăng tìm việc của ứng viên
+      <NavLink to="/nha-tuyen-dung/tim-kiem" className="text-sm font-semibold text-gray-800">
+        Danh sách bài đăng tìm việc
       </NavLink>,
       "/nha-tuyen-dung/tim-kiem",
       <SearchOutlined />
     ),
     getItem(
-      <NavLink to="/nha-tuyen-dung/cam-nang" className="text-base font-semibold text-gray-800">
-        Cẩm nang tuyển dụng
+      <NavLink to="/nha-tuyen-dung/bang-tin" className="text-sm font-semibold text-gray-800">
+        Bảng tin
       </NavLink>,
-      "/nha-tuyen-dung/cam-nang",
+      "/nha-tuyen-dung/bang-tin",
       <ReadOutlined />
     ),
   ];

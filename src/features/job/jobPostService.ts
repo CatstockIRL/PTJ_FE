@@ -83,7 +83,7 @@ export const getAllJobs = async (): Promise<PaginatedJobResponse> => {
   return await baseService.get<PaginatedJobResponse>('/EmployerPost/all');
 };
 
-export const updateStatus = async (id: number, status: 'Accepted' | 'Rejected', note: string = ''): Promise<ApplicationActionResponse> => {
+export const updateStatus = async (id: number, status: 'Accepted' | 'Rejected' | 'Interviewing', note: string = ''): Promise<ApplicationActionResponse> => {
   const payload: JobApplicationUpdateDto = { status, note };
   return await baseService.put<ApplicationActionResponse>(`/JobApplication/${id}/status`, payload);
 };

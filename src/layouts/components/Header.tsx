@@ -220,13 +220,20 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           <img src={LogoWhite} alt="Logo" className="h-8 mr-4" />
         </div>
         <div className="flex items-center space-x-5">
-          <div className="[&_.ant-btn]:text-white">
-            <NotificationDropdown />
-          </div>
-
           <Dropdown menu={{ items: userDropdownItems }} placement="bottomRight" arrow>
-            <a onClick={(e) => e.preventDefault()} className="flex items-center space-x-2 text-white hover:text-gray-200">
-              <Avatar size="small" src={avatarSrc} icon={!avatarSrc ? <UserOutlined /> : undefined} className="bg-blue-600" />
+            <a
+              onClick={(e) => e.preventDefault()}
+              className="flex items-center space-x-3 text-white hover:text-gray-200"
+            >
+              <span className="[&_.ant-btn]:text-white [&_.ant-badge-count]:bg-red-500">
+                <NotificationDropdown />
+              </span>
+              <Avatar
+                size="small"
+                src={avatarSrc}
+                icon={!avatarSrc ? <UserOutlined /> : undefined}
+                className="bg-blue-600"
+              />
               <span className="font-medium">{displayName}</span>
               <DownOutlined style={{ fontSize: "10px" }} />
             </a>

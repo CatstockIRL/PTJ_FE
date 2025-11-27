@@ -1,18 +1,21 @@
 import React, { useEffect, useState } from "react";
-import { Spin, Tag, Button } from "antd";
+import { Spin, Tag, Button, message } from "antd";
 import {
   ArrowRightOutlined,
-  BarChartOutlined,
   CheckCircleOutlined,
   FileTextOutlined,
   PlusOutlined,
   UserOutlined,
+  EyeOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../features/auth/hooks";
 import jobPostService from "../../features/job/jobPostService";
 import type { JobPostView } from "../../features/job/jobTypes";
 import { JobPostDetailModal } from "../../features/job/components/employer/JobPostDetailModal";
+import { jobApplicationService } from "../../features/applyJob-employer/jobApplicationService";
+import type { ApplicationSummaryDto } from "../../features/applyJob-jobSeeker/type";
+import { useAppSelector } from "../../app/hooks";
 
 const EmployerDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -21,10 +24,11 @@ const EmployerDashboard: React.FC = () => {
   const [activeJobs, setActiveJobs] = useState<JobPostView[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(true);
 
-  const [recentApps] = useState<any[]>([]);
-  const [loadingApps, setLoadingApps] = useState(true);
+  const [summary, setSummary] = useState<ApplicationSummaryDto | null>(null);
+  const [loadingSummary, setLoadingSummary] = useState(true);
   const [selectedJob, setSelectedJob] = useState<JobPostView | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const { notifications } = useAppSelector((state) => state.notification);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -46,21 +50,49 @@ const EmployerDashboard: React.FC = () => {
       }
     };
 
-    const fetchApps = async () => {
-      setLoadingApps(true);
-      // TODO: replace with real service when available
-      setLoadingApps(false);
+    const fetchSummary = async () => {
+      setLoadingSummary(true);
+      try {
+        const res = await jobApplicationService.getApplicationSummary();
+        if (res.success && res.data) {
+          setSummary(res.data);
+        } else {
+          message.error("Không thể tải thống kê ứng viên.");
+        }
+      } catch (error) {
+        console.error("Lỗi khi tải thống kê ứng viên:", error);
+        message.error("Không thể tải thống kê ứng viên.");
+      } finally {
+        setLoadingSummary(false);
+      }
     };
 
     fetchJobs();
-    fetchApps();
+    fetchSummary();
   }, [user]);
 
   const statCards = [
-    { label: "Công việc đang chạy", value: activeJobs.length, icon: <CheckCircleOutlined /> },
-    { label: "Ứng viên mới", value: loadingApps ? "…" : recentApps.length, icon: <UserOutlined /> },
-    { label: "Chiến dịch tuyển dụng", value: "Sắp ra mắt", icon: <BarChartOutlined /> },
+    {
+      label: "Công việc đang chạy",
+      value: loadingJobs ? "…" : activeJobs.length,
+      icon: <CheckCircleOutlined />,
+      helpText: "Cập nhật gần đây",
+    },
+    {
+      label: "Ứng viên đang chờ",
+      value: loadingSummary ? "…" : summary?.pendingTotal ?? 0,
+      icon: <UserOutlined />,
+      helpText: "Chờ xử lý",
+    },
+    {
+      label: "Ứng viên đã xem",
+      value: loadingSummary ? "…" : summary?.reviewedTotal ?? 0,
+      icon: <EyeOutlined />,
+      helpText: "Đã phản hồi",
+    },
   ];
+
+  const pendingApplicants = summary?.pendingApplications ?? [];
 
   const renderJobCard = (job: JobPostView) => (
     <div
@@ -125,7 +157,7 @@ const EmployerDashboard: React.FC = () => {
                 type="primary"
                 icon={<PlusOutlined />}
                 className="bg-white text-blue-600 hover:text-blue-700"
-                onClick={() => navigate("/nha-tuyen-dung/cong-viec/tao-moi")}
+                onClick={() => navigate("/nha-tuyen-dung/dang-tin")}
               >
                 Đăng tin ngay
               </Button>
@@ -149,9 +181,7 @@ const EmployerDashboard: React.FC = () => {
                   {card.icon}
                   <span>{card.value}</span>
                 </div>
-                <p className="text-xs text-white/70 mt-1">
-                  {card.label === "Chiến dịch tuyển dụng" ? "Mới" : "Cập nhật gần đây"}
-                </p>
+                <p className="text-xs text-white/70 mt-1">{card.helpText}</p>
               </div>
             ))}
           </div>
@@ -164,16 +194,7 @@ const EmployerDashboard: React.FC = () => {
             <h2 className="text-lg font-semibold text-gray-900">
               Bài tuyển dụng đang hoạt động
             </h2>
-            <div className="flex items-center gap-2">
-              <Button
-                type="primary"
-                size="middle"
-                icon={<PlusOutlined />}
-                onClick={() => navigate("/nha-tuyen-dung/cong-viec/tao-moi")}
-              >
-                Tạo bài đăng tuyển mới
-              </Button>
-            </div>
+            <div />
           </div>
 
           {loadingJobs ? (
@@ -201,27 +222,61 @@ const EmployerDashboard: React.FC = () => {
           )}
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-4 min-h-[360px]">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-lg font-semibold text-gray-900">Ứng viên mới</h3>
-            <FileTextOutlined className="text-gray-400" />
+        <div className="space-y-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">Thông báo</h3>
+            {notifications.length === 0 ? (
+              <p className="text-sm text-gray-500">Chưa có thông báo mới.</p>
+            ) : (
+              <div className="space-y-2">
+                {notifications.slice(0, 3).map((noti) => (
+                  <div
+                    key={noti.notificationId}
+                    className="p-3 rounded-lg border border-gray-100 bg-gray-50"
+                  >
+                    <p className="text-sm font-semibold text-gray-800">
+                      {noti.title}
+                    </p>
+                    <p className="text-xs text-gray-500 line-clamp-2">
+                      {noti.message}
+                    </p>
+                    <p className="text-[10px] text-gray-400 mt-1">
+                      {new Date(noti.createdAt).toLocaleString("vi-VN")}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-          {loadingApps ? (
+
+          <div className="bg-white rounded-xl border border-gray-200 p-4 min-h-[250px]">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-semibold text-gray-900">Ứng viên mới</h3>
+              <FileTextOutlined className="text-gray-400" />
+            </div>
+            {loadingSummary ? (
             <div className="flex justify-center py-10 text-gray-500">
               <Spin />
             </div>
-          ) : recentApps.length === 0 ? (
-            <p className="text-gray-500 text-sm">Chưa có ứng viên mới.</p>
-          ) : (
-            <div className="space-y-3">
-              {recentApps.slice(0, 3).map((app) => (
-                <div key={app.id} className="p-3 rounded-lg bg-gray-50">
-                  <p className="font-medium text-gray-900">{app.candidateName}</p>
-                  <p className="text-sm text-gray-600">Ứng tuyển: {app.jobTitle}</p>
-                </div>
-              ))}
-            </div>
-          )}
+            ) : pendingApplicants.length === 0 ? (
+              <p className="text-gray-500 text-sm">Chưa có ứng viên mới.</p>
+            ) : (
+              <div className="space-y-3">
+                {pendingApplicants.slice(0, 3).map((app) => (
+                  <div key={app.submissionId} className="p-3 rounded-lg bg-gray-50">
+                    <p className="font-medium text-gray-900">{app.username || "Ứng viên"}</p>
+                    <p className="text-sm text-gray-600">Ứng tuyển: {app.postTitle}</p>
+                    <p className="text-xs text-gray-500">
+                      Nộp ngày:{" "}
+                      {app.appliedAt
+                        ? new Date(app.appliedAt).toLocaleDateString("vi-VN")
+                        : "N/A"}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

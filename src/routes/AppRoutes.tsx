@@ -113,6 +113,10 @@ export const AppRoutes: React.FC = () => {
             path="/nha-tuyen-dung/tim-kiem"
             element={<JobSeekerPostPage />}
           />
+          <Route
+            path="/nha-tuyen-dung/bang-tin"
+            element={<NewsListPage />}
+          />
           {/* <Route
             path="/nha-tuyen-dung/tai-nang-da-xem"
             element={<SavedTalentPage />}

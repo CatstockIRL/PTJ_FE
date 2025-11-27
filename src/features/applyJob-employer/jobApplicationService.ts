@@ -1,5 +1,8 @@
 import baseService from "../../services/baseService";
-import type { AppliedJobsResponse } from "../applyJob-jobSeeker/type";
+import type {
+  AppliedJobsResponse,
+  ApplicationSummaryResponse,
+} from "../applyJob-jobSeeker/type";
 import type {
   ApplicationActionResponse,
   JobApplicationUpdateDto,
@@ -17,13 +20,18 @@ export const jobApplicationService = {
   },
   updateStatus: async (
     id: number,
-    status: "Accepted" | "Rejected",
+    status: "Accepted" | "Rejected" | "Interviewing",
     note: string = ""
   ): Promise<ApplicationActionResponse> => {
     const payload: JobApplicationUpdateDto = { status, note };
     return await baseService.put<ApplicationActionResponse>(
       `/JobApplication/${id}/status`,
       payload
+    );
+  },
+  getApplicationSummary: async (): Promise<ApplicationSummaryResponse> => {
+    return await baseService.get<ApplicationSummaryResponse>(
+      `${API_URL}/applications/summary`
     );
   },
 };

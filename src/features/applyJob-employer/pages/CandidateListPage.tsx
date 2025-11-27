@@ -11,6 +11,7 @@ import {
   Modal,
   Input,
   Tabs,
+  Dropdown,
 } from "antd";
 import {
   ArrowLeftOutlined,
@@ -20,6 +21,7 @@ import {
   CloseCircleOutlined,
   DeleteOutlined,
   StarOutlined,
+  DownOutlined,
 } from "@ant-design/icons";
 import type { TableColumnsType } from "antd";
 import { jobApplicationService } from "../jobApplicationService";
@@ -33,6 +35,50 @@ import RatingModal from "../../../components/RatingModal";
 
 const { Title } = Typography;
 const { TextArea } = Input;
+
+type StatusAction = "Accepted" | "Rejected" | "Interviewing";
+
+const STATUS_LABELS: Record<
+  StatusAction,
+  { label: string; className: string; successMessage: string; modalTitle: string }
+> = {
+  Accepted: {
+    label: "Đã duyệt",
+    className: "text-green-600 ml-1",
+    successMessage: "Đã duyệt hồ sơ.",
+    modalTitle: "Duyệt hồ sơ",
+  },
+  Rejected: {
+    label: "Đã từ chối",
+    className: "text-red-600 ml-1",
+    successMessage: "Đã từ chối hồ sơ.",
+    modalTitle: "Từ chối hồ sơ",
+  },
+  Interviewing: {
+    label: "Chờ phỏng vấn",
+    className: "text-blue-600 ml-1",
+    successMessage: "Đã chuyển sang trạng thái chờ phỏng vấn.",
+    modalTitle: "Chuyển sang chờ phỏng vấn",
+  },
+};
+
+const APPROVAL_OPTIONS: { key: StatusAction; label: string; icon: React.ReactNode }[] = [
+  {
+    key: "Accepted",
+    label: "Duyệt hồ sơ",
+    icon: <CheckCircleOutlined style={{ color: "#16a34a" }} />,
+  },
+  {
+    key: "Rejected",
+    label: "Từ chối hồ sơ",
+    icon: <CloseCircleOutlined style={{ color: "#dc2626" }} />,
+  },
+  {
+    key: "Interviewing",
+    label: "Chờ phỏng vấn",
+    icon: <StarOutlined style={{ color: "#2563eb" }} />,
+  },
+];
 
 const CandidateListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -49,7 +95,7 @@ const CandidateListPage: React.FC = () => {
     visible: false,
     id: 0,
     currentNote: "",
-    targetStatus: "" as "Accepted" | "Rejected",
+    targetStatus: "Accepted" as StatusAction,
     newNote: "",
   });
 
@@ -189,7 +235,7 @@ const CandidateListPage: React.FC = () => {
 
   const openStatusModal = (
     record: JobApplicationResultDto,
-    status: "Accepted" | "Rejected"
+    status: StatusAction
   ) => {
     setStatusModal({
       visible: true,
@@ -211,9 +257,7 @@ const CandidateListPage: React.FC = () => {
         finalNote
       );
       if (res.success) {
-        message.success(
-          targetStatus === "Accepted" ? "Đã duyệt hồ sơ." : "Đã từ chối hồ sơ."
-        );
+        message.success(STATUS_LABELS[targetStatus].successMessage);
         setStatusModal({ ...statusModal, visible: false });
         if (employerPostId) fetchAll(parseInt(employerPostId, 10));
       } else {
@@ -228,6 +272,8 @@ const CandidateListPage: React.FC = () => {
     const s = status?.toLowerCase();
     if (s === "accepted") return <Tag color="success">Đã duyệt</Tag>;
     if (s === "rejected") return <Tag color="error">Đã từ chối</Tag>;
+    if (s === "interviewing")
+      return <Tag color="blue">Chờ phỏng vấn</Tag>;
     if (s === "pending") return <Tag color="processing">Chờ duyệt</Tag>;
     return <Tag>Chưa xem</Tag>;
   };
@@ -294,46 +340,34 @@ const CandidateListPage: React.FC = () => {
       title: "Xét duyệt",
       key: "approval",
       render: (_, record) => {
-        const currentStatus = record.status?.toLowerCase();
         return (
-          <Space>
-            {(currentStatus === "pending" ||
-              currentStatus === "rejected") && (
-              <Tooltip
-                title={
-                  currentStatus === "rejected" ? "Duyệt lại" : "Chấp nhận"
-                }
-              >
-                <Button
-                  type={currentStatus === "rejected" ? "dashed" : "text"}
-                  className={
-                    currentStatus === "rejected"
-                      ? "text-green-600 border-green-600"
-                      : "text-green-600"
-                  }
-                  icon={<CheckCircleOutlined style={{ fontSize: 18 }} />}
-                  onClick={() => openStatusModal(record, "Accepted")}
-                >
-                  {currentStatus === "rejected" && "Duyệt lại"}
-                </Button>
-              </Tooltip>
-            )}
-            {(currentStatus === "pending" ||
-              currentStatus === "accepted") && (
-              <Tooltip
-                title={currentStatus === "accepted" ? "Hủy duyệt" : "Từ chối"}
-              >
-                <Button
-                  type={currentStatus === "accepted" ? "dashed" : "text"}
-                  danger
-                  icon={<CloseCircleOutlined style={{ fontSize: 18 }} />}
-                  onClick={() => openStatusModal(record, "Rejected")}
-                >
-                  {currentStatus === "accepted" && "Hủy duyệt"}
-                </Button>
-              </Tooltip>
-            )}
-          </Space>
+          <Dropdown
+            trigger={["click"]}
+            menu={{
+              items: APPROVAL_OPTIONS.map((option) => ({
+                key: option.key,
+                label: (
+                  <span className="flex items-center gap-2">
+                    {option.icon}
+                    {option.label}
+                  </span>
+                ),
+                disabled:
+                  record.status?.toLowerCase() === option.key.toLowerCase(),
+              })),
+              onClick: ({ key }) =>
+                openStatusModal(record, key as StatusAction),
+            }}
+          >
+            <Button
+              size="small"
+              type="default"
+              className="flex items-center gap-1"
+            >
+              <span>Chọn trạng thái</span>
+              <DownOutlined />
+            </Button>
+          </Dropdown>
         );
       },
     },
@@ -494,11 +528,7 @@ const CandidateListPage: React.FC = () => {
       </div>
 
       <Modal
-        title={
-          statusModal.targetStatus === "Accepted"
-            ? "Duyệt hồ sơ"
-            : "Từ chối hồ sơ"
-        }
+        title={STATUS_LABELS[statusModal.targetStatus].modalTitle}
         open={statusModal.visible}
         onOk={handleSubmitStatus}
         onCancel={() => setStatusModal({ ...statusModal, visible: false })}
@@ -509,16 +539,8 @@ const CandidateListPage: React.FC = () => {
         <div className="space-y-4">
           <p>
             Bạn xác nhận chuyển trạng thái sang
-            <strong
-              className={
-                statusModal.targetStatus === "Accepted"
-                  ? "text-green-600 ml-1"
-                  : "text-red-600 ml-1"
-              }
-            >
-              {statusModal.targetStatus === "Accepted"
-                ? "Đã duyệt"
-                : "Đã từ chối"}
+            <strong className={STATUS_LABELS[statusModal.targetStatus].className}>
+              {STATUS_LABELS[statusModal.targetStatus].label}
             </strong>
             ?
           </p>

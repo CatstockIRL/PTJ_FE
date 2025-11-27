@@ -36,3 +36,25 @@ export interface AppliedJobsResponse {
   total: number;
   data: JobApplicationResultDto[];
 }
+
+export interface ApplicationSimpleDto {
+  submissionId: number;
+  jobSeekerId: number;
+  username: string;
+  postId: number;
+  postTitle: string;
+  status: string;
+  appliedAt: string;
+}
+
+export interface ApplicationSummaryDto {
+  pendingTotal: number;
+  reviewedTotal: number;
+  pendingApplications: ApplicationSimpleDto[];
+  reviewedApplications: ApplicationSimpleDto[];
+}
+
+export interface ApplicationSummaryResponse {
+  success: boolean;
+  data: ApplicationSummaryDto;
+}

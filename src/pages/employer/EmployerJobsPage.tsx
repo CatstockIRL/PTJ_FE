@@ -41,6 +41,8 @@ import { useSubCategories } from "../../features/subcategory/hook";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../app/store";
 import { JobPostDetailModal } from "../../features/job/components/employer/JobPostDetailModal";
+import { jobApplicationService } from "../../features/applyJob-employer/jobApplicationService";
+import type { ApplicationSummaryDto } from "../../features/applyJob-jobSeeker/type";
 
 const { Option } = Select;
 const { Search } = Input;
@@ -104,6 +106,9 @@ const EmployerJobsPage: React.FC = () => {
   const [suggestionList, setSuggestionList] = useState<any[]>([]);
   const [isSuggestionLoading, setIsSuggestionLoading] = useState(false);
   const [currentJobTitle, setCurrentJobTitle] = useState("");
+  const [applicationSummary, setApplicationSummary] =
+    useState<ApplicationSummaryDto | null>(null);
+  const [isSummaryLoading, setIsSummaryLoading] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
@@ -139,8 +144,24 @@ const EmployerJobsPage: React.FC = () => {
     setIsLoading(false);
   };
 
+  const fetchApplicationSummary = async () => {
+    if (!user) return;
+    setIsSummaryLoading(true);
+    try {
+      const res = await jobApplicationService.getApplicationSummary();
+      if (res.success && res.data) {
+        setApplicationSummary(res.data);
+      }
+    } catch (error) {
+      message.error("Không thể tải thống kê ứng viên.");
+    } finally {
+      setIsSummaryLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchJobs();
+    fetchApplicationSummary();
   }, [user]);
 
   const handleShowSuggestions = async (postId: number, jobTitle: string) => {
@@ -502,7 +523,12 @@ const EmployerJobsPage: React.FC = () => {
             <div className="flex items-center gap-2 mt-1">
               <FileTextOutlined className="text-emerald-200" />
               <span>
-                Ứng viên mới: <strong>{suggestionList.length}</strong>
+                Ứng viên mới:{" "}
+                <strong>
+                  {isSummaryLoading
+                    ? "..."
+                    : applicationSummary?.pendingTotal ?? 0}
+                </strong>
               </span>
             </div>
           </div>

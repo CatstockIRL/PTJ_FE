@@ -124,7 +124,7 @@ export interface JobApplicationResultDto {
 }
 
 export interface JobApplicationUpdateDto {
-  status: 'Accepted' | 'Rejected';
+  status: 'Accepted' | 'Rejected' | 'Interviewing';
   note?: string;
 }
 
