@@ -14,14 +14,6 @@ const ListEmployerPage: React.FC = () => {
     [employers]
   );
 
-  const totalLocations = useMemo(() => {
-    const locationSet = new Set<string>();
-    employers.forEach((employer) => {
-      employer.locations?.forEach((loc) => locationSet.add(loc));
-    });
-    return locationSet.size;
-  }, [employers]);
-
   const handleSearch = (keyword: string) => {
     applyFilters({ keyword, page: 1 });
   };
@@ -60,18 +52,14 @@ const ListEmployerPage: React.FC = () => {
                 Cập nhật liên tục từ cộng đồng doanh nghiệp trong hệ thống.
               </p>
 
-              <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Tag color="gold" className="m-0 flex items-center justify-between rounded-full px-4 py-2 text-base">
-                  <span>Tổng NTD</span>
+                  <span>Nhà tuyển dụng</span>
                   <span className="font-bold">{totalRecords}</span>
                 </Tag>
                 <Tag color="blue" className="m-0 flex items-center justify-between rounded-full px-4 py-2 text-base">
                   <span>Việc đang tuyển</span>
                   <span className="font-bold">{totalOpenJobs}</span>
-                </Tag>
-                <Tag color="green" className="m-0 flex items-center justify-between rounded-full px-4 py-2 text-base">
-                  <span>Điểm đến</span>
-                  <span className="font-bold">{totalLocations}</span>
                 </Tag>
               </div>
             </div>
@@ -79,9 +67,7 @@ const ListEmployerPage: React.FC = () => {
             <div className="md:col-span-2">
               <div className="rounded-2xl bg-white/10 p-6 shadow-xl backdrop-blur ring-1 ring-white/15">
                 <h3 className="text-xl font-semibold">Tìm nhanh nhà tuyển dụng</h3>
-                <p className="mt-1 text-sm text-emerald-50">
-                  Nhập tên, ngành hoặc địa điểm để lọc danh sách phù hợp.
-                </p>
+              
                 <div className="mt-4">
                   <Search
                     placeholder="Nhập tên nhà tuyển dụng..."
@@ -91,18 +77,6 @@ const ListEmployerPage: React.FC = () => {
                     defaultValue=""
                     loading={loading}
                     className="shadow-lg"
-                  />
-                </div>
-                <div className="mt-3 grid grid-cols-2 gap-3 text-center text-sm text-emerald-50">
-                  <Statistic
-                    title="Trang hiện tại"
-                    value={currentPage}
-                    valueStyle={{ color: "white", fontWeight: 700 }}
-                  />
-                  <Statistic
-                    title="Kích thước trang"
-                    value={pageSize}
-                    valueStyle={{ color: "white", fontWeight: 700 }}
                   />
                 </div>
               </div>

@@ -634,27 +634,25 @@ const JobDetailPage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-500">
-                    Vị trí tuyển dụng
-                  </p>
                   <h1 className="text-2xl font-bold leading-tight text-slate-900 md:text-3xl">
                     {job.title}
                   </h1>
-                  <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-                    <span className="rounded-full bg-blue-50 px-3 py-1 font-semibold text-blue-700">
-                      {job.employerName}
-                    </span>
-                    {job.location && (
-                      <span className="flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-slate-700">
-                        <i className="fas fa-map-marker-alt text-blue-500" />
-                        {job.location}
-                      </span>
+                  <div className="relative mt-4 flex flex-wrap items-center gap-3 text-sm text-slate-600">
+                    <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-100 px-3 py-2">
+                      <i className="fas fa-calendar-alt text-blue-500" />
+                      <span>Đăng ngày {postedDate}</span>
+                    </div>
+                    {job.categoryName && (
+                      <div className="flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-blue-700">
+                        <i className="fas fa-layer-group" />
+                        <span>{job.categoryName}</span>
+                      </div>
                     )}
-                    {workHoursDisplay && (
-                      <span className="flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
-                        <i className="fas fa-clock" />
-                        {workHoursDisplay}
-                      </span>
+                    {job.subCategoryName && (
+                      <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2">
+                        <span className="font-semibold text-slate-700">Nhánh:</span>
+                        <span>{job.subCategoryName}</span>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -746,25 +744,6 @@ const JobDetailPage: React.FC = () => {
                   />
                 </Tooltip>
               </div>
-            </div>
-
-            <div className="relative mt-6 flex flex-wrap items-center gap-3 text-sm text-slate-600">
-              <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-100 px-3 py-2">
-                <i className="fas fa-calendar-alt text-blue-500" />
-                <span>Đăng ngày {postedDate}</span>
-              </div>
-              {job.categoryName && (
-                <div className="flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-blue-700">
-                  <i className="fas fa-layer-group" />
-                  <span>{job.categoryName}</span>
-                </div>
-              )}
-              {job.subCategoryName && (
-                <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2">
-                  <span className="font-semibold text-slate-700">Nhánh:</span>
-                  <span>{job.subCategoryName}</span>
-                </div>
-              )}
             </div>
 
             <div className="relative mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

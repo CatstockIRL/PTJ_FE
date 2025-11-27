@@ -9,10 +9,10 @@ import {
   SearchOutlined,
   BankOutlined,
   BookOutlined,
-  FileTextOutlined,
   HeartOutlined,
   SendOutlined,
   FileDoneOutlined,
+  FileTextOutlined,
   LockOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "../../features/auth/hooks";
@@ -32,20 +32,22 @@ interface HeaderProps {
   onToggleSidebar: () => void;
 }
 
-const jobSeekerNavLinks = [
+const jobSeekerFollowLinks = [
+  { icon: <HeartOutlined />, text: "Nhà tuyển dụng theo dõi", path: "/nha-tuyen-dung-theo-doi" },
+  { icon: <HeartOutlined />, text: "Bài tuyển dụng đã lưu", path: "/viec-lam-da-luu" },
+];
+
+const jobSeekerApplicationLinks = [
   {
     icon: <FileDoneOutlined />,
     text: "Bài đăng tìm việc của tôi",
     path: "/quan-ly-bai-dang",
   },
-  { icon: <HeartOutlined />, text: "Nhà tuyển dụng theo dõi", path: "/nha-tuyen-dung-theo-doi" },
-  { icon: <HeartOutlined />, text: "Bài tuyển dụng đã lưu", path: "/viec-lam-da-luu" },
   {
     icon: <SendOutlined />,
     text: "Bài tuyển dụng đã ứng tuyển",
     path: "/viec-da-ung-tuyen",
   },
-  { icon: <FileTextOutlined />, text: "Quản lí CV của tôi", path: "/cv-cua-toi" },
 ];
 
 
@@ -127,17 +129,31 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ user, onLogout }) => {
             <FileDoneOutlined />
             <span>Quản lý tìm việc</span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {jobSeekerNavLinks.map((link) => (
-              <NavLink
-                key={link.path}
-                to={link.path}
-                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-700"
-              >
-                {link.icon}
-                <span>{link.text}</span>
-              </NavLink>
-            ))}
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+            <div className="flex flex-col gap-2">
+              {jobSeekerFollowLinks.map((link) => (
+                <NavLink
+                  key={link.path}
+                  to={link.path}
+                  className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-700"
+                >
+                  {link.icon}
+                  <span>{link.text}</span>
+                </NavLink>
+              ))}
+            </div>
+            <div className="flex flex-col gap-2">
+              {jobSeekerApplicationLinks.map((link) => (
+                <NavLink
+                  key={link.path}
+                  to={link.path}
+                  className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-700"
+                >
+                  {link.icon}
+                  <span>{link.text}</span>
+                </NavLink>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -327,7 +343,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             Cho người tìm việc
           </NavLink>
         ) : (
-          <NavLink to="/nha-tuyen-dung/dashboard" className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
+        <NavLink to="/nha-tuyen-dung/register" className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
             Nhà tuyển dụng
           </NavLink>
         )}

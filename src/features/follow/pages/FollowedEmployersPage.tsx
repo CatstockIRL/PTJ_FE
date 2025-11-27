@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Card, List, Tag, Spin, message } from "antd";
+import { Card, List, Spin, message, Avatar } from "antd";
 import { UserOutlined, CalendarOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { useAppSelector } from "../../../app/hooks";
@@ -28,6 +28,13 @@ const FollowedEmployersPage: React.FC = () => {
               item.FollowDate ??
               item.followedAt ??
               item.followedDate,
+            logoUrl:
+              item.logoUrl ??
+              item.logo ??
+              item.employerLogoUrl ??
+              item.avatarUrl ??
+              item.logoUrlSmall ??
+              item.logo_path,
           }))
         );
       } catch (err: any) {
@@ -48,23 +55,17 @@ const FollowedEmployersPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-4">
-      <Card className="bg-gradient-to-r from-sky-600 to-blue-700 text-white shadow-lg border-none rounded-2xl">
-        <div className="space-y-1">
-            <p className="text-sm uppercase tracking-[0.35em] text-white/80">
-            Nhà tuyển dụng
+    <div className="space-y-3">
+      <Card className="border border-slate-200 bg-white shadow-sm">
+        <div className="flex flex-col gap-1">
+         
+          <h1 className="text-2xl font-semibold text-slate-900">Danh sách theo dõi</h1>
+          <p className="text-sm text-slate-600">
+            Danh sách các nhà tuyển dụng bạn đang theo dõi để nhận thông tin tuyển dụng mới.
           </p>
-          <h1 className="text-2xl font-bold leading-tight">
-            Danh sách theo dõi
-          </h1>
-          <p className="text-white/85">
-            Xem nhanh các nhà tuyển dụng bạn đang theo dõi để cập nhật cơ hội mới.
-          </p>
-          <div className="flex gap-2 flex-wrap">
-            <span className="px-3 py-1 rounded-md bg-white/15 border border-white/20 text-sm font-semibold">
-              Tổng: <strong>{items.length}</strong>
-            </span>
-          </div>
+          <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1 text-sm font-semibold text-slate-700">
+            Tổng: <span className="text-slate-900 font-bold">{items.length}</span>
+          </span>
         </div>
       </Card>
 
@@ -88,14 +89,17 @@ const FollowedEmployersPage: React.FC = () => {
                 >
                   <List.Item.Meta
                     avatar={
-                      <div className="h-12 w-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg font-semibold">
-                        {(item.employerName || "NTD").charAt(0).toUpperCase()}
-                      </div>
+                      <Avatar
+                        size={48}
+                        src={item.logoUrl}
+                        icon={!item.logoUrl ? <UserOutlined /> : undefined}
+                        className="bg-emerald-50 text-emerald-600 border border-emerald-100"
+                      >
+                        {!item.logoUrl && (item.employerName || "NTD").charAt(0).toUpperCase()}
+                      </Avatar>
                     }
                     title={
-                      <span className="font-semibold text-gray-900">
-                        {item.employerName}
-                      </span>
+                      <span className="font-semibold text-gray-900">{item.employerName}</span>
                     }
                     description={
                       <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -109,11 +113,9 @@ const FollowedEmployersPage: React.FC = () => {
                       </div>
                     }
                   />
-                  <div>
-                    <Tag icon={<UserOutlined />} color="blue">
-                      Nhà tuyển dụng
-                    </Tag>
-                  </div>
+                  <span className="rounded-full border border-slate-200 px-3 py-1 text-sm text-slate-600">
+                    Nhân sự
+                  </span>
                 </List.Item>
               )}
             />

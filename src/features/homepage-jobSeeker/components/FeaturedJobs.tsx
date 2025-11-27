@@ -4,6 +4,7 @@ import type { CarouselRef } from 'antd/es/carousel';
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
+import { ArrowRightOutlined } from '@ant-design/icons';
 import type { RootState } from '../../../app/store';
 import JobCard from './JobCard';
 
@@ -64,16 +65,18 @@ const FeaturedJobs: React.FC = () => {
   return (
     <section className="px-4">
       <div className="max-w-[120rem] mx-auto bg-white border border-gray-200 rounded-3xl p-12 shadow-[0_30px_90px_rgba(15,23,42,0.1)]">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8 text-slate-900">
-          <div>
-            <h2 className="text-3xl font-bold">Việc làm gần đây</h2>
-          </div>
-          <Link
-            to="/viec-lam"
-            className="text-blue-600 hover:text-blue-800 transition font-semibold text-sm"
-          >
-            Xem tất cả &gt;
-          </Link>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8 text-slate-900">
+            <div>
+              <p className="text-xs uppercase tracking-[0.4em] text-blue-500 mb-2">Việc làm</p>
+              <h2 className="text-3xl font-bold">Việc làm gần đây</h2>
+            </div>
+            <Link
+              to="/viec-lam"
+              className="inline-flex items-center gap-1 font-semibold text-sm text-sky-600 transition hover:text-sky-700"
+            >
+              <span>Xem tất cả</span>
+              <ArrowRightOutlined />
+            </Link>
         </div>
 
         <div className="relative px-4 md:px-10">

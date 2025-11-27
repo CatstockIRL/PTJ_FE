@@ -4,6 +4,7 @@ export interface EmployerFollowDto {
   employerId: number;
   employerName: string;
   followDate: string;
+  logoUrl?: string;
 }
 
 const followService = {

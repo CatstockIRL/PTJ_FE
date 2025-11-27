@@ -63,7 +63,7 @@ const NewsListPage: React.FC = () => {
         <div className="absolute -right-20 top-0 h-72 w-72 rounded-full bg-gradient-to-br from-indigo-500/30 via-purple-500/10 to-transparent blur-3xl" />
 
         <div className="relative mx-auto flex max-w-7xl flex-col gap-10 px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+          <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
             <div className="md:w-2/3">
               <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1 text-sm font-semibold uppercase tracking-[0.2em] text-emerald-100 ring-1 ring-white/15">
                 <FireOutlined /> Tin nóng mỗi ngày
@@ -75,20 +75,9 @@ const NewsListPage: React.FC = () => {
                 Cập nhật tin tức tuyển dụng, xu hướng ngành nghề và lời khuyên phát triển sự nghiệp
                 được tuyển chọn bởi đội ngũ chuyên gia.
               </Paragraph>
-              <div className="mt-6 flex flex-wrap gap-3">
-                <Tag color="cyan" className="rounded-full px-4 py-2 text-sm">
-                  {total} bài viết
-                </Tag>
-                <Tag color="geekblue" className="rounded-full px-4 py-2 text-sm">
-                  Cập nhật mỗi ngày
-                </Tag>
-                <Tag color="gold" className="rounded-full px-4 py-2 text-sm">
-                  Phân tích thị trường
-                </Tag>
-              </div>
             </div>
 
-            <div className="w-full md:w-[360px]">
+            <div className="w-full md:w-[360px] md:mt-16">
               <Search
                 placeholder="Tìm kiếm bài viết, chủ đề..."
                 allowClear
@@ -104,29 +93,31 @@ const NewsListPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur">
-            <span className="text-sm font-semibold uppercase tracking-wide text-emerald-100">
-              Chủ đề nổi bật
-            </span>
-            <Button
-              type={!params.category ? "primary" : "default"}
-              size="small"
-              className="!rounded-full !px-4"
-              onClick={() => handleCategory(undefined)}
-            >
-              Tất cả
-            </Button>
-            {categories.map((category) => (
+          <div className="mt-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-sm font-semibold uppercase tracking-wide text-emerald-100">
+                Chủ đề nổi bật
+              </span>
               <Button
-                key={category}
+                type={!params.category ? "primary" : "default"}
                 size="small"
                 className="!rounded-full !px-4"
-                type={params.category === category ? "primary" : "default"}
-                onClick={() => handleCategory(category)}
+                onClick={() => handleCategory(undefined)}
               >
-                {category}
+                Tất cả
               </Button>
-            ))}
+              {categories.map((category) => (
+                <Button
+                  key={category}
+                  size="small"
+                  className="!rounded-full !px-4"
+                  type={params.category === category ? "primary" : "default"}
+                  onClick={() => handleCategory(category)}
+                >
+                  {category}
+                </Button>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -140,7 +131,6 @@ const NewsListPage: React.FC = () => {
                 <Title level={3} className="!mb-1">
                   Thư viện tin tức tuyển dụng
                 </Title>
-                <p className="text-slate-500">Mọi bài viết được hiển thị chung trong một khung để dễ duyệt.</p>
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <Tag color="purple" className="m-0 rounded-full px-3 py-2">
