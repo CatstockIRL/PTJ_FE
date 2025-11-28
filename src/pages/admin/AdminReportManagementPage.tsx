@@ -72,9 +72,6 @@ type DetailRecord =
 interface ResolveFormValues {
   actionTaken: 'BanUser' | 'UnbanUser' | 'DeletePost' | 'Warn' | 'Ignore';
   reason?: string;
-  affectedUserId?: number;
-  affectedPostId?: number;
-  affectedPostType?: 'EmployerPost' | 'JobSeekerPost';
 }
 
 interface ResolveSystemFormValues extends AdminResolveSystemReportPayload {}
@@ -1022,6 +1019,7 @@ const AdminReportManagementPage: React.FC = () => {
         {detailLoading ? <p>Đang tải...</p> : renderDetailContent()}
       </Drawer>
 
+
       <Modal
         title="Xử lý report"
         open={resolveModalOpen}
@@ -1048,65 +1046,6 @@ const AdminReportManagementPage: React.FC = () => {
 
           <Form.Item name="reason" label="Lý do">
             <Input.TextArea rows={3} placeholder="Ghi chú xử lý (nếu có)" />
-          </Form.Item>
-
-          <Form.Item name="affectedUserId" label="Người bị tác động (User ID)">
-            <Input placeholder="Nhập ID người dùng nếu hành động ảnh hưởng" />
-          </Form.Item>
-
-          <Form.Item name="affectedPostId" label="Bài đăng bị tác động (Post ID)">
-            <Input placeholder="Nhập ID bài đăng nếu hành động ảnh hưởng" />
-          </Form.Item>
-
-          <Form.Item name="affectedPostType" label="Loại bài đăng">
-            <Select allowClear placeholder="Chọn loại bài đăng">
-              <Option value="EmployerPost">Bài đăng nhà tuyển dụng</Option>
-              <Option value="JobSeekerPost">Bài đăng ứng viên</Option>
-            </Select>
-          </Form.Item>
-        </Form>
-      </Modal>
-      <Modal
-        title="Xử lý report bài đăng"
-        open={resolveModalOpen}
-        onCancel={() => setResolveModalOpen(false)}
-        onOk={() => resolveForm.submit()}
-        confirmLoading={resolveSubmitting}
-        okText="Xác nhận"
-        cancelText="Hủy"
-      >
-        <Form form={resolveForm} layout="vertical" onFinish={handleResolveReport}>
-          <Form.Item
-            name="actionTaken"
-            label="Hành động"
-            rules={[{ required: true, message: 'Vui lòng chọn hành động' }]}
-          >
-            <Select placeholder="Chọn cách xử lý">
-              <Option value="BanUser">Cấm người dùng</Option>
-              <Option value="UnbanUser">Bỏ cấm người dùng</Option>
-              <Option value="DeletePost">Xóa bài đăng</Option>
-              <Option value="Warn">Cảnh báo</Option>
-              <Option value="Ignore">Bỏ qua</Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item name="reason" label="Lý do">
-            <Input.TextArea rows={3} placeholder="Ghi chú xử lý (nếu có)" />
-          </Form.Item>
-
-          <Form.Item name="affectedUserId" label="Người bị tác động (User ID)">
-            <Input placeholder="Nhập ID người dùng nếu hành động ảnh hưởng" />
-          </Form.Item>
-
-          <Form.Item name="affectedPostId" label="Bài đăng bị tác động (Post ID)">
-            <Input placeholder="Nhập ID bài đăng nếu hành động ảnh hưởng" />
-          </Form.Item>
-
-          <Form.Item name="affectedPostType" label="Loại bài đăng">
-            <Select allowClear placeholder="Chọn loại bài đăng">
-              <Option value="EmployerPost">Bài đăng nhà tuyển dụng</Option>
-              <Option value="JobSeekerPost">Bài đăng ứng viên</Option>
-            </Select>
           </Form.Item>
         </Form>
       </Modal>

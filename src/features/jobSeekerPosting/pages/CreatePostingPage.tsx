@@ -13,6 +13,7 @@ import {
   TimePicker,
   Space,
   Empty,
+  Tag,
 } from "antd";
 import type { Dayjs } from "dayjs";
 import dayjs from "dayjs";
@@ -741,51 +742,142 @@ const CreatePostingPage: React.FC = () => {
     </Spin>
   );
 
+  const summaryLocation =
+    postDetail?.preferredLocation || form.getFieldValue("locationDetail") || "Chưa cập nhật địa điểm";
+  const summaryCategory = postDetail?.categoryName || "Chưa có ngành";
+  const summarySubCategory = postDetail?.subCategoryName;
+  const summaryPhone = postDetail?.phoneContact || "Chưa cập nhật";
+  const summaryAge = postDetail?.age ? `${postDetail.age}+ tuổi` : "Chưa cập nhật";
+  const summaryWorkHour =
+    postDetail?.preferredWorkHourStart && postDetail?.preferredWorkHourEnd
+      ? `${postDetail.preferredWorkHourStart} - ${postDetail.preferredWorkHourEnd}`
+      : postDetail?.workHours || "Chưa cập nhật";
+
   return (
     <div
-      className={`p-8 bg-gray-50 min-h-screen ${
-        isViewMode ? "job-seeker-post-view" : ""
+      className={`min-h-screen ${
+        isViewMode ? "job-seeker-post-view" : "bg-gradient-to-b from-slate-50 via-white to-slate-100"
       }`}
     >
-      <div className={`${isViewMode ? "max-w-7xl" : "max-w-2xl"} mx-auto`}>
-        <Title level={2} className="mb-6 text-center">
-          {pageTitle}
-        </Title>
+      <div className={`${isViewMode ? "max-w-7xl" : "max-w-6xl"} mx-auto px-4 py-8`}>
+        {!isViewMode && (
+          <Card
+            className="mb-6 border-none shadow-lg bg-gradient-to-r from-sky-600 via-indigo-600 to-blue-700 text-white"
+            bodyStyle={{ padding: "18px 24px" }}
+          >
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-white/80">Bài đăng tìm việc</p>
+                <Title level={3} className="!text-white !mb-1">
+                  {isCreateMode ? "Tạo bài đăng tìm việc part-time" : "Chỉnh sửa bài đăng tìm việc"}
+                </Title>
+                <p className="text-white/85 max-w-3xl">
+                  Điền thông tin rõ ràng, thời gian làm việc và khu vực mong muốn để nhà tuyển dụng dễ dàng tìm thấy bạn.
+                </p>
+              </div>
+              <div className="px-4 py-3 bg-white/15 rounded-xl border border-white/20 text-sm">
+                <div className="font-semibold">Lưu ý</div>
+                <div className="text-white/85">Hãy nhập thông tin trung thực, số điện thoại chính xác để được liên hệ.</div>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {isViewMode ? (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">{MainContent}</div>
+          <Title level={2} className="mb-6 text-left">
+            {pageTitle}
+          </Title>
+        ) : null}
 
-            <div className="lg:col-span-1">
-              <div className="sticky top-4">
-                <Title level={4} className="mb-4 text-indigo-700">
-                  <i className="fas fa-bolt mr-2"></i>
-                  Công việc phù hợp
-                </Title>
-                <Spin spinning={isLoadingSuggestions}>
-                  <div className="flex flex-col gap-4">
-                    {suggestedJobs && suggestedJobs.length > 0 ? (
-                      suggestedJobs.map((job) => (
-                        <div
-                          key={job.id}
-                          className="transform hover:scale-102 transition-transform duration-200"
-                        >
-                          <JobCard job={job} />
-                        </div>
-                      ))
-                    ) : (
-                      <Empty
-                        description="Chưa tìm thấy công việc phù hợp"
-                        image={Empty.PRESENTED_IMAGE_SIMPLE}
-                      />
+        {isViewMode ? (
+          <div className="space-y-6">
+            <Card className="rounded-2xl border border-blue-50 shadow-lg">
+              <div className="flex flex-col gap-4 md:flex-row md:items-start">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs uppercase tracking-[0.25em] text-blue-500">Bài đăng tìm việc</p>
+                  <h3 className="text-2xl font-bold text-slate-900 leading-tight mt-1">{postDetail?.title}</h3>
+                  <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-slate-700">
+                    <Tag color="blue" className="rounded-full px-3 py-1">
+                      {summaryCategory}
+                    </Tag>
+                    {summarySubCategory && (
+                      <Tag color="geekblue" className="rounded-full px-3 py-1">
+                        {summarySubCategory}
+                      </Tag>
                     )}
+                    <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1">
+                      <i className="fas fa-map-marker-alt text-blue-500" />
+                      {summaryLocation}
+                    </span>
+                    <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
+                      <i className="fas fa-clock" />
+                      {summaryWorkHour}
+                    </span>
+                    <span className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-amber-700">
+                      <i className="fas fa-user" />
+                      {summaryAge}
+                    </span>
                   </div>
-                </Spin>
+                </div>
+                <div className="text-sm text-slate-600 space-y-1">
+                  <div className="font-semibold text-slate-800">Thông tin liên hệ</div>
+                  <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1">
+                    <i className="fas fa-phone text-blue-500" />
+                    {summaryPhone}
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">{MainContent}</div>
+
+              <div className="lg:col-span-1">
+                <div className="sticky top-4">
+                  <Title level={4} className="mb-4 text-indigo-700">
+                    <i className="fas fa-bolt mr-2"></i>
+                    Công việc phù hợp
+                  </Title>
+                  <Spin spinning={isLoadingSuggestions}>
+                    <div className="flex flex-col gap-4">
+                      {suggestedJobs && suggestedJobs.length > 0 ? (
+                        suggestedJobs.map((job) => (
+                          <div
+                            key={job.id}
+                            className="transform hover:scale-102 transition-transform duration-200"
+                          >
+                            <JobCard job={job} />
+                          </div>
+                        ))
+                      ) : (
+                        <Empty
+                          description="Chưa tìm thấy công việc phù hợp"
+                          image={Empty.PRESENTED_IMAGE_SIMPLE}
+                        />
+                      )}
+                    </div>
+                  </Spin>
+                </div>
               </div>
             </div>
           </div>
         ) : (
-          MainContent
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-4">
+              <Card className="shadow-lg border border-slate-200 rounded-xl">{MainContent}</Card>
+            </div>
+            <div className="lg:col-span-1">
+              <Card className="shadow-md border border-slate-200 rounded-xl">
+                <div className="text-sm text-slate-700 mb-3">
+                  <span className="font-semibold text-indigo-700">Mẹo nhỏ:</span> Viết tiêu đề ngắn gọn, mô tả rõ kỹ năng
+                  và thời gian rảnh của bạn để tăng cơ hội được liên hệ.
+                </div>
+                <div className="text-sm text-slate-600">
+                  Bạn có thể chọn CV đã tải lên để đính kèm cùng bài đăng trong phần bên dưới.
+                </div>
+              </Card>
+            </div>
+          </div>
         )}
       </div>
     </div>

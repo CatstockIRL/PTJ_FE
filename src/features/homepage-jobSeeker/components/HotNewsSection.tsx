@@ -39,16 +39,13 @@ const HotNewsCard: React.FC<{ item: NewsItem; onClick: (id: number) => void }> =
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/70 via-transparent to-transparent" />
-        <div className="absolute left-4 top-4 flex items-center gap-2">
-          <span className="inline-flex items-center gap-1 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-rose-600 shadow">
-            <FireOutlined /> Hot
-          </span>
-          {item.category && (
+        {item.category && (
+          <div className="absolute left-4 top-4">
             <Tag color="geekblue" className="m-0 rounded-full px-3 py-1 text-xs font-semibold">
               {item.category}
             </Tag>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-1 flex-col space-y-3 px-5 pb-5 pt-4">
@@ -128,7 +125,7 @@ const HotNewsSection: React.FC = () => {
         <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-end">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.3em] text-rose-500">
-              Tin tức nóng
+              Tin tức
             </p>
             <h2 className="text-2xl font-bold text-slate-900 md:text-3xl">
               Tin tức tuyển dụng nổi bật trong tuần

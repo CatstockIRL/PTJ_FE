@@ -8,13 +8,20 @@ import { useEmployerJobPosting } from '../employerJobHooks';
 import type { JobPostData } from '../jobTypes';
 import { useNavigate } from 'react-router-dom';
 
+const stripHtml = (value?: string | null) =>
+  (value ?? '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
 export const transformToEmployerPostDto = (data: JobPostData, userId: number) => ({
   userID: userId,
   title: data.jobTitle,
-  description: data.jobDescription,
+  description: stripHtml(data.jobDescription),
   salary: data.salaryValue,
   salaryText: data.salaryText,
-  requirements: data.requirements,
+  requirements: stripHtml(data.requirements),
   workHourStart: data.workHourStart,
   workHourEnd: data.workHourEnd,
   provinceId: data.provinceId,

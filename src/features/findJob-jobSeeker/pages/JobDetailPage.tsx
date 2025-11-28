@@ -634,29 +634,9 @@ const JobDetailPage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-500">
-                    Vị trí tuyển dụng
-                  </p>
                   <h1 className="text-2xl font-bold leading-tight text-slate-900 md:text-3xl">
                     {job.title}
                   </h1>
-                  <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-                    <span className="rounded-full bg-blue-50 px-3 py-1 font-semibold text-blue-700">
-                      {job.employerName}
-                    </span>
-                    {job.location && (
-                      <span className="flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-slate-700">
-                        <i className="fas fa-map-marker-alt text-blue-500" />
-                        {job.location}
-                      </span>
-                    )}
-                    {workHoursDisplay && (
-                      <span className="flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
-                        <i className="fas fa-clock" />
-                        {workHoursDisplay}
-                      </span>
-                    )}
-                  </div>
                 </div>
               </div>
 
@@ -665,7 +645,7 @@ const JobDetailPage: React.FC = () => {
                 <Button
                   type="primary"
                   size="large"
-                  className="!bg-blue-600 !border-blue-600 !shadow-md hover:!bg-blue-700"
+                  className="!bg-gradient-to-r !from-blue-600 !via-sky-600 !to-blue-700 !border-none !shadow-lg hover:!brightness-110"
                   onClick={handleApplyNow}
                   disabled={hasApplied}
                 >
@@ -674,7 +654,7 @@ const JobDetailPage: React.FC = () => {
                 <Button
                   size="large"
                   loading={followLoading}
-                  className="!border-slate-200 !text-slate-700 hover:!border-blue-500 hover:!text-blue-600"
+                  className="!border-blue-100 !text-blue-700 !bg-blue-50 hover:!bg-blue-100 hover:!border-blue-200"
                   onClick={async () => {
                     const employerId = job?.employerId;
                     const seekerId = jobSeekerId ? Number(jobSeekerId) : null;
@@ -761,7 +741,7 @@ const JobDetailPage: React.FC = () => {
               )}
               {job.subCategoryName && (
                 <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2">
-                  <span className="font-semibold text-slate-700">Nhánh:</span>
+                  <span className="font-semibold text-slate-700">Công việc:</span>
                   <span>{job.subCategoryName}</span>
                 </div>
               )}

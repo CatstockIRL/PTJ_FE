@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { Button, Dropdown, Avatar, message } from "antd";
 import {
   UserOutlined,
@@ -45,7 +45,6 @@ const jobSeekerNavLinks = [
     text: "Bài tuyển dụng đã ứng tuyển",
     path: "/viec-da-ung-tuyen",
   },
-  { icon: <FileTextOutlined />, text: "Quản lí CV của tôi", path: "/cv-cua-toi" },
 ];
 
 
@@ -83,6 +82,10 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ user, onLogout }) => {
     { icon: <UserOutlined />, text: "Hồ sơ của tôi", path: "/tai-khoan" },
     { icon: <LockOutlined />, text: "Đổi mật khẩu", path: "/doi-mat-khau" },
   ];
+
+  const pairedPaths = ["/nha-tuyen-dung-theo-doi", "/viec-lam-da-luu"];
+  const pairedLinks = jobSeekerNavLinks.filter((link) => pairedPaths.includes(link.path));
+  const remainingLinks = jobSeekerNavLinks.filter((link) => !pairedPaths.includes(link.path));
 
   return (
     <div
@@ -125,19 +128,35 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ user, onLogout }) => {
         <div className="space-y-3">
           <div className="flex items-center gap-3 text-gray-800 font-semibold text-base">
             <FileDoneOutlined />
-            <span>Quản lý tìm việc</span>
+            <span>Quản lý công việc của bạn</span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {jobSeekerNavLinks.map((link) => (
-              <NavLink
-                key={link.path}
-                to={link.path}
-                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-700"
-              >
-                {link.icon}
-                <span>{link.text}</span>
-              </NavLink>
-            ))}
+          <div className="flex flex-col gap-2">
+            {pairedLinks.length > 0 && (
+              <div className="grid grid-cols-2 gap-2">
+                {pairedLinks.map((link) => (
+                  <NavLink
+                    key={link.path}
+                    to={link.path}
+                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-700"
+                  >
+                    {link.icon}
+                    <span className="text-left">{link.text}</span>
+                  </NavLink>
+                ))}
+              </div>
+            )}
+            <div className="flex flex-col gap-2">
+              {remainingLinks.map((link) => (
+                <NavLink
+                  key={link.path}
+                  to={link.path}
+                  className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-700"
+                >
+                  {link.icon}
+                  <span>{link.text}</span>
+                </NavLink>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -167,7 +186,6 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ user, onLogout }) => {
 
 export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const { user } = useAuth();
-  const location = useLocation();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const jobSeekerProfile = useAppSelector((state) => state.jobSeekerProfile.profile);
@@ -184,6 +202,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
     user && isJobSeeker ? jobSeekerProfile?.fullName || user.username : user?.username;
   const baseAvatar = (user as any)?.avatarUrl || user?.avatar || undefined;
   const avatarSrc = user && isJobSeeker ? jobSeekerProfile?.profilePicture || baseAvatar : baseAvatar;
+  const employerDisplayName = (user as any)?.fullName || displayName;
 
   const handleLogout = () => {
     dispatch(logout());
@@ -209,7 +228,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
 
     return (
       <header
-        className="bg-blue-900 text-white shadow-md py-4 px-6 flex items-center justify-between sticky top-0 z-10"
+        className="bg-blue-900 text-white shadow-md py-4 px-6 flex items-center justify-between sticky top-0 z-30"
         style={{ height: "68px" }}
       >
         <div className="flex items-center">
@@ -236,7 +255,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                 icon={!avatarSrc ? <UserOutlined /> : undefined}
                 className="bg-blue-600"
               />
-              <span className="font-medium">{displayName}</span>
+              <span className="font-medium">{employerDisplayName}</span>
               <DownOutlined style={{ fontSize: "10px" }} />
             </a>
           </Dropdown>
@@ -253,7 +272,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
 
   return (
     <header
-      className="bg-white shadow-md py-4 px-6 flex items-center justify-between sticky top-0 z-10"
+      className="bg-white shadow-md py-4 px-6 flex items-center justify-between sticky top-0 z-30"
       style={{ height: "68px" }}
     >
       <div className="flex items-center flex-1 min-w-0">
@@ -322,12 +341,11 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
 
         <div className="border-l border-gray-300 h-6" />
 
-        {location.pathname.startsWith("/nha-tuyen-dung") ? (
-          <NavLink to="/" className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
-            Cho người tìm việc
-          </NavLink>
-        ) : (
-          <NavLink to="/nha-tuyen-dung/dashboard" className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
+        {user && user.roles.includes(ROLES.EMPLOYER) && (
+          <NavLink
+            to="/nha-tuyen-dung/ho-so"
+            className="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+          >
             Nhà tuyển dụng
           </NavLink>
         )}

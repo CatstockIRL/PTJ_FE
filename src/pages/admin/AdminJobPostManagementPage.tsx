@@ -417,18 +417,27 @@ const AdminJobPostManagementPage: React.FC = () => {
   const handleToggleEmployerPost = async (post: AdminEmployerPost, reason?: string) => {
     setToggleLoadingId(post.employerPostId);
     setToggleType('employer');
+    let shouldRefresh = true;
     try {
-      await adminJobPostService.toggleEmployerPostBlocked(post.employerPostId, reason);
+      await adminJobPostService.toggleEmployerPostBlocked(post.employerPostId, reason, { notify: false });
       message.success(
         post.status === 'Blocked'
-          ? 'Đã mở khóa bài đăng nhà tuyển dụng'
-          : 'Đã khóa bài đăng nhà tuyển dụng'
+          ? 'Da mo khoa bai dang nha tuyen dung'
+          : 'Da khoa bai dang nha tuyen dung'
       );
-      await fetchEmployerPosts();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to toggle employer post', error);
-      message.error('Không thể thay đổi trạng thái bài đăng');
+      const apiMessage: string | undefined = error?.response?.data?.message;
+      if (apiMessage?.includes('PostHidden')) {
+        message.warning('Trang thai bai da cap nhat, nhung server thieu template PostHidden.');
+      } else {
+        message.error(apiMessage ?? 'Khong the thay doi trang thai bai dang');
+        shouldRefresh = false;
+      }
     } finally {
+      if (shouldRefresh) {
+        await fetchEmployerPosts();
+      }
       setToggleLoadingId(null);
       setToggleType(null);
     }
@@ -437,18 +446,27 @@ const AdminJobPostManagementPage: React.FC = () => {
   const handleToggleJobSeekerPost = async (post: AdminJobSeekerPost, reason?: string) => {
     setToggleLoadingId(post.jobSeekerPostId);
     setToggleType('jobseeker');
+    let shouldRefresh = true;
     try {
-      await adminJobPostService.toggleJobSeekerPostArchived(post.jobSeekerPostId, reason);
+      await adminJobPostService.toggleJobSeekerPostArchived(post.jobSeekerPostId, reason, { notify: false });
       message.success(
         post.status === 'Archived'
-          ? 'Đã mở khóa bài đăng ứng viên'
-          : 'Đã khóa bài đăng ứng viên'
+          ? 'Da mo khoa bai dang ung vien'
+          : 'Da khoa bai dang ung vien'
       );
-      await fetchJobSeekerPosts();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to toggle job seeker post', error);
-      message.error('Không thể thay đổi trạng thái bài đăng');
+      const apiMessage: string | undefined = error?.response?.data?.message;
+      if (apiMessage?.includes('PostHidden')) {
+        message.warning('Trang thai bai da cap nhat, nhung server thieu template PostHidden.');
+      } else {
+        message.error(apiMessage ?? 'Khong the thay doi trang thai bai dang');
+        shouldRefresh = false;
+      }
     } finally {
+      if (shouldRefresh) {
+        await fetchJobSeekerPosts();
+      }
       setToggleLoadingId(null);
       setToggleType(null);
     }

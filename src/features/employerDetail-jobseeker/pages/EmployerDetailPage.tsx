@@ -83,11 +83,10 @@ const EmployerDetailPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-12 text-slate-800">
-      <div className="relative overflow-hidden bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-500 pb-16 pt-10">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.15),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(255,255,255,0.15),transparent_30%)]" />
-        <div className="container mx-auto px-4 relative">
+      <div className="relative overflow-hidden bg-gradient-to-r from-[#1e3a5f] via-[#295f8b] to-[#2b6cb0] pb-16 pt-10">
+        <div className="container relative mx-auto px-4">
           <div className="flex flex-col gap-6 md:flex-row md:items-center">
-            <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-2xl bg-white/20 backdrop-blur shadow-lg ring-2 ring-white/30">
+            <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-2xl bg-white/20 backdrop-blur shadow-lg ring-2 ring-white/40">
               <img
                 src={profile.avatarUrl || "https://via.placeholder.com/150"}
                 alt={profile.displayName}
@@ -95,13 +94,13 @@ const EmployerDetailPage: React.FC = () => {
               />
             </div>
             <div className="flex-1 text-white">
-              <p className="text-xs uppercase tracking-[0.25em] text-emerald-100">
+              <p className="text-xs uppercase tracking-[0.25em] text-sky-100">
                 Nhà tuyển dụng
               </p>
               <h1 className="text-3xl font-bold leading-tight md:text-4xl">
                 {profile.displayName}
               </h1>
-              <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-emerald-50">
+              <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-sky-50">
                 {profile.website && (
                   <a
                     href={profile.website}
@@ -119,7 +118,7 @@ const EmployerDetailPage: React.FC = () => {
               </div>
             </div>
             <div className="rounded-2xl bg-white/10 px-4 py-3 text-white shadow-lg backdrop-blur">
-              <p className="text-xs uppercase tracking-wide text-emerald-100">
+              <p className="text-xs uppercase tracking-wide text-sky-100">
                 Đánh giá
               </p>
               <div className="text-3xl font-bold">
@@ -131,7 +130,7 @@ const EmployerDetailPage: React.FC = () => {
                 value={averageRating}
                 className="text-sm text-yellow-300"
               />
-              <p className="text-xs text-emerald-100">
+              <p className="text-xs text-sky-100">
                 {ratings.length} đánh giá
               </p>
             </div>
@@ -148,7 +147,7 @@ const EmployerDetailPage: React.FC = () => {
                   <Title level={4} className="!mb-0">
                     Giới thiệu công ty
                   </Title>
-                  <Tag color="green">Thông tin</Tag>
+                  <Tag color="blue">Thông tin</Tag>
                 </div>
                 <Paragraph className="mt-3 leading-relaxed text-slate-700">
                   {getPlainText(profile.description)}
@@ -160,7 +159,7 @@ const EmployerDetailPage: React.FC = () => {
                   <Title level={4} className="!mb-0">
                     Tuyển dụng
                   </Title>
-                  <Tag color="green" className="rounded px-3 py-1 text-base">
+                  <Tag color="blue" className="rounded px-3 py-1 text-base">
                     {jobs.length} vị trí đang mở
                   </Tag>
                 </div>

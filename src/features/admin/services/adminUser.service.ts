@@ -34,8 +34,9 @@ const adminUserService = {
     return await baseService.get<AdminUserDetail>(`/admin/users/${id}`);
   },
 
-  async toggleActive(id: number): Promise<void> {
-    await baseService.post(`/admin/users/${id}/toggle-active`);
+  async toggleActive(id: number, options: { notify?: boolean } = {}): Promise<void> {
+    const notify = options.notify ?? false;
+    await baseService.post(`/admin/users/${id}/toggle-active?notify=${notify}`);
   }
 };
 

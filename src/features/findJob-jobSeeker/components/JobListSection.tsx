@@ -26,9 +26,16 @@ const normalizeNumericId = (value: unknown): number | null => {
   return Number.isNaN(parsed) ? null : parsed;
 };
 
-const salaryToMillions = (salary: number): number => {
-  if (salary <= 0) return 0;
-  return salary > 1_000_000 ? Math.round(salary / 1_000_000) : Math.round(salary);
+const normalizeText = (value?: string | null): string =>
+  (value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+
+const salaryToMillions = (salary: number): number | null => {
+  if (salary <= 0) return null;
+  return salary / 1_000_000;
 };
 
 const JobListCard: React.FC<{ job: JobPostView }> = ({ job }) => {
@@ -45,12 +52,12 @@ const JobListCard: React.FC<{ job: JobPostView }> = ({ job }) => {
   return (
     <Card
       key={job.employerPostId}
-      className="shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer rounded-xl"
+      className="shadow-sm border border-blue-50 hover:shadow-lg transition cursor-pointer rounded-2xl bg-white/95"
       onClick={() => navigate(`/viec-lam/chi-tiet/${job.employerPostId}`)}
     >
       <div className="flex flex-col gap-3">
         <div className="flex items-start gap-4">
-          <div className="h-12 w-12 rounded-full bg-white flex items-center justify-center border border-emerald-100 shadow-sm overflow-hidden">
+          <div className="h-12 w-12 rounded-full bg-white flex items-center justify-center border border-sky-100 shadow-sm overflow-hidden">
             {job.companyLogo ? (
               <img
                 src={getCompanyLogoSrc(job.companyLogo)}
@@ -58,7 +65,7 @@ const JobListCard: React.FC<{ job: JobPostView }> = ({ job }) => {
                 className="h-full w-full object-contain"
               />
             ) : (
-              <div className="h-full w-full flex items-center justify-center text-emerald-700 font-semibold bg-emerald-50">
+              <div className="h-full w-full flex items-center justify-center text-sky-700 font-semibold bg-sky-50">
                 {(job.employerName || "J").trim().charAt(0).toUpperCase()}
               </div>
             )}
@@ -66,9 +73,7 @@ const JobListCard: React.FC<{ job: JobPostView }> = ({ job }) => {
           <div className="flex-1">
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
               <div>
-                <p className="text-sm text-emerald-600 font-medium">
-                  {job.employerName || "Nhà tuyển dụng"}
-                </p>
+                <p className="text-sm text-sky-600 font-medium">{job.employerName || "Nhà tuyển dụng"}</p>
                 <h3 className="text-lg font-semibold text-gray-900 leading-tight">
                   {job.title}
                 </h3>
@@ -78,7 +83,7 @@ const JobListCard: React.FC<{ job: JobPostView }> = ({ job }) => {
                 <Button
                   type="primary"
                   size="middle"
-                  className="bg-emerald-600 hover:bg-emerald-700"
+                  className="bg-sky-600 hover:bg-sky-700 border-sky-600"
                   onClick={(e) => {
                     e.stopPropagation();
                     navigate(`/viec-lam/chi-tiet/${job.employerPostId}`);
@@ -99,7 +104,7 @@ const JobListCard: React.FC<{ job: JobPostView }> = ({ job }) => {
                   {job.workHours}
                 </Tag>
               )}
-              <Tag color="green" className="px-2 py-1 rounded-full font-semibold">
+              <Tag color="blue" className="px-2 py-1 rounded-full font-semibold">
                 {salaryText}
               </Tag>
               {job.categoryName && (
@@ -202,13 +207,13 @@ const JobListSection: React.FC<JobListSectionProps> = ({
   }, [provinceId]);
 
   const filteredJobs = useMemo(() => {
-    const keywordLower = keyword.trim().toLowerCase();
+    const keywordNormalized = normalizeText(keyword);
 
     return jobs.filter((job) => {
       const titleMatch =
-        !keywordLower ||
-        job.title?.toLowerCase().includes(keywordLower) ||
-        job.location?.toLowerCase().includes(keywordLower);
+        !keywordNormalized ||
+        normalizeText(job.title).includes(keywordNormalized) ||
+        normalizeText(job.location).includes(keywordNormalized);
 
       const provinceMatch =
         provinceId === null ||
@@ -220,14 +225,13 @@ const JobListSection: React.FC<JobListSectionProps> = ({
         !categoryId ||
         job.categoryId === categoryId ||
         (filters.categoryName &&
-          job.categoryName?.toLowerCase() === filters.categoryName.toLowerCase());
+          normalizeText(job.categoryName) === normalizeText(filters.categoryName));
 
       const subCategoryMatch =
         !subCategoryId ||
         job.subCategoryId === subCategoryId ||
         (filters.subCategoryName &&
-          job.subCategoryName?.toLowerCase() ===
-            filters.subCategoryName.toLowerCase());
+          normalizeText(job.subCategoryName) === normalizeText(filters.subCategoryName));
 
       let salaryPresenceMatch = true;
       if (salary === "hasValue") {
@@ -243,16 +247,16 @@ const JobListSection: React.FC<JobListSectionProps> = ({
       let salaryRangeMatch = true;
       switch (salaryRange) {
         case "under1":
-          salaryRangeMatch = !!salaryMillions && salaryMillions < 1;
+          salaryRangeMatch = salaryMillions !== null && salaryMillions < 1;
           break;
         case "1-3":
-          salaryRangeMatch = !!salaryMillions && salaryMillions >= 1 && salaryMillions <= 3;
+          salaryRangeMatch = salaryMillions !== null && salaryMillions >= 1 && salaryMillions <= 3;
           break;
         case "3-5":
-          salaryRangeMatch = !!salaryMillions && salaryMillions > 3 && salaryMillions <= 5;
+          salaryRangeMatch = salaryMillions !== null && salaryMillions > 3 && salaryMillions <= 5;
           break;
         case "5plus":
-          salaryRangeMatch = !!salaryMillions && salaryMillions > 5;
+          salaryRangeMatch = salaryMillions !== null && salaryMillions > 5;
           break;
         case "negotiable":
           salaryRangeMatch = !numericSalary || numericSalary <= 0;

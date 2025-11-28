@@ -8,14 +8,12 @@ import {
   Card, 
   Tag, 
   Divider,
-  Button,
   Empty
 } from 'antd';
 import { 
   ClockCircleOutlined, 
-  FireFilled, 
-  UserOutlined,
-  ArrowLeftOutlined
+  ReadOutlined, 
+  UserOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 
@@ -25,7 +23,7 @@ import { useNewsList } from '../../listNew-JobSeeker/hooks';
 
 const { Title, Paragraph } = Typography;
 
-// Component hiển thị thẻ tin tức HOT
+// Component hiển thị thẻ tin gợi ý
 const HotNewsItem: React.FC<{ item: any; onClick: (id: number) => void }> = ({ item, onClick }) => (
   <div 
     className="group cursor-pointer mb-4 p-3 bg-white rounded-lg shadow-sm hover:shadow-md transition-all border border-gray-100"
@@ -38,11 +36,6 @@ const HotNewsItem: React.FC<{ item: any; onClick: (id: number) => void }> = ({ i
           alt={item.title}
           className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
         />
-        <div className="absolute top-0 left-0">
-          <Tag color="#f50" className="m-0 rounded-br-md border-none text-[10px] font-bold px-1">
-             <FireFilled className="mr-1" />HOT
-          </Tag>
-        </div>
       </div>
       <div className="flex-1 flex flex-col justify-between py-1">
         <h4 className="text-sm font-medium text-gray-800 line-clamp-2 group-hover:text-indigo-600 transition-colors leading-snug">
@@ -63,27 +56,31 @@ const NewsDetailPage: React.FC = () => {
   const newsId = Number(id);
 
   const { newsDetail, loading: loadingDetail } = useNewsDetail(newsId);
-  // Sử dụng hook từ listView để lấy danh sách tin tức làm tin gợi ý/tin hot
+  // Sử dụng hook từ listView để lấy danh sách tin tức làm tin gợi ý
   const { newsList, loading: loadingList } = useNewsList(); 
 
-  const hotNews = newsList
-    .filter(item => item.priority < 2 && item.newsID !== newsId)
+  const otherNews = newsList
+    .filter(item => item.newsID !== newsId)
     .slice(0, 5); 
 
   const handleHotNewsClick = (clickedId: number) => {
-    navigate(`/cam-nang-viec-lam/${clickedId}`);
+    navigate(`/newsDetail/${clickedId}`);
     window.scrollTo(0, 0);
   };
 
+  const stripHtml = (html: string) => html.replace(/<[^>]+>/g, " ");
+
   const renderContent = (content: string) => {
-    return content.split(/\r\n|\n/).map((paragraph, index) => {
-      if (!paragraph.trim()) return null;
-      return (
-        <Paragraph key={index} className="text-gray-700 text-base leading-relaxed mb-4 text-justify">
-          {paragraph}
-        </Paragraph>
-      );
-    });
+    return stripHtml(content)
+      .split(/\r\n|\n/)
+      .map((paragraph, index) => {
+        if (!paragraph.trim()) return null;
+        return (
+          <Paragraph key={index} className="text-gray-700 text-base leading-relaxed mb-4 text-justify">
+            {paragraph}
+          </Paragraph>
+        );
+      });
   };
 
   if (loadingDetail) {
@@ -105,17 +102,17 @@ const NewsDetailPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Row gutter={[32, 32]}>
           
-          {/* --- LEFT SIDEBAR (Tin Hot) --- */}
+          {/* --- LEFT SIDEBAR (Tin khác) --- */}
           <Col xs={24} lg={7} className="order-2 lg:order-1">
             <div className="bg-white p-5 rounded-xl shadow-sm sticky top-6 border border-gray-100">
-                <div className="flex items-center mb-6 border-b-2 border-orange-100 pb-2">
-                    <FireFilled className="text-orange-500 text-xl mr-2" />
-                    <Title level={4} className="!mb-0 text-gray-800">Tin Nổi Bật</Title>
+                <div className="flex items-center mb-6 border-b-2 border-blue-100 pb-2">
+                    <ReadOutlined className="text-blue-600 text-xl mr-2" />
+                    <Title level={4} className="!mb-0 text-gray-800">Tin khác</Title>
                 </div>
                 
                 <Spin spinning={loadingList}>
-                    {hotNews.length > 0 ? (
-                        hotNews.map(news => (
+                    {otherNews.length > 0 ? (
+                        otherNews.map(news => (
                             <HotNewsItem 
                                 key={news.newsID} 
                                 item={news} 
@@ -123,7 +120,7 @@ const NewsDetailPage: React.FC = () => {
                             />
                         ))
                     ) : (
-                        <Empty description="Không có tin nổi bật" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                        <Empty description="Không có tin khác" image={Empty.PRESENTED_IMAGE_SIMPLE} />
                     )}
                 </Spin>
 
@@ -179,16 +176,15 @@ const NewsDetailPage: React.FC = () => {
                     {renderContent(newsDetail.content)}
                 </div>
 
-                {/* Footer Actions */}
                 <Divider />
-                <div className="flex justify-between items-center">
-                    <Button 
-                        icon={<ArrowLeftOutlined />} 
-                        onClick={() => navigate('/news')}
-                    >
-                        Quay lại danh sách
-                    </Button>
-                    
+                <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <Title level={4} className="!mb-0">Bình luận</Title>
+                    <Tag color="blue">Đang cập nhật</Tag>
+                  </div>
+                  <div className="mt-3 text-sm text-slate-500">
+                    Tính năng bình luận sẽ sớm được bổ sung.
+                  </div>
                 </div>
              </Card>
           </Col>

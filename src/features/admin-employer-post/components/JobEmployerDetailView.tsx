@@ -7,6 +7,11 @@ const formatCurrency = (value: number | null | undefined) => {
   return `${value.toLocaleString("vi-VN")} VND`;
 };
 
+const stripHtml = (value?: string | null) => {
+  if (!value) return '';
+  return value.replace(/<[^>]+>/g, '').replace(/&nbsp;/gi, ' ').trim();
+};
+
 const DetailField: React.FC<{
   label: string;
   children: React.ReactNode;
@@ -19,7 +24,7 @@ const DetailField: React.FC<{
     {isHtml ? (
       <div
         className="prose prose-sm max-w-none text-gray-900 col-span-2"
-        dangerouslySetInnerHTML={{ __html: (children as string) || "N/A" }}
+        dangerouslySetInnerHTML={{ __html: stripHtml(children as string) || "N/A" }}
       />
     ) : (
       <span className="col-span-2 text-gray-900">{children || "N/A"}</span>
@@ -37,7 +42,7 @@ const JobEmployerDetailView: React.FC<{ post: AdminEmployerPostDetailView }> = (
       <DetailField label="Email NTD">{post.employerEmail}</DetailField>
       <DetailField label="Tên NTD">{post.employerName}</DetailField>
       <DetailField label="Địa điểm">{post.location}</DetailField>
-      <DetailField label="Lương">{formatCurrency(post.salary)}</DetailField>
+      <DetailField label="Lương việc làm">{formatCurrency(post.salary)}</DetailField>
       <DetailField label="Giờ làm việc">{post.workHours}</DetailField>
       <DetailField label="Ngành nghề">{post.categoryName}</DetailField>
       <DetailField label="Liên hệ">{post.phoneContact}</DetailField>
