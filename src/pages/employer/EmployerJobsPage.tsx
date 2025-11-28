@@ -52,43 +52,9 @@ const { Option } = Select;
 const { Search } = Input;
 const { Text } = Typography;
 
-const MOCK_API_RESPONSE = {
-  success: true,
-  total: 3,
-  data: [
-    {
-      employerPostId: 9991,
-      title: "Trình Dược Viên Tại Tuyên Quang [Thu Nhập Không Giới Hạn] (Mẫu)",
-      location: "Phường Minh Xuân, TP Tuyên Quang, Tuyên Quang",
-      matchPercent: 97,
-      phoneContact: "0326397621",
-      employerName: "Hệ thống (Gợi ý mẫu)",
-      createdAt: new Date().toISOString(),
-    },
-    {
-      employerPostId: 9992,
-      title: "Trình Dược Viên Tại Điện Biên (Đi làm ngay) (Mẫu)",
-      location: "Xã Mường Tùng, Huyện Mường Chà, Điện Biên",
-      matchPercent: 82,
-      phoneContact: "0326845871",
-      employerName: "Hệ thống (Gợi ý mẫu)",
-      createdAt: new Date().toISOString(),
-    },
-    {
-      employerPostId: 9993,
-      title: "Nhân viên Kinh doanh Dược phẩm - Yên Bái (Mẫu)",
-      location: "Xã Lâm Giang, Huyện Văn Yên, Yên Bái",
-      matchPercent: 75,
-      phoneContact: "0327865284",
-      employerName: "Hệ thống (Gợi ý mẫu)",
-      createdAt: new Date().toISOString(),
-    },
-  ],
-};
-
 const formatCurrency = (value: number | null | undefined) => {
   if (value == null || value <= 0) return "Thỏa thuận";
-  return `${value.toLocaleString("vi-VN")} vnđ`;
+  return `${value.toLocaleString("vi-VN")} VNĐ`;
 };
 
 const EmployerJobsPage: React.FC = () => {
@@ -180,14 +146,14 @@ const EmployerJobsPage: React.FC = () => {
     try {
       const res: any = await jobPostService.getSuggestions(postId);
 
-      if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+      if (res && res.success && Array.isArray(res.data)) {
         setSuggestionList(res.data);
       } else {
-        setSuggestionList(MOCK_API_RESPONSE.data);
+        setSuggestionList([]);
       }
     } catch (error) {
-      console.error("Lỗi tải gợi ý, sử dụng dữ liệu mẫu", error);
-      setSuggestionList(MOCK_API_RESPONSE.data);
+      console.error("Suggestion fetch error", error);
+      setSuggestionList([]);
     } finally {
       setIsSuggestionLoading(false);
     }
@@ -425,7 +391,8 @@ const EmployerJobsPage: React.FC = () => {
             {record.location || "(Chưa có địa điểm)"}
           </div>
           <div className="text-xs text-gray-500">
-            Cập nhật: {new Date(record.createdAt).toLocaleDateString("vi-VN")}
+            Cập nhật:{" "}
+            {new Date(record.createdAt).toLocaleDateString("vi-VN")}
           </div>
         </div>
       ),
@@ -486,7 +453,7 @@ const EmployerJobsPage: React.FC = () => {
               Gợi ý
             </Button>
           </Tooltip>
-          <Tooltip title="Ứng viên & Đã lưu">
+          <Tooltip title="Ứng viên & đã lưu">
             <Button
               icon={<UsergroupAddOutlined />}
               size="small"
@@ -569,7 +536,7 @@ const EmployerJobsPage: React.FC = () => {
                 }}
                 loading={statusActionLoadingId === record.employerPostId}
               >
-              Khác
+                Khác
               </Button>
             </Dropdown>
           </Tooltip>
@@ -590,8 +557,8 @@ const EmployerJobsPage: React.FC = () => {
               Bài tuyển dụng công việc của tôi ({allJobs.length})
             </Typography.Title>
             <p className="text-white/80 max-w-2xl">
-              Theo dõi, lọc và cập nhật nhanh các tin tuyển dụng đang chạy. Đăng tin
-              mới chỉ với một bước.
+              Theo dõi, lọc và cập nhật nhanh các tin tuyển dụng đang chạy. Đăng
+              tin mới chỉ với một bước.
             </p>
             <div className="flex gap-2 flex-wrap">
               <Button
@@ -642,7 +609,7 @@ const EmployerJobsPage: React.FC = () => {
       </div>
 
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 space-y-5">
-        {/* HÀNG FILTER DÀN ĐỀU 24 CỘT */}
+        {/* HÀNG FILTER DẪN ĐẦU 24 CỘT */}
         <Row gutter={[16, 16]}>
           <Col xs={24} md={12} lg={10}>
             <Search
@@ -740,6 +707,7 @@ const EmployerJobsPage: React.FC = () => {
             loading={isSuggestionLoading}
             itemLayout="vertical"
             dataSource={suggestionList}
+            locale={{ emptyText: "Không có gợi ý phù hợp" }}
             renderItem={(item) => (
               <List.Item
                 key={item.employerPostId}
@@ -800,7 +768,7 @@ const EmployerJobsPage: React.FC = () => {
                         </span>
                       </div>
                       <div className="text-xs text-gray-400 mt-2">
-                        Đăng bởi: {item.employerName} •{" "}
+                        Đăng bởi: {item.employerName} ·{" "}
                         {item.createdAt
                           ? new Date(item.createdAt).toLocaleDateString(
                               "vi-VN"
