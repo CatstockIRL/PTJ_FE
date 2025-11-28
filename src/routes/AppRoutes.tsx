@@ -46,6 +46,7 @@ import JobSeekerCvPage from "../features/jobSeekerCv/pages/JobSeekerCvPage";
 import EmployerDetailPage from "../features/employerDetail-jobseeker/pages/EmployerDetailPage";
 import NewsListPage from "../features/listNew-JobSeeker/pages/NewsListPage";
 import NewsDetailPage from "../features/newsDetail-JobSeeker/pages/NewsDetailPage";
+import AdminEmployerRegistrationPage from "../pages/admin/AdminEmployerRegistrationPage";
 
 export const AppRoutes: React.FC = () => {
   return (
@@ -60,18 +61,29 @@ export const AppRoutes: React.FC = () => {
         <Route path="employer" element={<ListEmployerPage />} />
         <Route path="login" element={<JobSeekerLoginPage />} />
         <Route path="register" element={<UnifiedRegisterPage />} />
-        <Route path="nha-tuyen-dung/register" element={<UnifiedRegisterPage defaultRole="employer" />} />
+        <Route
+          path="nha-tuyen-dung/register"
+          element={<UnifiedRegisterPage defaultRole="employer" />}
+        />
         <Route path="verify-email" element={<EmailVerifyPage />} />
         <Route path="forgot-password" element={<ForgotPasswordPage />} />
         <Route path="reset-password" element={<ResetPasswordPage />} />
         {/* <Route path="account/confirm-change-password" element={<ConfirmChangePasswordPage />} /> */}
-        <Route path="/set-new-password" element={<ConfirmChangePasswordPage />} />
-        <Route path="google/select-role" element={<GoogleRoleSelectionPage />} />
+        <Route
+          path="/set-new-password"
+          element={<ConfirmChangePasswordPage />}
+        />
+        <Route
+          path="google/select-role"
+          element={<GoogleRoleSelectionPage />}
+        />
         <Route path="unauthorized" element={<UnauthorizedPage />} />
         <Route path="verify-success" element={<VerifySuccessPage />} />
         <Route path="verify-failed" element={<VerifyFailedPage />} />
-        <Route path="/nha-tuyen-dung/chi-tiet/:id" element={<EmployerDetailPage />} />
-
+        <Route
+          path="/nha-tuyen-dung/chi-tiet/:id"
+          element={<EmployerDetailPage />}
+        />
 
         {/* Job Seeker Protected Routes */}
         <Route element={<ProtectedRoute allowedRoles={[ROLES.JOB_SEEKER]} />}>
@@ -156,6 +168,10 @@ export const AppRoutes: React.FC = () => {
           <Route
             path="admin/employer-post"
             element={<AdminEmployerPostPage />}
+          />
+          <Route
+            path="admin/employer-registration"
+            element={<AdminEmployerRegistrationPage />}
           />
         </Route>
       </Route>

@@ -7,6 +7,7 @@ import {
   AppstoreOutlined,
   FlagOutlined,
   NotificationOutlined,
+  CheckCircleOutlined,
 } from "@ant-design/icons";
 
 interface AdminNavItem {
@@ -28,6 +29,12 @@ const adminNavItems: AdminNavItem[] = [
     label: "Tài khoản",
     description: "Quản lý người dùng và quyền hạn",
     icon: <UserSwitchOutlined />,
+  },
+  {
+    path: "/admin/employer-registration",
+    label: "Phê duyệt NTD",
+    description: "Xét duyệt hồ sơ nhà tuyển dụng",
+    icon: <CheckCircleOutlined />,
   },
   {
     path: "/admin/job-posts",
@@ -61,12 +68,18 @@ const AdminSidebar: React.FC = () => {
   return (
     <aside className="bg-white border-r border-gray-100 w-72 flex-shrink-0 h-[calc(100vh-68px)] sticky top-[68px] overflow-y-auto shadow-md">
       <div className="px-5 py-4 border-b border-gray-100">
-        <p className="text-xs uppercase tracking-widest text-gray-400">Trung tâm quản trị</p>
-        <p className="text-sm text-gray-500 mt-1">Chọn module bạn muốn quản lý</p>
+        <p className="text-xs uppercase tracking-widest text-gray-400">
+          Trung tâm quản trị
+        </p>
+        <p className="text-sm text-gray-500 mt-1">
+          Chọn module bạn muốn quản lý
+        </p>
       </div>
       <nav className="p-4 flex flex-col gap-3">
         {adminNavItems.map((item) => {
-          const isActive = location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);
+          const isActive =
+            location.pathname === item.path ||
+            location.pathname.startsWith(`${item.path}/`);
           return (
             <NavLink
               key={item.path}
@@ -77,12 +90,18 @@ const AdminSidebar: React.FC = () => {
                   : "border-transparent text-gray-700 hover:border-gray-200 hover:bg-gray-50"
               }`}
             >
-              <span className={`text-lg flex items-center ${isActive ? "text-blue-600" : "text-gray-400"}`}>
+              <span
+                className={`text-lg flex items-center ${
+                  isActive ? "text-blue-600" : "text-gray-400"
+                }`}
+              >
                 {item.icon}
               </span>
               <div className="flex flex-col leading-tight">
                 <span className="font-semibold">{item.label}</span>
-                <span className="text-xs text-gray-500">{item.description}</span>
+                <span className="text-xs text-gray-500">
+                  {item.description}
+                </span>
               </div>
             </NavLink>
           );
@@ -93,4 +112,3 @@ const AdminSidebar: React.FC = () => {
 };
 
 export default AdminSidebar;
-
