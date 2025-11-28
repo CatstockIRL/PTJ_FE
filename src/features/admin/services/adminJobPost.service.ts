@@ -37,8 +37,13 @@ const adminJobPostService = {
     return await baseService.get<AdminEmployerPostDetail>(`/admin/jobposts/employer/${id}`);
   },
 
-  async toggleEmployerPostBlocked(id: number, reason?: string): Promise<void> {
-    await baseService.post(`/admin/jobposts/employer/${id}/toggle-block`, {
+  async toggleEmployerPostBlocked(
+    id: number,
+    reason?: string,
+    options: { notify?: boolean } = {}
+  ): Promise<void> {
+    const notify = options.notify ?? false;
+    await baseService.post(`/admin/jobposts/employer/${id}/toggle-block?notify=${notify}`, {
       reason: reason?.trim() ?? ''
     });
   },
@@ -54,8 +59,13 @@ const adminJobPostService = {
     return await baseService.get<AdminJobSeekerPostDetail>(`/admin/jobposts/jobseeker/${id}`);
   },
 
-  async toggleJobSeekerPostArchived(id: number, reason?: string): Promise<void> {
-    await baseService.post(`/admin/jobposts/jobseeker/${id}/toggle-archive`, {
+  async toggleJobSeekerPostArchived(
+    id: number,
+    reason?: string,
+    options: { notify?: boolean } = {}
+  ): Promise<void> {
+    const notify = options.notify ?? false;
+    await baseService.post(`/admin/jobposts/jobseeker/${id}/toggle-archive?notify=${notify}`, {
       reason: reason?.trim() ?? ''
     });
   }

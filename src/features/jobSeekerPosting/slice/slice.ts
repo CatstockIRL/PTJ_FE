@@ -1,7 +1,8 @@
-import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
+﻿import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
 import { createJobSeekerPost, getJobById, updateJobSeekerPost, deleteJobSeekerPost, getJobSuggestions } from '../services';
 import type { CreateJobSeekerPostPayload, JobSeekerPost, UpdateJobSeekerPostPayload } from '../types';
 import type { Job } from '../../../types';
+import { getCompanyLogoSrc, getJobDetailCached } from '../../../utils/jobPostHelpers';
 
 interface JobSeekerPostingState {
   create: {
@@ -120,25 +121,31 @@ export const fetchPostSuggestions = createAsyncThunk(
   async (jobSeekerPostId: number, { rejectWithValue }) => {
     try {
       const response = await getJobSuggestions(jobSeekerPostId);
-      
+
       if (response.success && Array.isArray(response.data)) {
-        // Mapping dữ liệu từ API (JobSuggestionData) sang Interface Job
-        const mappedJobs: Job[] = response.data.map((item) => ({
-          id: item.employerPostId.toString(),
-          title: item.title || 'Công việc gợi ý',
-          description: item.description || '',
-          company: item.employerName || null,
-          location: item.location || null,
-          salary: 'Thỏa thuận', 
-          updatedAt: item.createdAt,
-          companyLogo: null, 
-          isHot: item.matchPercent >= 90,
-        }));
+        const mappedJobs: Job[] = await Promise.all(
+          response.data.map(async (item) => {
+            const detail = await getJobDetailCached(item.employerPostId?.toString?.() ?? '');
+            const logoSrc = getCompanyLogoSrc(detail?.companyLogo);
+
+            return {
+              id: item.employerPostId.toString(),
+              title: item.title || 'Cong viec goi y',
+              description: item.description || '',
+              company: item.employerName || null,
+              location: item.location || null,
+              salary: 'Thoa thuan',
+              updatedAt: item.createdAt,
+              companyLogo: logoSrc,
+              isHot: item.matchPercent >= 90,
+            };
+          })
+        );
         return mappedJobs;
       }
       return [];
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Không thể tải danh sách gợi ý');
+      return rejectWithValue(error.response?.data?.message || 'Khong the tai danh sach goi y');
     }
   }
 );
@@ -239,3 +246,4 @@ const jobSeekerPostingSlice = createSlice({
 
 export const { resetPostStatus } = jobSeekerPostingSlice.actions;
 export default jobSeekerPostingSlice.reducer;
+

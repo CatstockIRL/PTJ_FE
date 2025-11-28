@@ -66,7 +66,7 @@ const NewsListPage: React.FC = () => {
           <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
             <div className="md:w-2/3">
               <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1 text-sm font-semibold uppercase tracking-[0.2em] text-emerald-100 ring-1 ring-white/15">
-                <FireOutlined /> Tin nóng mỗi ngày
+                <FireOutlined /> Tin tức mỗi ngày
               </span>
               <Title className="!mt-5 !mb-3 !text-4xl !font-black leading-tight sm:!text-5xl lg:!text-6xl !text-white drop-shadow-sm">
                 Cẩm nang nghề nghiệp & góc nhìn thị trường

@@ -156,7 +156,7 @@ const EmployerDashboard: React.FC = () => {
               PTJ FOR BUSINESS
             </p>
             <h1 className="text-2xl md:text-3xl font-bold leading-tight">
-              Đăng tin tuyển dụng miễn phí, tìm CV ứng viên nhanh hơn
+              Đăng bài tuyển dụng miễn phí, tìm CV ứng viên nhanh hơn
             </h1>
             <p className="text-sm text-white/80 max-w-2xl">
               Tiếp cận kho ứng viên chất lượng, quản lý chiến dịch tuyển dụng và theo dõi CV trong một giao diện đồng nhất.
@@ -168,14 +168,14 @@ const EmployerDashboard: React.FC = () => {
                 className="bg-white text-blue-600 hover:text-blue-700"
                 onClick={() => navigate("/nha-tuyen-dung/dang-tin")}
               >
-                Đăng tin ngay
+                Đăng bài đăng tuyển dụng ngay
               </Button>
               <Button
                 ghost
                 className="text-white border-white hover:bg-white hover:text-blue-600"
                 onClick={() => navigate("/nha-tuyen-dung/cong-viec")}
               >
-                Quản lý tin tuyển dụng
+                Quản lý bài đăng tuyển dụng việc làm
               </Button>
             </div>
           </div>

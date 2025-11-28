@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Rate, Tag } from "antd";
 import type { Employer } from "../types";
 import ratingService from "../../../services/ratingService";
+import defaultLogo from "../../../assets/no-logo.png";
 
 interface EmployerCardProps {
   employer: Employer;
@@ -25,16 +26,22 @@ const EmployerCard: React.FC<EmployerCardProps> = ({ employer }) => {
     }
   }, [employer.id]);
 
-  const logoSrc = employer.logo || "/src/assets/no-logo.png";
+  const logoSrc = employer.logo || defaultLogo;
   const locationDisplay =
     employer.locations && employer.locations.length > 0
       ? employer.locations.join(", ")
       : "Đang cập nhật";
+  const categoryDisplay =
+    employer.categories && employer.categories.length > 0
+      ? employer.categories.join(", ")
+      : "Ngành nghề đang cập nhật";
+  const descriptionDisplay =
+    (employer.description && employer.description.trim()) || categoryDisplay;
 
   return (
     <div className="h-full rounded-2xl border border-slate-100 bg-white shadow-md transition hover:-translate-y-1 hover:shadow-xl">
-      <div className="relative h-28 overflow-hidden rounded-t-2xl bg-gradient-to-r from-emerald-500 via-cyan-500 to-blue-500">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.25),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(255,255,255,0.18),transparent_30%)]" />
+      <div className="relative h-28 overflow-hidden rounded-t-2xl bg-gradient-to-r from-blue-700 via-blue-600 to-slate-800">
+        <div className="absolute inset-0 bg-blue-900/30" />
         <div className="absolute left-1/2 top-1/2 h-20 w-20 -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-2 shadow-lg ring-2 ring-white/70">
           <img
             src={logoSrc}
@@ -64,6 +71,10 @@ const EmployerCard: React.FC<EmployerCardProps> = ({ employer }) => {
             <span className="truncate max-w-[160px]">{locationDisplay}</span>
           </div>
         </div>
+
+        <p className="mt-3 text-sm text-slate-600 line-clamp-2" title={descriptionDisplay}>
+          {descriptionDisplay}
+        </p>
       </div>
     </div>
   );

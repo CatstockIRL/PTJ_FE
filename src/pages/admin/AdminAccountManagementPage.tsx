@@ -155,7 +155,7 @@ const AdminAccountManagementPage: React.FC = () => {
     try {
       const detail = await adminUserService.getUserDetail(userId);
       setSelectedUser(detail);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch user detail', error);
       message.error('Không thể tải chi tiết tài khoản');
       setDetailOpen(false);
@@ -167,19 +167,27 @@ const AdminAccountManagementPage: React.FC = () => {
   const handleToggleActive = async (user: AdminUser) => {
     setToggleLoadingId(user.userId);
     try {
-      await adminUserService.toggleActive(user.userId);
+      await adminUserService.toggleActive(user.userId, { notify: false });
       message.success(
         `Đã ${user.isActive ? 'vô hiệu hóa' : 'kích hoạt'} tài khoản ${user.username}`
       );
+    } catch (error: any) {
+      console.error('Failed to toggle user active', error);
+      const apiMessage: string | undefined = error?.response?.data?.message;
+      if (apiMessage?.includes('AccountSuspended')) {
+        message.warning(
+          'Đã khóa tài khoản nhưng server thiếu template AccountSuspended. Trạng thái đã được cập nhật.'
+        );
+      } else {
+        message.error(apiMessage ?? 'Không thể thay đổi trạng thái tài khoản');
+        return;
+      }
+    } finally {
       await fetchUsers();
       if (selectedUser?.userId === user.userId) {
         const detail = await adminUserService.getUserDetail(user.userId);
         setSelectedUser(detail);
       }
-    } catch (error) {
-      console.error('Failed to toggle user active', error);
-      message.error('Không thể thay đổi trạng thái tài khoản');
-    } finally {
       setToggleLoadingId(null);
     }
   };

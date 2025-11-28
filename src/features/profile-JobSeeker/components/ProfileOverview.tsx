@@ -1,6 +1,6 @@
 import React from 'react';
-import { Card, Avatar, Skeleton, Typography, Tag, Descriptions } from 'antd';
-import { EnvironmentOutlined, IdcardOutlined, MailOutlined, PhoneOutlined } from '@ant-design/icons';
+import { Card, Skeleton, Typography, Descriptions } from 'antd';
+import { EnvironmentOutlined, MailOutlined, PhoneOutlined } from '@ant-design/icons';
 import type { JobSeekerProfileDto } from '../types';
 
 const { Title, Text } = Typography;
@@ -40,30 +40,6 @@ const ProfileOverview: React.FC<ProfileOverviewProps> = ({ profile, loading, ema
 
   return (
     <div className="space-y-4">
-      <Card className="shadow-sm">
-        <div className="flex flex-col md:flex-row gap-4 items-center">
-          <Avatar
-            size={96}
-            src={profile.profilePicture ?? undefined}
-            icon={<IdcardOutlined />}
-          />
-          <div className="text-center md:text-left flex-1">
-            <Title level={4} className="mb-1">
-              {profile.fullName || 'Người tìm việc'}
-            </Title>
-            <Tag color="purple" className="mb-2">
-              Người tìm việc
-            </Tag>
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-gray-500">
-              <span className="inline-flex items-center gap-1">
-                <EnvironmentOutlined />
-                {profile.location || 'Chưa cập nhật địa điểm'}
-              </span>
-            </div>
-          </div>
-        </div>
-      </Card>
-
       <Card title="Thông tin hồ sơ" className="shadow-sm">
         <Descriptions column={1} bordered={false} size="small">
           <Descriptions.Item label="Họ và tên">

@@ -52,40 +52,6 @@ const { Option } = Select;
 const { Search } = Input;
 const { Text } = Typography;
 
-const MOCK_API_RESPONSE = {
-  success: true,
-  total: 3,
-  data: [
-    {
-      employerPostId: 9991,
-      title: "Trình Dược Viên Tại Tuyên Quang [Thu Nhập Không Giới Hạn] (Mẫu)",
-      location: "Phường Minh Xuân, TP Tuyên Quang, Tuyên Quang",
-      matchPercent: 97,
-      phoneContact: "0326397621",
-      employerName: "Hệ thống (Gợi ý mẫu)",
-      createdAt: new Date().toISOString(),
-    },
-    {
-      employerPostId: 9992,
-      title: "Trình Dược Viên Tại Điện Biên (Đi làm ngay) (Mẫu)",
-      location: "Xã Mường Tùng, Huyện Mường Chà, Điện Biên",
-      matchPercent: 82,
-      phoneContact: "0326845871",
-      employerName: "Hệ thống (Gợi ý mẫu)",
-      createdAt: new Date().toISOString(),
-    },
-    {
-      employerPostId: 9993,
-      title: "Nhân viên Kinh doanh Dược phẩm - Yên Bái (Mẫu)",
-      location: "Xã Lâm Giang, Huyện Văn Yên, Yên Bái",
-      matchPercent: 75,
-      phoneContact: "0327865284",
-      employerName: "Hệ thống (Gợi ý mẫu)",
-      createdAt: new Date().toISOString(),
-    },
-  ],
-};
-
 const formatCurrency = (value: number | null | undefined) => {
   if (value == null || value <= 0) return "Thỏa thuận";
   return `${value.toLocaleString("vi-VN")} vnđ`;
@@ -180,14 +146,11 @@ const EmployerJobsPage: React.FC = () => {
     try {
       const res: any = await jobPostService.getSuggestions(postId);
 
-      if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+      if (res && res.success && Array.isArray(res.data)) {
         setSuggestionList(res.data);
-      } else {
-        setSuggestionList(MOCK_API_RESPONSE.data);
       }
     } catch (error) {
-      console.error("Lỗi tải gợi ý, sử dụng dữ liệu mẫu", error);
-      setSuggestionList(MOCK_API_RESPONSE.data);
+      console.error("Loi tai goi y", error);
     } finally {
       setIsSuggestionLoading(false);
     }
@@ -451,7 +414,7 @@ const EmployerJobsPage: React.FC = () => {
       ),
     },
     {
-      title: "Lương",
+      title: " Lương làm việc",
       dataIndex: "salary",
       key: "salary",
       width: "15%",
@@ -607,7 +570,7 @@ const EmployerJobsPage: React.FC = () => {
                   icon={<PlusOutlined />}
                   className="bg-emerald-400 border-none"
                 >
-                  Đăng công việc mới
+                  Đăng bài tuyển dụng công việc mới
                 </Button>
               </NavLink>
             </div>
@@ -740,6 +703,7 @@ const EmployerJobsPage: React.FC = () => {
             loading={isSuggestionLoading}
             itemLayout="vertical"
             dataSource={suggestionList}
+            locale={{ emptyText: "Khong co goi y phu hop" }}
             renderItem={(item) => (
               <List.Item
                 key={item.employerPostId}
@@ -820,3 +784,4 @@ const EmployerJobsPage: React.FC = () => {
 };
 
 export default EmployerJobsPage;
+

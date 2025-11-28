@@ -15,14 +15,23 @@ const JobSeekerHomePage: React.FC = () => {
     dispatch(fetchFeaturedJobs());
   }, [dispatch]);
 
+  const sections = [
+    { key: 'featured', node: <FeaturedJobs /> },
+    { key: 'news', node: <HotNewsSection /> },
+    { key: 'employers', node: <TopEmployersSlider /> }
+  ];
+
   return (
     <div className="min-h-screen bg-white text-slate-900">
-      <div className="space-y-16 pb-16">
-        <HeroSection />
-        <FeaturedJobs />
-        <HotNewsSection />
-        <TopEmployersSlider />
-      </div>
+      <HeroSection />
+      {sections.map((section, index) => (
+        <div
+          key={section.key}
+          className={`${index % 2 === 0 ? 'bg-white' : 'bg-slate-50'} py-16`}
+        >
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">{section.node}</div>
+        </div>
+      ))}
     </div>
   );
 };

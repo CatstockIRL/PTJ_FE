@@ -4,9 +4,13 @@ import type { PaginatedJobResponse, JobPostView } from '../../job/jobTypes';
 
 const JOB_LIST_API_URL = '/EmployerPost/all';
 const PUBLIC_PROFILE_API_URL = '/EmployerProfile/public';
+
 interface EmployerPublicProfileApi {
   displayName?: string;
   avatarUrl?: string;
+  address?: string;
+  email?: string;
+  description?: string;
 }
 
 type EmployerJobPostView = JobPostView & { employerId?: number };
@@ -24,11 +28,14 @@ const enrichWithProfile = async (employer: Employer): Promise<Employer> => {
     return {
       ...employer,
       name: profile.displayName || employer.name,
-      logo: profile.avatarUrl || employer.logo || "",
+      logo: profile.avatarUrl || employer.logo || '',
+      address: profile.address || employer.address,
+      email: profile.email || employer.email,
+      description: profile.description || employer.description || '',
     };
   } catch (error) {
     console.warn(`Khong the tai profile cho nha tuyen dung ${employer.id}`, error);
-    return { ...employer, logo: employer.logo || "" };
+    return { ...employer, logo: employer.logo || '' };
   }
 };
 
@@ -39,13 +46,14 @@ export const getEmployers = async (
     const response = await baseService.get<PaginatedJobResponse>(JOB_LIST_API_URL);
     const jobData: EmployerJobPostView[] = (response.data ?? []) as EmployerJobPostView[];
 
-    const employerMap = new Map<
-      number,
-      {
-        base: Employer;
-        locations: Set<string>;
-      }
-    >();
+  const employerMap = new Map<
+    number,
+    {
+      base: Employer;
+      locations: Set<string>;
+      categories: Set<string>;
+    }
+  >();
 
     jobData.forEach((job) => {
       const employerId = Number(job.employerId);
@@ -55,15 +63,23 @@ export const getEmployers = async (
 
       const existing = employerMap.get(employerId);
       const province = extractProvince(job.location || '');
+      const categoryName = job.categoryName || '';
       if (existing) {
         existing.base.jobCount += 1;
         if (province) {
           existing.locations.add(province);
         }
+        if (categoryName) {
+          existing.categories.add(categoryName);
+        }
       } else {
         const locations = new Set<string>();
+        const categories = new Set<string>();
         if (province) {
           locations.add(province);
+        }
+        if (categoryName) {
+          categories.add(categoryName);
         }
         employerMap.set(employerId, {
           base: {
@@ -72,20 +88,35 @@ export const getEmployers = async (
             logo: '',
             jobCount: 1,
             locations: [],
+            categories: [],
+            description: '',
           },
           locations,
+          categories,
         });
       }
     });
 
-    let employers = Array.from(employerMap.values()).map(({ base, locations }) => ({
+    let employers = Array.from(employerMap.values()).map(({ base, locations, categories }) => ({
       ...base,
       locations: Array.from(locations),
+      categories: Array.from(categories),
     }));
 
-    const keyword = (filters.keyword ?? '').trim().toLowerCase();
+    const normalizeText = (value?: string | null): string =>
+      (value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+
+    const keyword = normalizeText(filters.keyword);
     if (keyword) {
-      employers = employers.filter((employer) => employer.name.toLowerCase().includes(keyword));
+      employers = employers.filter((employer) => {
+        const nameMatch = normalizeText(employer.name).includes(keyword);
+        const locationMatch = employer.locations?.some((loc) => normalizeText(loc).includes(keyword));
+        return nameMatch || locationMatch;
+      });
     }
 
     const totalRecords = employers.length;
@@ -109,7 +140,6 @@ export const getEmployers = async (
 
 export const getTopEmployersByApply = async (top = 10): Promise<EmployerRanking[]> => {
   try {
-    // baseService đã set baseURL = https://localhost:7100/api, nên không thêm /api ở đây để tránh đúp đường dẫn
     const response = await baseService.get<EmployerRanking[]>(`/employers/top`, {
       params: { top },
     });
@@ -118,4 +148,8 @@ export const getTopEmployersByApply = async (top = 10): Promise<EmployerRanking[
     console.error('Loi khi tai top nha tuyen dung:', error);
     return [];
   }
+};
+
+export const getEmployerPublicProfile = async (userId: number | string): Promise<EmployerPublicProfileApi> => {
+  return baseService.get<EmployerPublicProfileApi>(`${PUBLIC_PROFILE_API_URL}/${userId}`);
 };

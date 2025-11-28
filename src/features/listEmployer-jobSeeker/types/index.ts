@@ -6,6 +6,10 @@ export interface Employer {
   jobCount: number;
   locations: string[];
   rating?: number;
+  address?: string;
+  email?: string;
+  categories?: string[];
+  description?: string;
 }
 
 export interface EmployerJob {

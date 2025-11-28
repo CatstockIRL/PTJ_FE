@@ -53,12 +53,12 @@ export const SearchBar: React.FC<SearchBarProps> = ({ value, onSearch }) => {
 
   return (
     <div className="max-w-5xl mx-auto">
-      <div className="bg-white shadow-2xl rounded-full px-4 py-3 md:px-6 md:py-4">
+      <div className="bg-white/95 shadow-2xl rounded-3xl px-4 py-4 md:px-6 md:py-5 border border-blue-50 backdrop-blur">
         <div className="flex flex-col md:flex-row md:items-center gap-3">
           <div className="flex-1 flex items-center gap-3">
             <Input
               prefix={<SearchOutlined className="text-gray-400 mr-1" />}
-              placeholder="Nhập vị trí công việc, kỹ năng..."
+              placeholder="Nhập vị trí, chức danh, kỹ năng..."
               value={formState.keyword}
               onChange={(e) => handleChange("keyword", e.target.value)}
               onPressEnter={handleSearch}
@@ -89,7 +89,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ value, onSearch }) => {
               type="primary"
               size="large"
               icon={<SearchOutlined />}
-              className="md:px-6 bg-emerald-600 hover:bg-emerald-700"
+              className="md:px-6 bg-sky-600 hover:bg-sky-700 border-sky-600"
               onClick={handleSearch}
             >
               Tìm kiếm

@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Row, Col, Input, Spin, Pagination, Empty, Tag, Statistic } from "antd";
+import { Row, Col, Input, Spin, Pagination, Empty, Tag } from "antd";
 import { Link } from "react-router-dom";
 import { useEmployers } from "../hooks/useEmployers";
 import EmployerCard from "../components/EmployerCard";
@@ -13,14 +13,6 @@ const ListEmployerPage: React.FC = () => {
     () => employers.reduce((sum, employer) => sum + (employer.jobCount || 0), 0),
     [employers]
   );
-
-  const totalLocations = useMemo(() => {
-    const locationSet = new Set<string>();
-    employers.forEach((employer) => {
-      employer.locations?.forEach((loc) => locationSet.add(loc));
-    });
-    return locationSet.size;
-  }, [employers]);
 
   const handleSearch = (keyword: string) => {
     applyFilters({ keyword, page: 1 });
@@ -69,10 +61,7 @@ const ListEmployerPage: React.FC = () => {
                   <span>Việc đang tuyển</span>
                   <span className="font-bold">{totalOpenJobs}</span>
                 </Tag>
-                <Tag color="green" className="m-0 flex items-center justify-between rounded-full px-4 py-2 text-base">
-                  <span>Điểm đến</span>
-                  <span className="font-bold">{totalLocations}</span>
-                </Tag>
+                
               </div>
             </div>
 
@@ -93,18 +82,7 @@ const ListEmployerPage: React.FC = () => {
                     className="shadow-lg"
                   />
                 </div>
-                <div className="mt-3 grid grid-cols-2 gap-3 text-center text-sm text-emerald-50">
-                  <Statistic
-                    title="Trang hiện tại"
-                    value={currentPage}
-                    valueStyle={{ color: "white", fontWeight: 700 }}
-                  />
-                  <Statistic
-                    title="Kích thước trang"
-                    value={pageSize}
-                    valueStyle={{ color: "white", fontWeight: 700 }}
-                  />
-                </div>
+               
               </div>
             </div>
           </div>

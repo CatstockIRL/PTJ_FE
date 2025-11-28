@@ -54,17 +54,17 @@ export const JobFilters: React.FC<JobFiltersProps> = ({
 
   return (
     <Card
-      className="shadow-md rounded-2xl sticky top-4 overflow-hidden"
-      bodyStyle={{ padding: 0 }}
+      className="shadow-md rounded-2xl sticky top-4 overflow-hidden border border-blue-50"
+      styles={{ body: { padding: 0 } }}
     >
-      <div className="flex items-center justify-between px-4 py-3 border-b">
+      <div className="flex items-center justify-between px-4 py-3 border-b bg-gradient-to-r from-slate-50 to-blue-50">
         <Title level={5} className="!mb-0 text-gray-800">
           Bộ lọc
         </Title>
         <button
           type="button"
           onClick={onClear}
-          className="text-sm text-emerald-600 hover:text-emerald-700 hover:underline"
+          className="text-sm text-sky-600 hover:text-sky-700 hover:underline"
         >
          Xóa tất cả
         </button>

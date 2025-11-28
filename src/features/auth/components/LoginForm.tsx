@@ -121,7 +121,7 @@ const LoginForm: React.FC = () => {
       >
         <Form.Item
           name="email"
-          rules={[{ required: true, type: 'email', message: 'Vui l?ng nh?p email h?p l?!' }]}
+          rules={[{ required: true, type: 'email', message: 'Vui lòng nhập email hợp lệ' }]}
         >
           <Input
             size="large"
