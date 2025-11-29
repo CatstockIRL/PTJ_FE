@@ -24,10 +24,9 @@ const buildEmployerPostFormData = (data: EmployerPostDto): FormData => {
   appendIfDefined(formData, 'UserID', data.userID);
   formData.append('Title', data.title ?? '');
   formData.append('Description', data.description ?? '');
-  appendIfDefined(formData, 'Salary', data.salary);
-  if (data.salaryText) {
-    formData.append('SalaryText', data.salaryText);
-  }
+  appendIfDefined(formData, 'SalaryMin', data.salaryMin);
+  appendIfDefined(formData, 'SalaryMax', data.salaryMax);
+  appendIfDefined(formData, 'SalaryType', data.salaryType);
   formData.append('Requirements', data.requirements ?? '');
   formData.append('WorkHourStart', data.workHourStart ?? '');
   formData.append('WorkHourEnd', data.workHourEnd ?? '');

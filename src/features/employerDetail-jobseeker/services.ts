@@ -1,6 +1,7 @@
 import baseService from "../../services/baseService";
 import type { EmployerPublicProfile } from "./types";
 import type { Job } from "../../types";
+import { formatSalaryText } from "../../utils/jobPostHelpers";
 
 // URL API
 const PROFILE_API_URL = 'https://localhost:7100/api/EmployerProfile/public';
@@ -35,7 +36,12 @@ export const getEmployerFullDetail = async (userId: number | string) => {
             description: job.description,
             company: profile.displayName,
             location: job.location,
-            salary: job.salary || "Thỏa thuận",
+            salary: formatSalaryText(
+                job.salaryMin,
+                job.salaryMax,
+                job.salaryType,
+                job.salaryDisplay
+            ),
             updatedAt: job.createdAt,
             companyLogo: profile.avatarUrl, 
             isHot: job.isHot || false

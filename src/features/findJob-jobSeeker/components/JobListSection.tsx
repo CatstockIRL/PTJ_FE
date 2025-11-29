@@ -4,9 +4,14 @@ import { useNavigate } from "react-router-dom";
 import jobPostService from "../../job/jobPostService";
 import type { JobPostView } from "../../job/jobTypes";
 import { formatTimeAgo } from "../../../utils/date";
-import { getCompanyLogoSrc, getJobDetailCached } from "../../../utils/jobPostHelpers";
+import {
+  getCompanyLogoSrc,
+  getJobDetailCached,
+  formatSalaryText,
+} from "../../../utils/jobPostHelpers";
 import type { JobSearchFilters } from "../types";
 import matchService from "../../match/matchService";
+import { getRepresentativeSalaryValue } from "../../../utils/salary";
 
 const pageSize = 12;
 type SortOrder = "newest" | "oldest" | "salaryDesc" | "salaryAsc";
@@ -33,17 +38,19 @@ const normalizeText = (value?: string | null): string =>
     .toLowerCase()
     .trim();
 
-const salaryToMillions = (salary: number): number | null => {
-  if (salary <= 0) return null;
+const salaryToMillions = (salary?: number | null): number | null => {
+  if (typeof salary !== "number" || salary <= 0) return null;
   return salary / 1_000_000;
 };
 
 const JobListCard: React.FC<{ job: JobPostView }> = ({ job }) => {
   const navigate = useNavigate();
-  const salaryText =
-    job.salary && job.salary > 0
-      ? `${job.salary.toLocaleString("vi-VN")} VND`
-      : job.salaryText || "Thoả thuận";
+  const salaryText = formatSalaryText(
+    job.salaryMin,
+    job.salaryMax,
+    job.salaryType,
+    job.salaryDisplay
+  );
   const timeLabel = job.createdAt ? formatTimeAgo(job.createdAt) : "Chưa cập nhật";
 
   const descriptionText =
@@ -141,8 +148,14 @@ const JobListSection: React.FC<JobListSectionProps> = ({
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const { keyword, provinceId, categoryId, salary, salaryRange } =
-    filters;
+  const {
+    keyword,
+    provinceId,
+    categoryId,
+    salary,
+    salaryRange,
+    salaryType,
+  } = filters;
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -165,7 +178,9 @@ const JobListSection: React.FC<JobListSectionProps> = ({
 
         if (shouldQueryByProvince) {
           try {
-            data = await matchService.searchJobsByProvince(normalizedProvinceId);
+            data = await matchService.searchJobsByProvince(
+              normalizedProvinceId as number
+            );
             if (!data || data.length === 0) {
               // fallback to all jobs if API returns nothing
               data = await fetchAllJobs();
@@ -201,6 +216,9 @@ const JobListSection: React.FC<JobListSectionProps> = ({
     fetchJobs();
   }, [provinceId]);
 
+  const resolveSalaryValue = (job: JobPostView) =>
+    getRepresentativeSalaryValue(job.salaryMin, job.salaryMax);
+
   const filteredJobs = useMemo(() => {
     const keywordNormalized = normalizeText(keyword);
 
@@ -222,16 +240,19 @@ const JobListSection: React.FC<JobListSectionProps> = ({
         (filters.categoryName &&
           normalizeText(job.categoryName) === normalizeText(filters.categoryName));
 
+      const numericSalary = resolveSalaryValue(job);
+
       let salaryPresenceMatch = true;
       if (salary === "hasValue") {
-        salaryPresenceMatch = !!job.salary && job.salary > 0;
+        salaryPresenceMatch = numericSalary !== null;
       } else if (salary === "negotiable") {
-        salaryPresenceMatch = !job.salary || job.salary <= 0;
+        salaryPresenceMatch = numericSalary === null;
       }
 
-      const numericSalary =
-        typeof job.salary === "number" && job.salary > 0 ? job.salary : null;
-      const salaryMillions = numericSalary ? salaryToMillions(numericSalary) : null;
+      const salaryMillions =
+        typeof numericSalary === "number"
+          ? salaryToMillions(numericSalary)
+          : null;
 
       let salaryRangeMatch = true;
       switch (salaryRange) {
@@ -248,18 +269,23 @@ const JobListSection: React.FC<JobListSectionProps> = ({
           salaryRangeMatch = salaryMillions !== null && salaryMillions > 5;
           break;
         case "negotiable":
-          salaryRangeMatch = !numericSalary || numericSalary <= 0;
+          salaryRangeMatch = numericSalary == null;
           break;
         default:
           salaryRangeMatch = true;
       }
+
+      const salaryTypeValue = salaryType ?? "all";
+      const salaryTypeMatch =
+        salaryTypeValue === "all" || job.salaryType === salaryTypeValue;
 
       return (
         titleMatch &&
         provinceMatch &&
         categoryMatch &&
         salaryPresenceMatch &&
-        salaryRangeMatch
+        salaryRangeMatch &&
+        salaryTypeMatch
       );
     });
   }, [
@@ -269,13 +295,11 @@ const JobListSection: React.FC<JobListSectionProps> = ({
     categoryId,
     salary,
     salaryRange,
+    salaryType,
     filters.categoryName,
   ]);
 
   const sortedJobs = useMemo(() => {
-    const getSalaryValue = (job: JobPostView) =>
-      typeof job.salary === "number" && job.salary > 0 ? job.salary : null;
-
     return [...filteredJobs].sort((a, b) => {
       if (sortOrder === "newest" || sortOrder === "oldest") {
         const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
@@ -283,8 +307,8 @@ const JobListSection: React.FC<JobListSectionProps> = ({
         return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
       }
 
-      const salaryA = getSalaryValue(a);
-      const salaryB = getSalaryValue(b);
+      const salaryA = resolveSalaryValue(a);
+      const salaryB = resolveSalaryValue(b);
 
       if (salaryA === null && salaryB === null) return 0;
       if (salaryA === null) return 1;
@@ -302,6 +326,7 @@ const JobListSection: React.FC<JobListSectionProps> = ({
     categoryId,
     salary,
     salaryRange,
+    salaryType,
     sortOrder,
   ]);
 

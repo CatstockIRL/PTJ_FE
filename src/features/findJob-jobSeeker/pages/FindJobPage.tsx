@@ -15,6 +15,7 @@ const DEFAULT_FILTERS: JobSearchFilters = {
   categoryName: null,
   salary: "all",
   salaryRange: "all",
+  salaryType: "all",
 };
 
 const FindJobPage = () => {

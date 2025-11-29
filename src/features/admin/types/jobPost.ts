@@ -1,4 +1,5 @@
 import type { PagedResult } from '../services/pagedResultHelper';
+import type { SalaryTypeCode } from '../../../utils/salary';
 
 export interface AdminEmployerPost {
   employerPostId: number;
@@ -12,7 +13,10 @@ export interface AdminEmployerPost {
 
 export interface AdminEmployerPostDetail extends AdminEmployerPost {
   description?: string | null;
-  salary?: number | null;
+  salaryMin?: number | null;
+  salaryMax?: number | null;
+  salaryType?: SalaryTypeCode | null;
+  salaryDisplay?: string | null;
   requirements?: string | null;
   workHours?: string | null;
   phoneContact?: string | null;

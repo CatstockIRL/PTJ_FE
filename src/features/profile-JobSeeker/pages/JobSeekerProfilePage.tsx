@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Card, Tabs, Avatar, Rate, Tag, Skeleton, List } from "antd";
-import { EnvironmentOutlined, MailOutlined, PhoneOutlined, UserOutlined } from "@ant-design/icons";
+import { UserOutlined } from "@ant-design/icons";
 import ProfileDetails from "../components/ProfileDetails";
 import ProfileOverview from "../components/ProfileOverview";
 import { useJobSeekerProfile } from "../hooks/useJobSeekerProfile";
@@ -16,7 +16,6 @@ const JobSeekerProfilePage: React.FC = () => {
   const displayName = profile?.fullName || user?.username || "Ứng viên";
   const avatarSrc = profile?.profilePicture || undefined;
   const locationText = profile?.location || "Chưa cập nhật địa chỉ";
-  const phoneText = profile?.contactPhone || "Chưa cập nhật";
   const [averageRating, setAverageRating] = useState(0);
   const [ratingCount, setRatingCount] = useState(0);
   const [ratings, setRatings] = useState<Rating[]>([]);

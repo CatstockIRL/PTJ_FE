@@ -25,6 +25,7 @@ const JobListPage: React.FC = () => {
     categoryName: null,
     salary: "all",
     salaryRange: "all",
+    salaryType: "all",
   };
 
   return (

@@ -1,5 +1,6 @@
 import { getJobDetail } from '../features/findJob-jobSeeker/services';
 import type { EmployerPostDtoOut } from '../features/findJob-jobSeeker/types';
+import { formatSalaryRange, type SalaryTypeCode } from './salary';
 
 const jobDetailCache = new Map<string, EmployerPostDtoOut>();
 
@@ -30,9 +31,15 @@ export const getCompanyLogoSrc = (logo?: string | null): string => {
   return logo && logo.trim().length > 0 ? logo : DEFAULT_COMPANY_LOGO;
 };
 
-export const formatSalaryText = (salary?: number | null): string => {
-  if (typeof salary !== 'number' || Number.isNaN(salary) || salary <= 0) {
-    return 'Thỏa thuận';
+export const formatSalaryText = (
+  salaryMin?: number | null,
+  salaryMax?: number | null,
+  salaryType?: SalaryTypeCode | number | null,
+  salaryDisplay?: string | null,
+  fallback = 'Th???a thu??-n'
+): string => {
+  if (salaryDisplay && salaryDisplay.trim().length > 0) {
+    return salaryDisplay;
   }
-  return `${salary.toLocaleString('vi-VN')} VND`;
+  return formatSalaryRange(salaryMin, salaryMax, salaryType, fallback);
 };

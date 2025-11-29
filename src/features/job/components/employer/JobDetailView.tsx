@@ -1,5 +1,6 @@
 import React from "react";
 import type { JobPostView } from "../../jobTypes";
+import { formatSalaryText } from "../../../../utils/jobPostHelpers";
 
 const DetailField: React.FC<{
   label: string;
@@ -13,10 +14,12 @@ const DetailField: React.FC<{
   </div>
 );
 
-const formatCurrency = (value: number | null) => {
-  if (!value) return "Thỏa thuận";
-  return `${value.toLocaleString("vi-VN")} VNĐ`;
-};
+const formatCurrency = (
+  min?: number | null,
+  max?: number | null,
+  type?: number | null,
+  display?: string | null
+) => formatSalaryText(min, max, type, display);
 
 export const JobDetailView: React.FC<{ job: JobPostView }> = ({ job }) => {
   return (
@@ -30,7 +33,12 @@ export const JobDetailView: React.FC<{ job: JobPostView }> = ({ job }) => {
         <DetailField label="Ngành nghề">{job.categoryName}</DetailField>
         <DetailField label="Địa điểm">{job.location}</DetailField>
         <DetailField label="Mức lương">
-          {formatCurrency(job.salary)}
+          {formatCurrency(
+            job.salaryMin,
+            job.salaryMax,
+            job.salaryType,
+            job.salaryDisplay
+          )}
         </DetailField>
         <DetailField label="Giờ làm việc">{job.workHours}</DetailField>
         <DetailField label="Liên hệ">{job.phoneContact}</DetailField>
