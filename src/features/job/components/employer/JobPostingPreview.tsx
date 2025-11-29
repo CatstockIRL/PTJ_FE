@@ -1,8 +1,6 @@
 import React, { useMemo } from "react";
 import { useCategories } from "../../../category/hook";
 import type { Category } from "../../../category/type";
-import { useSubCategories } from "../../../subcategory/hook";
-import type { SubCategory } from "../../../subcategory/type";
 import type { JobPostData } from "../../jobTypes";
 
 interface JobPostingPreviewProps {
@@ -11,10 +9,6 @@ interface JobPostingPreviewProps {
 
 const JobPostingPreview: React.FC<JobPostingPreviewProps> = ({ data }) => {
   const { categories, isLoading: isCategoriesLoading } = useCategories();
-  const { subCategories, isLoading: isSubCategoriesLoading } = useSubCategories(
-    data.categoryID ?? null
-  );
-
   const categoryName = useMemo(() => {
     if (isCategoriesLoading || !data.categoryID) return null;
     const foundCategory = categories.find(
@@ -22,14 +16,6 @@ const JobPostingPreview: React.FC<JobPostingPreviewProps> = ({ data }) => {
     );
     return foundCategory ? foundCategory.name : null;
   }, [data.categoryID, categories, isCategoriesLoading]);
-
-  const subCategoryName = useMemo(() => {
-    if (!data.subCategoryId || isSubCategoriesLoading) return null;
-    const found = subCategories.find(
-      (item: SubCategory) => item.subCategoryId === data.subCategoryId
-    );
-    return found ? found.name : null;
-  }, [data.subCategoryId, subCategories, isSubCategoriesLoading]);
 
   const previewImages = [
     ...data.existingImages.map((img) => img.url),
@@ -129,13 +115,6 @@ const JobPostingPreview: React.FC<JobPostingPreviewProps> = ({ data }) => {
               ? categoryName
               : "Chưa chọn danh mục"}
           </p>
-          <p className="text-sm text-gray-500">
-            {data.subCategoryId
-              ? isSubCategoriesLoading
-                ? "Đang tải nhóm nghề..."
-                : subCategoryName || "Chưa chọn nhóm nghề"
-              : "Chưa chọn nhóm nghề"}
-          </p>
         </div>
 
         <div>
@@ -144,6 +123,15 @@ const JobPostingPreview: React.FC<JobPostingPreviewProps> = ({ data }) => {
           </h3>
           <p className="text-gray-700">
             {data.contactPhone || "Chưa có số điện thoại"}
+          </p>
+        </div>
+
+        <div>
+          <h3 className="text-sm font-semibold text-gray-500 uppercase">
+            Ngày hết hạn
+          </h3>
+          <p className="text-gray-700">
+            {data.expiredAt ? data.expiredAt : "Chưa thiết lập"}
           </p>
         </div>
       </div>

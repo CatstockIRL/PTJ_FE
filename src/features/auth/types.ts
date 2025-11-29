@@ -23,11 +23,15 @@ export interface RegisterJobSeekerPayload {
 }
 
 export interface RegisterEmployerPayload {
-  displayName: string;
+  companyName: string;
+  companyDescription?: string;
+  contactPerson?: string;
+  contactPhone: string;
+  contactEmail?: string;
+  address?: string;
+  website?: string;
   email: string;
   password: string;
-  contactPhone?: string;
-  website?: string;
 }
 
 export interface ForgotPasswordPayload {

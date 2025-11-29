@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from "react";
+﻿import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   Button,
@@ -36,12 +36,12 @@ import {
   LockOutlined,
   UnlockOutlined,
   MoreOutlined,
+  ReloadOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "../../features/auth/hooks";
 import jobPostService from "../../features/job/jobPostService";
 import type { JobPostView } from "../../features/job/jobTypes";
 import { useCategories } from "../../features/category/hook";
-import { useSubCategories } from "../../features/subcategory/hook";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../app/store";
 import { JobPostDetailModal } from "../../features/job/components/employer/JobPostDetailModal";
@@ -75,7 +75,9 @@ const EmployerJobsPage: React.FC = () => {
     useState(false);
   const [suggestionList, setSuggestionList] = useState<any[]>([]);
   const [isSuggestionLoading, setIsSuggestionLoading] = useState(false);
+  const [isResettingSuggestions, setIsResettingSuggestions] = useState(false);
   const [currentJobTitle, setCurrentJobTitle] = useState("");
+  const [currentJobId, setCurrentJobId] = useState<number | null>(null);
   const [applicationSummary, setApplicationSummary] =
     useState<ApplicationSummaryDto | null>(null);
   const [isSummaryLoading, setIsSummaryLoading] = useState(false);
@@ -85,12 +87,6 @@ const EmployerJobsPage: React.FC = () => {
 
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
-  const [selectedSubCategory, setSelectedSubCategory] = useState<number | null>(
-    null
-  );
-  const { subCategories, isLoading: isLoadingSubCategories } = useSubCategories(
-    selectedCategory
-  );
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
   const [sortInfo, setSortInfo] = useState<{
     field: string;
@@ -137,23 +133,54 @@ const EmployerJobsPage: React.FC = () => {
     fetchApplicationSummary();
   }, [user]);
 
-  const handleShowSuggestions = async (postId: number, jobTitle: string) => {
-    setCurrentJobTitle(jobTitle);
-    setIsSuggestionModalVisible(true);
+  const loadSuggestions = useCallback(async (postId: number) => {
     setIsSuggestionLoading(true);
     setSuggestionList([]);
-
     try {
       const res: any = await jobPostService.getSuggestions(postId);
-
       if (res && res.success && Array.isArray(res.data)) {
         setSuggestionList(res.data);
+      } else {
+        setSuggestionList([]);
       }
     } catch (error) {
-      console.error("Loi tai goi y", error);
+      console.error("Lỗi tải gợi ý", error);
+      message.error("Không thể tải gợi ý AI.");
     } finally {
       setIsSuggestionLoading(false);
     }
+  }, []);
+
+  const handleShowSuggestions = (postId: number, jobTitle: string) => {
+    setCurrentJobTitle(jobTitle);
+    setCurrentJobId(postId);
+    setIsSuggestionModalVisible(true);
+    loadSuggestions(postId);
+  };
+
+  const handleResetAiSuggestions = async () => {
+    if (!currentJobId) return;
+    setIsResettingSuggestions(true);
+    try {
+      const res: any = await jobPostService.refreshAiSuggestions(currentJobId);
+      if (res?.success) {
+        message.success("Đã làm mới gợi ý AI.");
+      } else {
+        message.info(res?.message || "Đã gửi yêu cầu làm mới gợi ý AI.");
+      }
+      await loadSuggestions(currentJobId);
+    } catch (error: any) {
+      message.error(
+        error?.response?.data?.message || "Không thể gửi yêu cầu làm mới gợi ý AI."
+      );
+    } finally {
+      setIsResettingSuggestions(false);
+    }
+  };
+
+  const handleCloseSuggestionModal = () => {
+    setIsSuggestionModalVisible(false);
+    setCurrentJobId(null);
   };
 
   const processedJobs = useMemo(() => {
@@ -170,14 +197,6 @@ const EmployerJobsPage: React.FC = () => {
         const jobCategoryId =
           job.categoryId ?? (job as any).categoryID ?? null;
         return jobCategoryId === selectedCategory;
-      });
-    }
-
-    if (selectedSubCategory) {
-      filteredData = filteredData.filter((job) => {
-        const jobSubCategoryId =
-          job.subCategoryId ?? (job as any).subCategoryID ?? null;
-        return jobSubCategoryId === selectedSubCategory;
       });
     }
 
@@ -200,7 +219,6 @@ const EmployerJobsPage: React.FC = () => {
     allJobs,
     searchTerm,
     selectedCategory,
-    selectedSubCategory,
     sortInfo,
     categories,
   ]);
@@ -316,12 +334,6 @@ const EmployerJobsPage: React.FC = () => {
 
   const handleCategoryChange = (value: number | null) => {
     setSelectedCategory(value);
-    setSelectedSubCategory(null);
-    setPagination((prev) => ({ ...prev, current: 1 }));
-  };
-
-  const handleSubCategoryChange = (value: number | null) => {
-    setSelectedSubCategory(value);
     setPagination((prev) => ({ ...prev, current: 1 }));
   };
 
@@ -405,11 +417,6 @@ const EmployerJobsPage: React.FC = () => {
           <Space>
             <AppstoreOutlined /> {category || "N/A"}
           </Space>
-          {record.subCategoryName && (
-            <div className="text-xs text-gray-500">
-              {record.subCategoryName}
-            </div>
-          )}
         </div>
       ),
     },
@@ -633,23 +640,6 @@ const EmployerJobsPage: React.FC = () => {
               ))}
             </Select>
           </Col>
-          <Col xs={24} md={12} lg={7}>
-            <Select
-              placeholder="Lọc theo nhóm nghề"
-              value={selectedSubCategory ?? undefined}
-              onChange={handleSubCategoryChange}
-              allowClear
-              style={{ width: "100%" }}
-              loading={isLoadingSubCategories}
-              disabled={!selectedCategory}
-            >
-              {subCategories.map((sub: any) => (
-                <Option key={sub.subCategoryId} value={sub.subCategoryId}>
-                  {sub.name}
-                </Option>
-              ))}
-            </Select>
-          </Col>
         </Row>
 
         <Table
@@ -687,15 +677,43 @@ const EmployerJobsPage: React.FC = () => {
             </div>
           }
           open={isSuggestionModalVisible}
-          onCancel={() => setIsSuggestionModalVisible(false)}
+
+          onCancel={handleCloseSuggestionModal}
+
           footer={[
+
             <Button
-              key="close"
-              onClick={() => setIsSuggestionModalVisible(false)}
+
+              key="reset"
+
+              icon={<ReloadOutlined />}
+
+              onClick={handleResetAiSuggestions}
+
+              disabled={!currentJobId}
+
+              loading={isResettingSuggestions}
+
             >
-              Đóng
+
+              Làm mới 
+
             </Button>,
+
+            <Button
+
+              key="close"
+
+              onClick={handleCloseSuggestionModal}
+
+            >
+
+              Đóng
+
+            </Button>,
+
           ]}
+
           width={700}
           centered
         >

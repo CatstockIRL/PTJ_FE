@@ -29,7 +29,6 @@ const buildJobSeekerPostFormData = (payload: CreateJobSeekerPostPayload): FormDa
   appendIfDefined(formData, 'WardId', payload.wardId);
   formData.append('PreferredLocation', payload.preferredLocation ?? '');
   appendIfDefined(formData, 'CategoryID', payload.categoryID);
-  appendIfDefined(formData, 'SubCategoryId', payload.subCategoryId ?? null);
   formData.append('PhoneContact', payload.phoneContact ?? '');
   appendIfDefined(formData, 'SelectedCvId', payload.selectedCvId ?? null);
   return formData;
@@ -99,4 +98,8 @@ export const getJobById = async (id: number): Promise<GetJobByIdResponse> => {
 
 export const getJobSuggestions = async (jobSeekerPostId: number, take = 10, skip = 0): Promise<JobSuggestionResponse> => {
   return await baseService.get<JobSuggestionResponse>(`/JobSeekerPost/${jobSeekerPostId}/suggestions?take=${take}&skip=${skip}`);
+};
+
+export const refreshJobSeekerSuggestions = async (jobSeekerPostId: number) => {
+  return await baseService.post(`/JobSeekerPost/refresh/${jobSeekerPostId}`, {});
 };

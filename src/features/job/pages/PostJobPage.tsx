@@ -29,8 +29,8 @@ export const transformToEmployerPostDto = (data: JobPostData, userId: number) =>
   wardId: data.wardId,
   detailAddress: data.detailAddress,
   categoryID: data.categoryID,
-  subCategoryId: data.subCategoryId ?? null,
   phoneContact: data.contactPhone,
+  expiredAt: data.expiredAt,
   images: data.images,
   deleteImageIds: data.deleteImageIds,
 });

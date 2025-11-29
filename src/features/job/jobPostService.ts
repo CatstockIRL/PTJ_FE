@@ -36,7 +36,7 @@ const buildEmployerPostFormData = (data: EmployerPostDto): FormData => {
   appendIfDefined(formData, 'WardId', data.wardId);
   formData.append('DetailAddress', data.detailAddress ?? '');
   appendIfDefined(formData, 'CategoryID', data.categoryID);
-  appendIfDefined(formData, 'SubCategoryId', data.subCategoryId ?? null);
+  appendIfDefined(formData, 'ExpiredAt', data.expiredAt ?? null);
   formData.append('PhoneContact', data.phoneContact ?? '');
 
   if (data.images && data.images.length > 0) {
@@ -97,6 +97,10 @@ export const getSuggestions = async (postId: number): Promise<JobSuggestionRespo
   return getJobSuggestions(postId);
 };
 
+export const refreshAiSuggestions = async (postId: number) => {
+  return await baseService.post(`/EmployerPost/refresh/${postId}`, {});
+};
+
 export const closeEmployerPost = async (id: number): Promise<JobStatusToggleResponse> => {
   return await baseService.put<JobStatusToggleResponse>(`/EmployerPost/${id}/close`, {});
 };
@@ -115,6 +119,7 @@ export const jobPostService = {
   updateStatus,
   getJobSuggestions,
   getSuggestions,
+  refreshAiSuggestions,
   closeEmployerPost,
   reopenEmployerPost,
 };

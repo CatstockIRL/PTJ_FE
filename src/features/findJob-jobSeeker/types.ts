@@ -36,7 +36,6 @@ export interface EmployerPostDtoOut {
   detailAddress?: string | null;
   phoneContact?: string;
   categoryName?: string;
-  subCategoryName?: string | null;
   employerName?: string;
   createdAt: string; 
   status: string;
@@ -49,8 +48,6 @@ export interface JobSearchFilters {
   provinceId: number | null;
   categoryId: number | null;
   categoryName?: string | null;
-  subCategoryId: number | null;
-  subCategoryName?: string | null;
   salary: "all" | "hasValue" | "negotiable";
   salaryRange?:
     | "all"

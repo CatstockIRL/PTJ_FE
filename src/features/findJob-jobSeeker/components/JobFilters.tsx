@@ -1,6 +1,5 @@
 import { Card, Typography, Select, Radio } from "antd";
 import { useCategories } from "../../category/hook";
-import { useSubCategories } from "../../subcategory/hook";
 import type { JobSearchFilters } from "../types";
 
 const { Title, Text } = Typography;
@@ -26,9 +25,6 @@ export const JobFilters: React.FC<JobFiltersProps> = ({
   onClear,
 }) => {
   const { categories, isLoading: isLoadingCategories } = useCategories();
-  const { subCategories, isLoading: isLoadingSubCategories } = useSubCategories(
-    filters.categoryId ?? null
-  );
 
   const handleCategoryChange = (categoryId: number | null) => {
     const selectedCat = categories.find(
@@ -37,18 +33,6 @@ export const JobFilters: React.FC<JobFiltersProps> = ({
     onChange({
       categoryId,
       categoryName: selectedCat ? (selectedCat as any).name : null,
-      subCategoryId: null,
-      subCategoryName: null,
-    });
-  };
-
-  const handleSubCategoryChange = (subCategoryId: number | null) => {
-    const selectedSub = subCategories.find(
-      (item: any) => item.subCategoryId === subCategoryId
-    );
-    onChange({
-      subCategoryId,
-      subCategoryName: selectedSub ? (selectedSub as any).name : null,
     });
   };
 
@@ -116,31 +100,6 @@ export const JobFilters: React.FC<JobFiltersProps> = ({
               {categories.map((cat: any) => (
                 <Select.Option key={cat.categoryId} value={cat.categoryId}>
                   {cat.name}
-                </Select.Option>
-              ))}
-            </Select>
-            <Select
-              placeholder="Chọn nhóm nghề?"
-              value={filters.subCategoryId ?? undefined}
-              onChange={(value) =>
-                handleSubCategoryChange(
-                  value === undefined ? null : (value as number)
-                )
-              }
-              allowClear
-              showSearch
-              optionFilterProp="children"
-              loading={isLoadingSubCategories}
-              className="w-full"
-              size="large"
-              disabled={!filters.categoryId}
-            >
-              {subCategories.map((sub: any) => (
-                <Select.Option
-                  key={sub.subCategoryId}
-                  value={sub.subCategoryId}
-                >
-                  {sub.name}
                 </Select.Option>
               ))}
             </Select>

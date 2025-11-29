@@ -11,7 +11,6 @@ import {
   Input,
   Tabs,
   Dropdown,
-  Spin,
   Empty,
 } from "antd";
 import {
@@ -23,7 +22,6 @@ import {
   DeleteOutlined,
   StarOutlined,
   DownOutlined,
-  ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import type { TableColumnsType } from "antd";
 import { jobApplicationService } from "../jobApplicationService";
@@ -34,8 +32,6 @@ import type { JobApplicationResultDto } from "../../applyJob-jobSeeker/type";
 import type { ShortlistedCandidateDto } from "../../candidate/type";
 import type { JobSeekerCv } from "../../jobSeekerCv/types";
 import RatingModal from "../../../components/RatingModal";
-import reportService from "../../report/reportService";
-import type { PostReportType } from "../../report/types";
 
 const { Title } = Typography;
 const { TextArea } = Input;
@@ -127,22 +123,6 @@ const CandidateListPage: React.FC = () => {
     rateeName: "",
   });
 
-  const [reportModal, setReportModal] = useState<{
-    visible: boolean;
-    postId: number | null;
-    subjectName: string;
-    reason: string;
-    submitting: boolean;
-    postType: PostReportType;
-  }>({
-    visible: false,
-    postId: null,
-    subjectName: "",
-    reason: "",
-    submitting: false,
-    postType: "JobSeekerPost",
-  });
-
   // ⭐ NEW: modal hiển thị đầy đủ mô tả / ghi chú
   const [descriptionModal, setDescriptionModal] = useState<{
     visible: boolean;
@@ -197,58 +177,6 @@ const CandidateListPage: React.FC = () => {
       });
     }
   }, []);
-
-  const openReportModal = (
-    postId: number | undefined | null,
-    subjectName: string
-  ) => {
-    if (!postId) {
-      message.warning("Ứng viên chưa có bài đăng để báo cáo.");
-      return;
-    }
-    setReportModal({
-      visible: true,
-      postId,
-      subjectName,
-      reason: "",
-      submitting: false,
-      postType: "JobSeekerPost",
-    });
-  };
-
-  const handleSubmitReport = async () => {
-    if (!reportModal.postId) {
-      return;
-    }
-    const reason = reportModal.reason.trim();
-    if (!reason) {
-      message.warning("Vui lòng nhập lý do báo cáo.");
-      return;
-    }
-    setReportModal((prev) => ({ ...prev, submitting: true }));
-    try {
-      await reportService.reportPost({
-        postId: reportModal.postId,
-        postType: reportModal.postType,
-        reason,
-      });
-      message.success("Đã gửi báo cáo tới quản trị viên.");
-      setReportModal({
-        visible: false,
-        postId: null,
-        subjectName: "",
-        reason: "",
-        submitting: false,
-        postType: "JobSeekerPost",
-      });
-    } catch (error: any) {
-      message.error(
-        error?.response?.data?.message ||
-          "Gửi báo cáo thất bại. Vui lòng thử lại."
-      );
-      setReportModal((prev) => ({ ...prev, submitting: false }));
-    }
-  };
 
   useEffect(() => {
     if (!employerPostId) {
@@ -448,47 +376,14 @@ const CandidateListPage: React.FC = () => {
       key: "username",
       width: 220,
       fixed: "left",
-      render: (text: string, record) => {
-        const canReport = Boolean(record.jobSeekerPostId);
-        return (
-          <div className="flex items-center gap-2">
-            <div className="min-w-0">
-              <div className="font-medium truncate max-w-[180px]">
-                {text}
-              </div>
-              <div className="text-xs text-gray-500 truncate max-w-[180px]">
-                {record.username}
-              </div>
-            </div>
-            <Tooltip
-              title={
-                canReport
-                  ? "Báo cáo bài đăng của ứng viên"
-                  : "Ứng viên chưa có bài đăng để báo cáo"
-              }
-            >
-              <Button
-                type="text"
-                shape="circle"
-                icon={
-                  <ExclamationCircleOutlined
-                    style={{
-                      color: canReport ? "#dc2626" : "#d1d5db",
-                      fontSize: 18,
-                    }}
-                  />
-                }
-                onClick={() =>
-                  canReport &&
-                  openReportModal(record.jobSeekerPostId, record.username || "")
-                }
-                disabled={!canReport}
-                aria-label="Báo cáo ứng viên"
-              />
-            </Tooltip>
+      render: (text: string, record) => (
+        <div className="min-w-0">
+          <div className="font-medium truncate max-w-[180px]">{text}</div>
+          <div className="text-xs text-gray-500 truncate max-w-[180px]">
+            {record.username}
           </div>
-        );
-      },
+        </div>
+      ),
     },
     {
       title: "Ngày nộp",
@@ -634,50 +529,14 @@ const CandidateListPage: React.FC = () => {
       dataIndex: "jobSeekerName",
       key: "jobSeekerName",
       width: 220,
-      render: (text, record) => {
-        const canReport = Boolean(record.jobSeekerPostId);
-        return (
-          <div className="flex items-center gap-2">
-            <div className="min-w-0">
-              <div className="font-medium truncate max-w-[180px]">
-                {text}
-              </div>
-              <div className="text-xs text-gray-500 truncate max-w-[180px]">
-                {record.jobSeekerName}
-              </div>
-            </div>
-            <Tooltip
-              title={
-                canReport
-                  ? "Báo cáo bài đăng của ứng viên"
-                  : "Ứng viên chưa có bài đăng để báo cáo"
-              }
-            >
-              <Button
-                type="text"
-                shape="circle"
-                icon={
-                  <ExclamationCircleOutlined
-                    style={{
-                      color: canReport ? "#dc2626" : "#d1d5db",
-                      fontSize: 18,
-                    }}
-                  />
-                }
-                onClick={() =>
-                  canReport &&
-                  openReportModal(
-                    record.jobSeekerPostId,
-                    record.jobSeekerName || "Ứng viên"
-                  )
-                }
-                disabled={!canReport}
-                aria-label="Báo cáo ứng viên"
-              />
-            </Tooltip>
+      render: (text, record) => (
+        <div className="min-w-0">
+          <div className="font-medium truncate max-w-[180px]">{text}</div>
+          <div className="text-xs text-gray-500 truncate max-w-[180px]">
+            {record.jobSeekerName}
           </div>
-        );
-      },
+        </div>
+      ),
     },
     {
       title: "Ghi chú",
@@ -824,20 +683,81 @@ const CandidateListPage: React.FC = () => {
         width={800}
       >
         {cvModal.loading ? (
-          <div className="flex justify-center py-10">
-            <Spin tip="Đang tải CV..." />
-          </div>
+          <p>Đang tải CV...</p>
         ) : cvModal.error ? (
           <p className="text-red-500">{cvModal.error}</p>
         ) : cvModal.cv ? (
-          <div className="space-y-4">
-            {/* ... phần CV giữ nguyên ... */}
+          <div className="space-y-4 text-sm">
+            <div className="p-3 rounded-lg border bg-gray-50">
+              <h3 className="font-semibold text-gray-700 mb-1">Thông tin chung</h3>
+              <p>
+                <span className="font-semibold">Tiêu đề:</span>{" "}
+                {cvModal.cv.cvTitle}
+              </p>
+              {cvModal.cv.preferredJobType && (
+                <p>
+                  <span className="font-semibold">Công việc mong muốn:</span>{" "}
+                  {cvModal.cv.preferredJobType}
+                </p>
+              )}
+              {cvModal.cv.preferredLocationName && (
+                <p>
+                  <span className="font-semibold">Khu vực mong muốn:</span>{" "}
+                  {cvModal.cv.preferredLocationName}
+                </p>
+              )}
+              {cvModal.cv.contactPhone && (
+                <p>
+                  <span className="font-semibold">Liên hệ:</span>{" "}
+                  {cvModal.cv.contactPhone}
+                </p>
+              )}
+            </div>
+
+            {(cvModal.cv.skillSummary || cvModal.cv.skills) && (
+              <div className="p-3 rounded-lg border bg-gray-50">
+                <h3 className="font-semibold text-gray-700 mb-1">Kỹ năng</h3>
+                {cvModal.cv.skillSummary && (
+                  <p className="text-gray-700">{cvModal.cv.skillSummary}</p>
+                )}
+                {cvModal.cv.skills && (
+                  <div className="mt-2">
+                    {cvModal.cv.skills.split(",").map((skill, idx) => (
+                      <Tag key={idx} color="blue" className="mb-1">
+                        {skill.trim()}
+                      </Tag>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {(cvModal.cv as any).experience && (
+              <div className="p-3 rounded-lg border bg-gray-50">
+                <h3 className="font-semibold text-gray-700 mb-1">Kinh nghiệm</h3>
+                <p className="whitespace-pre-wrap text-gray-700">
+                  {(cvModal.cv as any).experience}
+                </p>
+              </div>
+            )}
+
+            {(cvModal.cv as any).education && (
+              <div className="p-3 rounded-lg border bg-gray-50">
+                <h3 className="font-semibold text-gray-700 mb-1">Học vấn</h3>
+                <p className="whitespace-pre-wrap text-gray-700">
+                  {(cvModal.cv as any).education}
+                </p>
+              </div>
+            )}
+
+            <div className="text-xs text-gray-500 text-right">
+              Cập nhật: {formatDateOnly(cvModal.cv.updatedAt)}
+            </div>
           </div>
         ) : (
           <Empty description="Không có dữ liệu CV." />
         )}
       </Modal>
-
       {/* Modal xem đầy đủ mô tả / ghi chú */}
       <Modal
         title={descriptionModal.title || "Chi tiết"}
@@ -859,36 +779,6 @@ const CandidateListPage: React.FC = () => {
         rateeName={ratingModal.rateeName}
       />
 
-      <Modal
-        title={`Báo cáo ứng viên ${
-          reportModal.subjectName ? `- ${reportModal.subjectName}` : ""
-        }`}
-        open={reportModal.visible}
-        onCancel={() =>
-          setReportModal((prev) => ({
-            ...prev,
-            visible: false,
-            submitting: false,
-          }))
-        }
-        onOk={handleSubmitReport}
-        okText="Gửi báo cáo"
-        cancelText="Hủy"
-        confirmLoading={reportModal.submitting}
-      >
-        <p className="text-sm text-gray-600 mb-3">
-          Hãy mô tả ngắn gọn lý do bạn muốn báo cáo bài đăng tìm việc này. Thông
-          tin sẽ được gửi tới quản trị viên để xử lý.
-        </p>
-        <TextArea
-          rows={4}
-          value={reportModal.reason}
-          onChange={(e) =>
-            setReportModal((prev) => ({ ...prev, reason: e.target.value }))
-          }
-          placeholder="Ví dụ: Bài đăng có nội dung không phù hợp..."
-        />
-      </Modal>
     </div>
   );
 };

@@ -11,6 +11,7 @@ import {
   Select,
   Checkbox,
   TimePicker,
+  DatePicker,
   Space,
   message,
 } from "antd";
@@ -25,7 +26,6 @@ import type { Dayjs } from "dayjs";
 import locationService, {
   type LocationOption,
 } from "../../../location/locationService";
-import { useSubCategories } from "../../../subcategory/hook";
 import { DeleteOutlined } from "@ant-design/icons";
 
 const FormField: React.FC<{
@@ -53,9 +53,6 @@ export const JobInfoFormSection: React.FC<{
   const editor = useRef(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const { categories, isLoading } = useCategories();
-  const { subCategories, isLoading: isLoadingSubCategories } = useSubCategories(
-    data.categoryID ?? null
-  );
 
   const fileToBase64 = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
@@ -73,6 +70,7 @@ export const JobInfoFormSection: React.FC<{
     null,
   ]);
   const [isNegotiable, setIsNegotiable] = useState(false);
+  const [expiryDate, setExpiryDate] = useState<Dayjs | null>(null);
 
   const [provinceOptions, setProvinceOptions] = useState<LocationOption[]>([]);
   const [districtOptions, setDistrictOptions] = useState<LocationOption[]>([]);
@@ -87,6 +85,11 @@ export const JobInfoFormSection: React.FC<{
     districts: false,
     wards: false,
   });
+
+  const disablePastDates = (current: Dayjs) => {
+    if (!current) return false;
+    return current.startOf("day").isBefore(dayjs().startOf("day"));
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -233,6 +236,15 @@ export const JobInfoFormSection: React.FC<{
   }, [data.salaryText]);
 
   useEffect(() => {
+    if (data.expiredAt) {
+      const parsed = dayjs(data.expiredAt, "DD/MM/YYYY", true);
+      setExpiryDate(parsed.isValid() ? parsed : null);
+    } else {
+      setExpiryDate(null);
+    }
+  }, [data.expiredAt]);
+
+  useEffect(() => {
     if (!touched.workHours) return;
     const invalid =
       !timeRange[0] || !timeRange[1] || !timeRange[1]?.isAfter(timeRange[0]!);
@@ -329,8 +341,8 @@ export const JobInfoFormSection: React.FC<{
       isInvalid = value === null || value === undefined;
     }
 
-    if (field === "subCategoryId") {
-      isInvalid = value === null || value === undefined;
+    if (field === "expiredAt") {
+      isInvalid = !value;
     }
 
     if (field === "salaryValue") {
@@ -350,14 +362,7 @@ export const JobInfoFormSection: React.FC<{
   };
 
   const handleChange = (field: keyof JobPostData, value: any) => {
-    if (field === "categoryID") {
-      onDataChange(field, value);
-      onDataChange("subCategoryId", null);
-      setValidation((prev) => ({ ...prev, subCategoryId: false }));
-    } else {
-      onDataChange(field, value);
-    }
-
+    onDataChange(field, value);
     if (validation[field]) {
       setValidation((prev) => ({ ...prev, [field]: false }));
     }
@@ -373,6 +378,19 @@ export const JobInfoFormSection: React.FC<{
       setValidation((prev) => ({ ...prev, salaryValue: false }));
     } else {
       handleChange("salaryText", null);
+    }
+  };
+
+
+  const handleExpiredDateChange = (value: Dayjs | null) => {
+    setExpiryDate(value);
+    setTouched((prev) => ({ ...prev, expiredAt: true }));
+    if (value) {
+      handleChange("expiredAt", value.format("DD/MM/YYYY"));
+      setValidation((prev) => ({ ...prev, expiredAt: false }));
+    } else {
+      handleChange("expiredAt", null);
+      setValidation((prev) => ({ ...prev, expiredAt: true }));
     }
   };
 
@@ -630,6 +648,25 @@ export const JobInfoFormSection: React.FC<{
         )}
       </FormField>
 
+      <FormField label="Ngày hết hạn" required>
+        <DatePicker
+          format="DD/MM/YYYY"
+          value={expiryDate}
+          onChange={handleExpiredDateChange}
+          onBlur={() => handleBlur("expiredAt", data.expiredAt)}
+          disabledDate={disablePastDates}
+          size="large"
+          placeholder="Chọn ngày hết hạn"
+          style={{ width: "100%" }}
+          className={validation.expiredAt ? "border-red-500" : ""}
+        />
+        {validation.expiredAt && (
+          <p className="text-red-500 text-sm mt-1">
+            Vui lòng chọn ngày hết hạn hợp lệ
+          </p>
+        )}
+      </FormField>
+
       <FormField label="Mô tả công việc cần tuyển dụng" required>
         <div className={validation.jobDescription ? "jodit-invalid" : ""}>
           <JoditEditor
@@ -791,35 +828,6 @@ export const JobInfoFormSection: React.FC<{
           <p className="text-red-500 text-sm mt-1">Vui lòng chọn ngành nghề</p>
         )}
         <style>{`.select-invalid .ant-select-selector { border-color: #ef4444 !important; }`}</style>
-      </FormField>
-
-      <FormField label="Nhóm nghề" required>
-        <Select
-          size="large"
-          placeholder={
-            data.categoryID
-              ? isLoadingSubCategories
-                ? "Đang tải nhóm nghề..."
-                : "Chọn nhóm nghề"
-              : "Chọn ngành trước"
-          }
-          loading={isLoadingSubCategories}
-          disabled={!data.categoryID}
-          value={data.subCategoryId ?? undefined}
-          onChange={(value) => handleChange("subCategoryId", value)}
-          onBlur={() => handleBlur("subCategoryId", data.subCategoryId)}
-          className={validation.subCategoryId ? "select-invalid" : ""}
-          options={subCategories.map((sub: any) => ({
-            value: sub.subCategoryId,
-            label: sub.name,
-          }))}
-          allowClear
-        />
-        {validation.subCategoryId && (
-          <p className="text-red-500 text-sm mt-1">
-            Vui lòng chọn nhóm nghề
-          </p>
-        )}
       </FormField>
 
       <FormField label="Số điện thoại liên hệ" required>

@@ -10,7 +10,6 @@ import savedJobsReducer from '../features/savedJob-jobSeeker/slice';
 import jobDetailReducer from '../features/findJob-jobSeeker/jobDetailSlice';
 import employerJobPostingReducer from '../features/job/jobPostingSlice';
 import categoryReducer from '../features/category/slice';
-import subCategoryReducer from '../features/subcategory/slice';
 import adminJobsReducer from '../features/admin-js-post/slice';
 import appliedJobsReducer from '../features/applyJob-jobSeeker/slices/appliedJobsSlice';
 import profileReducer from '../features/employer/slice/profileSlice';
@@ -33,7 +32,6 @@ const rootReducer = combineReducers({
   jobDetail: jobDetailReducer,
   employerPosting: employerJobPostingReducer, 
   category: categoryReducer,
-  subcategory: subCategoryReducer,
   appliedJobs: appliedJobsReducer,
   adminJobs: adminJobsReducer,
   profile: profileReducer,

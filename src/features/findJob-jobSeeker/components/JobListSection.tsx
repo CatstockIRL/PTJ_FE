@@ -112,11 +112,6 @@ const JobListCard: React.FC<{ job: JobPostView }> = ({ job }) => {
                   {job.categoryName}
                 </Tag>
               )}
-              {job.subCategoryName && (
-                <Tag color="default" className="px-2 py-1 rounded-full text-gray-700">
-                  {job.subCategoryName}
-                </Tag>
-              )}
             </div>
             {descriptionText && (
               <p className="text-sm text-gray-600 mt-2">
@@ -146,7 +141,7 @@ const JobListSection: React.FC<JobListSectionProps> = ({
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const { keyword, provinceId, categoryId, subCategoryId, salary, salaryRange } =
+  const { keyword, provinceId, categoryId, salary, salaryRange } =
     filters;
 
   useEffect(() => {
@@ -227,12 +222,6 @@ const JobListSection: React.FC<JobListSectionProps> = ({
         (filters.categoryName &&
           normalizeText(job.categoryName) === normalizeText(filters.categoryName));
 
-      const subCategoryMatch =
-        !subCategoryId ||
-        job.subCategoryId === subCategoryId ||
-        (filters.subCategoryName &&
-          normalizeText(job.subCategoryName) === normalizeText(filters.subCategoryName));
-
       let salaryPresenceMatch = true;
       if (salary === "hasValue") {
         salaryPresenceMatch = !!job.salary && job.salary > 0;
@@ -269,7 +258,6 @@ const JobListSection: React.FC<JobListSectionProps> = ({
         titleMatch &&
         provinceMatch &&
         categoryMatch &&
-        subCategoryMatch &&
         salaryPresenceMatch &&
         salaryRangeMatch
       );
@@ -279,11 +267,9 @@ const JobListSection: React.FC<JobListSectionProps> = ({
     keyword,
     provinceId,
     categoryId,
-    subCategoryId,
     salary,
     salaryRange,
     filters.categoryName,
-    filters.subCategoryName,
   ]);
 
   const sortedJobs = useMemo(() => {
@@ -314,7 +300,6 @@ const JobListSection: React.FC<JobListSectionProps> = ({
     keyword,
     provinceId,
     categoryId,
-    subCategoryId,
     salary,
     salaryRange,
     sortOrder,

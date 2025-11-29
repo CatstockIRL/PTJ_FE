@@ -25,12 +25,12 @@ const initialState: EmployerJobPostingState = {
     wardId: null,
     location: '',
     categoryID: null,
-    subCategoryId: null,
     contactPhone: '',
     images: [],
     imagePreviews: [],
     existingImages: [],
     deleteImageIds: [],
+    expiredAt: null,
   },
   status: 'idle',
 };

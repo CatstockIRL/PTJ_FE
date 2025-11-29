@@ -600,9 +600,6 @@ const JobDetailPage: React.FC = () => {
       label: "Ngành nghề",
       value: job.categoryName || "Không cập nhật",
       icon: "fas fa-layer-group",
-      helper: job.subCategoryName
-        ? `Chuyên mục: ${job.subCategoryName}`
-        : undefined,
     },
     {
       label: "Liên hệ",
@@ -737,12 +734,6 @@ const JobDetailPage: React.FC = () => {
                 <div className="flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-blue-700">
                   <i className="fas fa-layer-group" />
                   <span>{job.categoryName}</span>
-                </div>
-              )}
-              {job.subCategoryName && (
-                <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2">
-                  <span className="font-semibold text-slate-700">Công việc:</span>
-                  <span>{job.subCategoryName}</span>
                 </div>
               )}
             </div>

@@ -32,12 +32,12 @@ const transformDtoToFormData = (dto: JobPostView): JobPostData => {
     wardId: dto.wardId ?? null,
     location: dto.location || '',
     categoryID: dto.categoryId ?? null,
-    subCategoryId: dto.subCategoryId ?? null,
     contactPhone: dto.phoneContact || '',
     images: [],
     imagePreviews: [],
     existingImages: normalizedImages,
     deleteImageIds: [],
+    expiredAt: dto.expiredAtText ?? null,
   };
 };
 
@@ -56,12 +56,12 @@ const emptyState: JobPostData = {
   wardId: null,
   location: '',
   categoryID: null,
-  subCategoryId: null,
   contactPhone: '',
   images: [],
   imagePreviews: [],
   existingImages: [],
   deleteImageIds: [],
+  expiredAt: null,
 };
 
 const EditJobPage: React.FC = () => {

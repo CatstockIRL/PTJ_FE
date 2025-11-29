@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Form,
   Input,
@@ -29,7 +29,6 @@ import {
   fetchPostSuggestions,
 } from "../slice/slice";
 import { useCategories } from "../../category/hook";
-import { useSubCategories } from "../../subcategory/hook";
 import type {
   CreateJobSeekerPostPayload,
   UpdateJobSeekerPostPayload,
@@ -39,8 +38,10 @@ import locationService, {
 } from "../../location/locationService";
 import { fetchMyCvs } from "../../jobSeekerCv/services";
 import type { JobSeekerCv } from "../../jobSeekerCv/types";
+import { refreshJobSeekerSuggestions } from "../services";
 import JobCard from "../../homepage-jobSeeker/components/JobCard";
 import "./CreatePostingPage.css";
+import { ReloadOutlined } from "@ant-design/icons";
 
 const { Title } = Typography;
 const { TextArea } = Input;
@@ -87,31 +88,6 @@ const CreatePostingPage: React.FC = () => {
   );
 
   const { categories, isLoading: isLoadingCategories } = useCategories();
-  const selectedCategoryId = Form.useWatch("categoryID", form);
-  const lastCategoryRef = useRef<number | null>(null);
-  const prefillingCategoryRef = useRef(false);
-  const { subCategories, isLoading: isLoadingSubCategories } = useSubCategories(
-    selectedCategoryId ?? null
-  );
-  const mergedSubCategories = useMemo(() => {
-    if (
-      postDetail &&
-      (isViewMode || isEditMode) &&
-      postDetail.subCategoryId &&
-      !subCategories.some(
-        (sub) => sub.subCategoryId === Number(postDetail.subCategoryId)
-      )
-    ) {
-      return [
-        ...subCategories,
-        {
-          subCategoryId: Number(postDetail.subCategoryId),
-          name: postDetail.subCategoryName || "Nhóm nghề",
-        },
-      ];
-    }
-    return subCategories;
-  }, [subCategories, postDetail, isViewMode, isEditMode]);
   const [provinces, setProvinces] = useState<LocationOption[]>([]);
   const [districts, setDistricts] = useState<LocationOption[]>([]);
   const [wards, setWards] = useState<LocationOption[]>([]);
@@ -122,6 +98,7 @@ const CreatePostingPage: React.FC = () => {
   });
   const [cvOptions, setCvOptions] = useState<JobSeekerCv[]>([]);
   const [isLoadingCvs, setIsLoadingCvs] = useState(false);
+  const [isResettingSuggestions, setIsResettingSuggestions] = useState(false);
 
   const pageTitle = isCreateMode
     ? "Tạo bài đăng tìm việc Part-time"
@@ -202,24 +179,25 @@ const CreatePostingPage: React.FC = () => {
     }
   }, [dispatch, isViewMode, id]);
 
-  useEffect(() => {
-    const normalized =
-      typeof selectedCategoryId === "number"
-        ? selectedCategoryId
-        : selectedCategoryId
-        ? Number(selectedCategoryId)
-        : null;
-
-    if (prefillingCategoryRef.current) {
-      lastCategoryRef.current = normalized;
-      return;
+  const handleResetAiSuggestions = async () => {
+    if (!id) return;
+    setIsResettingSuggestions(true);
+    try {
+      const res: any = await refreshJobSeekerSuggestions(Number(id));
+      if (res?.success) {
+        message.success("Đã làm mới gợi ý AI cho bài đăng này.");
+      } else {
+        message.info(res?.message || "Đã làm mới gợi ý.");
+      }
+      await dispatch(fetchPostSuggestions(Number(id)));
+    } catch (error: any) {
+      message.error(
+        error?.response?.data?.message || "Không thể làm mới gợi ý AI."
+      );
+    } finally {
+      setIsResettingSuggestions(false);
     }
-
-    if (lastCategoryRef.current !== normalized) {
-      lastCategoryRef.current = normalized;
-      form.setFieldsValue({ subCategoryId: undefined });
-    }
-  }, [selectedCategoryId, form]);
+  };
 
   useEffect(() => {
     if (postDetail && (isViewMode || isEditMode)) {
@@ -239,17 +217,10 @@ const CreatePostingPage: React.FC = () => {
         postDetail.categoryID !== undefined && postDetail.categoryID !== null
           ? Number(postDetail.categoryID)
           : undefined;
-      const normalizedSubCategoryId =
-        postDetail.subCategoryId !== undefined &&
-        postDetail.subCategoryId !== null
-          ? Number(postDetail.subCategoryId)
-          : undefined;
 
-      prefillingCategoryRef.current = true;
       form.setFieldsValue({
         ...postDetail,
         categoryID: normalizedCategoryId,
-        subCategoryId: normalizedSubCategoryId,
         provinceId: postDetail.provinceId ?? undefined,
         districtId: postDetail.districtId ?? undefined,
         wardId: postDetail.wardId ?? undefined,
@@ -258,10 +229,6 @@ const CreatePostingPage: React.FC = () => {
         locationDetail: postDetail.preferredLocation,
         selectedCvId: postDetail.selectedCvId ?? postDetail.cvId ?? undefined,
       });
-
-      lastCategoryRef.current =
-        normalizedCategoryId !== undefined ? normalizedCategoryId : null;
-      prefillingCategoryRef.current = false;
 
       (async () => {
         if (postDetail.provinceId) {
@@ -349,7 +316,6 @@ const CreatePostingPage: React.FC = () => {
       preferredWorkHourStart,
       preferredWorkHourEnd,
       selectedCvId,
-      subCategoryId,
       ...rest
     } = values;
 
@@ -369,7 +335,6 @@ const CreatePostingPage: React.FC = () => {
       userID: user.id,
       age: Number(rest.age),
       categoryID: Number(rest.categoryID),
-      subCategoryId: subCategoryId ? Number(subCategoryId) : undefined,
       provinceId: Number(provinceId),
       districtId: Number(districtId),
       wardId: Number(wardId),
@@ -442,28 +407,6 @@ const CreatePostingPage: React.FC = () => {
                   value={category.categoryId}
                 >
                   {category.name}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-
-          <Form.Item
-            name="subCategoryId"
-            label="Nhóm nghề cụ thể"
-            rules={[{ required: true, message: "Vui lòng chọn nhóm nghề!" }]}
-          >
-            <Select
-              placeholder={
-                selectedCategoryId ? "Chọn nhóm nghề" : "Chọn ngành trước"
-              }
-              disabled={isReadOnly || !selectedCategoryId}
-              loading={isLoadingSubCategories}
-              showSearch
-              optionFilterProp="children"
-            >
-              {mergedSubCategories.map((sub) => (
-                <Select.Option key={sub.subCategoryId} value={sub.subCategoryId}>
-                  {sub.name}
                 </Select.Option>
               ))}
             </Select>
@@ -745,13 +688,12 @@ const CreatePostingPage: React.FC = () => {
   const summaryLocation =
     postDetail?.preferredLocation || form.getFieldValue("locationDetail") || "Chưa cập nhật địa điểm";
   const summaryCategory = postDetail?.categoryName || "Chưa có ngành";
-  const summarySubCategory = postDetail?.subCategoryName;
   const summaryPhone = postDetail?.phoneContact || "Chưa cập nhật";
   const summaryAge = postDetail?.age ? `${postDetail.age}+ tuổi` : "Chưa cập nhật";
   const summaryWorkHour =
     postDetail?.preferredWorkHourStart && postDetail?.preferredWorkHourEnd
       ? `${postDetail.preferredWorkHourStart} - ${postDetail.preferredWorkHourEnd}`
-      : postDetail?.workHours || "Chưa cập nhật";
+      : postDetail?.preferredWorkHours || "Chưa cập nhật";
 
   return (
     <div
@@ -800,11 +742,6 @@ const CreatePostingPage: React.FC = () => {
                     <Tag color="blue" className="rounded-full px-3 py-1">
                       {summaryCategory}
                     </Tag>
-                    {summarySubCategory && (
-                      <Tag color="geekblue" className="rounded-full px-3 py-1">
-                        {summarySubCategory}
-                      </Tag>
-                    )}
                     <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1">
                       <i className="fas fa-map-marker-alt text-blue-500" />
                       {summaryLocation}
@@ -834,10 +771,21 @@ const CreatePostingPage: React.FC = () => {
 
               <div className="lg:col-span-1">
                 <div className="sticky top-4">
-                  <Title level={4} className="mb-4 text-indigo-700">
-                    <i className="fas fa-bolt mr-2"></i>
-                    Công việc phù hợp
-                  </Title>
+                  <div className="flex items-center justify-between gap-3 mb-4">
+                    <Title level={4} className="!mb-0 text-indigo-700">
+                      <i className="fas fa-bolt mr-2"></i>
+                      Công việc phù hợp
+                    </Title>
+                    <Button
+                      size="small"
+                      icon={<ReloadOutlined />}
+                      onClick={handleResetAiSuggestions}
+                      loading={isResettingSuggestions}
+                      disabled={!id}
+                    >
+                      Làm mới
+                    </Button>
+                  </div>
                   <Spin spinning={isLoadingSuggestions}>
                     <div className="flex flex-col gap-4">
                       {suggestedJobs && suggestedJobs.length > 0 ? (
