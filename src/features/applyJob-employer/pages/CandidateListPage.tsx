@@ -142,14 +142,6 @@ const CandidateListPage: React.FC = () => {
     return record.cvId ?? record.selectedCvId ?? (record as any)?.cvid ?? null;
   };
 
-  const getSkillTags = (skills?: string | null) => {
-    if (!skills) return [];
-    return skills
-      .split(/[,;\n]/)
-      .map((skill) => skill.trim())
-      .filter(Boolean);
-  };
-
   const formatDateOnly = (value?: string | null) => {
     if (!value) return "Chưa cập nhật";
     try {

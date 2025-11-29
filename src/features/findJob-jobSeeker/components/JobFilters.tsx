@@ -1,6 +1,7 @@
 import { Card, Typography, Select, Radio } from "antd";
 import { useCategories } from "../../category/hook";
 import type { JobSearchFilters } from "../types";
+import { salaryTypeOptions } from "../../../utils/salary";
 
 const { Title, Text } = Typography;
 
@@ -11,6 +12,17 @@ const salaryOptions: { value: JobSearchFilters["salaryRange"]; label: string }[]
   { value: "3-5", label: "3 - 5 triệu" },
   { value: "5plus", label: "Từ 5 triệu trở lên" },
   { value: "negotiable", label: "Thỏa thuận" },
+];
+
+const salaryTypeFilterOptions: {
+  value: JobSearchFilters["salaryType"];
+  label: string;
+}[] = [
+  { value: "all", label: "Tất cả" },
+  ...salaryTypeOptions.map((opt) => ({
+    value: opt.value,
+    label: opt.label,
+  })),
 ];
 
 interface JobFiltersProps {
@@ -70,6 +82,27 @@ export const JobFilters: React.FC<JobFiltersProps> = ({
             }
           >
             {salaryOptions.map((option) => (
+              <Radio value={option.value} key={option.value}>
+                {option.label}
+              </Radio>
+            ))}
+          </Radio.Group>
+        </div>
+
+        <div className="px-4 py-4">
+          <Text strong className="block text-gray-800">
+            Loại lương
+          </Text>
+          <Radio.Group
+            className="mt-3 grid gap-2 text-gray-700"
+            value={filters.salaryType ?? "all"}
+            onChange={(e) =>
+              onChange({
+                salaryType: e.target.value,
+              })
+            }
+          >
+            {salaryTypeFilterOptions.map((option) => (
               <Radio value={option.value} key={option.value}>
                 {option.label}
               </Radio>

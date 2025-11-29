@@ -21,7 +21,14 @@ export const getSavedJobs = async (jobSeekerId: string): Promise<{ jobs: SavedJo
           savedAt: backendJob.addedAt,
           updatedAt: detail?.createdAt ?? backendJob.addedAt,
           description: detail?.description ?? null,
-          salary: detail ? formatSalaryText(detail.salary ?? null) : null,
+          salary: detail
+            ? formatSalaryText(
+                detail.salaryMin,
+                detail.salaryMax,
+                detail.salaryType,
+                detail.salaryDisplay
+              )
+            : null,
           companyLogo: getCompanyLogoSrc(detail?.companyLogo),
           isHot: false,
         };

@@ -1,9 +1,9 @@
 import React from 'react';
 import { Card, Skeleton, Typography, Descriptions } from 'antd';
-import { EnvironmentOutlined, MailOutlined, PhoneOutlined } from '@ant-design/icons';
+import { MailOutlined, PhoneOutlined } from '@ant-design/icons';
 import type { JobSeekerProfileDto } from '../types';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 interface ProfileOverviewProps {
   profile: JobSeekerProfileDto | null;

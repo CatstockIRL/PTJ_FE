@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { useCategories } from "../../../category/hook";
 import type { Category } from "../../../category/type";
 import type { JobPostData } from "../../jobTypes";
+import { formatSalaryRange } from "../../../../utils/salary";
 
 interface JobPostingPreviewProps {
   data: JobPostData;
@@ -22,13 +23,25 @@ const JobPostingPreview: React.FC<JobPostingPreviewProps> = ({ data }) => {
     ...data.imagePreviews,
   ];
 
+  const salaryPreview = useMemo(() => {
+    if (data.salaryDisplay && data.salaryDisplay.trim().length > 0) {
+      return data.salaryDisplay;
+    }
+    return formatSalaryRange(
+      data.salaryMin,
+      data.salaryMax,
+      data.salaryType,
+      "Chưa nhập"
+    );
+  }, [data.salaryDisplay, data.salaryMin, data.salaryMax, data.salaryType]);
+
   return (
     <div className="p-6 bg-white rounded-lg shadow-md border border-gray-200">
       <div className="flex items-start justify-between gap-3 mb-4">
         <div>
           <p className="text-sm text-gray-500">Thông tin xem trước</p>
           <h2 className="text-2xl font-semibold text-gray-800">
-            {data.jobTitle || "Chưa đặt tiêu đề ?"}
+            {data.jobTitle || "Chưa đặt tiêu đề"}
           </h2>
         </div>
       </div>
@@ -76,17 +89,17 @@ const JobPostingPreview: React.FC<JobPostingPreviewProps> = ({ data }) => {
 
       <div className="grid grid-cols-2 gap-4 mt-6">
         <div>
+
           <h3 className="text-sm font-semibold text-gray-500 uppercase">
+
             Mức lương
+
           </h3>
-          <p className="text-gray-700">
-            {data.salaryText
-              ? data.salaryText
-              : data.salaryValue
-              ? `${data.salaryValue.toLocaleString()} VND`
-              : "Chưa nhập"}
-          </p>
+
+          <p className="text-gray-700">{salaryPreview}</p>
+
         </div>
+
 
         <div>
           <h3 className="text-sm font-semibold text-gray-500 uppercase">

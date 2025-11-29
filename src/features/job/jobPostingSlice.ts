@@ -13,8 +13,10 @@ const initialState: EmployerJobPostingState = {
   form: {
     jobTitle: '',
     jobDescription: '',
-    salaryValue: null,
-    salaryText: null,
+    salaryMin: null,
+    salaryMax: null,
+    salaryType: null,
+    salaryDisplay: null,
     requirements: '',
     workHours: '',
     workHourStart: null,

@@ -1,9 +1,12 @@
+import type { SalaryTypeCode } from "../../utils/salary";
+
 export interface EmployerPostDto {
   userID: number;
   title: string;
   description: string | null;
-  salary: number | null;
-  salaryText: string | null;
+  salaryMin: number | null;
+  salaryMax: number | null;
+  salaryType: SalaryTypeCode | null;
   requirements: string | null;
   workHourStart: string | null;
   workHourEnd: string | null;
@@ -21,8 +24,10 @@ export interface EmployerPostDto {
 export interface JobPostData {
   jobTitle: string;
   jobDescription: string;
-  salaryValue: number | null;
-  salaryText: string | null;
+  salaryMin: number | null;
+  salaryMax: number | null;
+  salaryType: SalaryTypeCode | null;
+  salaryDisplay?: string | null;
   requirements: string;
   workHours: string;
   workHourStart: string | null;
@@ -45,8 +50,10 @@ export interface JobPostView {
   employerPostId: number;
   title: string;
   description: string | null;
-  salary: number | null;
-  salaryText?: string | null;
+  salaryMin: number | null;
+  salaryMax: number | null;
+  salaryType: SalaryTypeCode | null;
+  salaryDisplay?: string | null;
   requirements: string | null;
   workHours: string | null;
   workHourStart?: string | null;
@@ -62,7 +69,7 @@ export interface JobPostView {
   expiredAtText?: string | null;
   employerName: string;
   createdAt: string;
-  status: 'draft' | 'active' | 'expired' | string;
+  status: "draft" | "active" | "expired" | string;
   companyLogo?: string;
   imageUrls?: string[];
   images?: EmployerPostImage[];

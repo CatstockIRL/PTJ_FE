@@ -18,6 +18,7 @@ import type { ApplicationSummaryDto } from "../../features/applyJob-jobSeeker/ty
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import NotificationDropdown from "../../features/notification/components/NotificationDropdown";
 import { fetchNotifications } from "../../features/notification/slice";
+import { formatSalaryText } from "../../utils/jobPostHelpers";
 
 const EmployerDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -103,49 +104,56 @@ const EmployerDashboard: React.FC = () => {
 
   const pendingApplicants = summary?.pendingApplications ?? [];
 
-  const renderJobCard = (job: JobPostView) => (
-    <div
-      key={job.employerPostId}
-      className="p-4 bg-white border border-gray-200 rounded-xl hover:shadow-md hover:border-blue-200 transition cursor-pointer"
-      onClick={() => {
-        setSelectedJob(job);
-        setIsModalVisible(true);
-      }}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
+  const renderJobCard = (job: JobPostView) => {
+    const salaryLabel = formatSalaryText(
+      job.salaryMin,
+      job.salaryMax,
+      job.salaryType,
+      job.salaryDisplay
+    );
+
+    return (
+      <div
+        key={job.employerPostId}
+        className="p-4 bg-white border border-gray-200 rounded-xl hover:shadow-md hover:border-blue-200 transition cursor-pointer"
+        onClick={() => {
           setSelectedJob(job);
           setIsModalVisible(true);
-        }
-      }}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Tag color="blue">Đang hoạt động</Tag>
-            {job.salary ? (
+        }}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            setSelectedJob(job);
+            setIsModalVisible(true);
+          }
+        }}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Tag color="blue">Đang hoạt động</Tag>
               <Tag color="default" className="text-gray-700">
-                {job.salary.toLocaleString("vi-VN")} VND
+                {salaryLabel}
               </Tag>
-            ) : (
-              <Tag color="default">Thỏa thuận</Tag>
-            )}
+            </div>
+            <p className="text-base font-semibold text-gray-900 leading-tight">
+              {job.title}
+            </p>
+            <p className="text-sm text-gray-600">
+              {job.location || "Chưa cập nhật địa điểm"}
+            </p>
+            <p className="text-xs text-gray-500">
+              Cập nhật: {job.createdAt
+                ? new Date(job.createdAt).toLocaleDateString("vi-VN")
+                : "N/A"}
+            </p>
           </div>
-          <p className="text-base font-semibold text-gray-900 leading-tight">
-            {job.title}
-          </p>
-          <p className="text-sm text-gray-600">
-            {job.location || "Chưa cập nhật địa điểm"}
-          </p>
-          <p className="text-xs text-gray-500">
-            Cập nhật: {job.createdAt ? new Date(job.createdAt).toLocaleDateString("vi-VN") : "N/A"}
-          </p>
+          <ArrowRightOutlined className="text-gray-400" />
         </div>
-        <ArrowRightOutlined className="text-gray-400" />
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="space-y-6">

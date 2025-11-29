@@ -38,6 +38,7 @@ import type {
 } from '../../features/admin/types/report';
 import type { AdminEmployerPostDetail, AdminJobSeekerPostDetail } from '../../features/admin/types/jobPost';
 import AdminSectionHeader from './components/AdminSectionHeader';
+import { formatSalaryText } from '../../utils/jobPostHelpers';
 
 const { Text } = Typography;
 const { Option } = Select;
@@ -453,8 +454,12 @@ const AdminReportManagementPage: React.FC = () => {
     }
   };
 
-  const formatCurrency = (value?: number | null) =>
-    value === null || value === undefined ? undefined : `${value.toLocaleString('vi-VN')} VND`;
+  const formatCurrency = (
+    min?: number | null,
+    max?: number | null,
+    type?: number | null,
+    display?: string | null
+  ) => formatSalaryText(min, max, type, display);
 
   const formatLocation = (province?: string | null, district?: string | null, ward?: string | null) => {
     const parts = [ward, district, province].filter((part): part is string => Boolean(part && part.trim()));
@@ -665,7 +670,12 @@ const AdminReportManagementPage: React.FC = () => {
     if (postDetail.kind === 'employer') {
       const post = postDetail.data;
       const location = formatLocation(post.provinceName, post.districtName, post.wardName);
-      const salary = formatCurrency(post.salary);
+      const salary = formatCurrency(
+        post.salaryMin,
+        post.salaryMax,
+        post.salaryType,
+        post.salaryDisplay
+      );
       return (
         <>
           <Descriptions column={2} size="small" bordered>

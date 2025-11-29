@@ -13,6 +13,7 @@ import { format, parseISO } from "date-fns";
 import type { JobApplicationResultDto } from "../type";
 import { APPLICATION_STATUS_VN, STATUS_COLORS } from "../constants";
 import RatingModal from "../../../components/RatingModal";
+import { formatSalaryText } from "../../../utils/jobPostHelpers";
 
 const { TextArea } = Input;
 
@@ -42,6 +43,13 @@ const AppliedJobCard = ({ appliedJob, onWithdraw }: AppliedJobCardProps) => {
     ? format(parseISO(appliedJob.applicationDate), "dd/MM/yyyy")
     : "N/A";
 
+  const salaryText = formatSalaryText(
+    appliedJob.salaryMin,
+    appliedJob.salaryMax,
+    appliedJob.salaryType,
+    appliedJob.salaryDisplay
+  );
+
   return (
     <Card
       className="mb-4 overflow-hidden shadow-lg transition-transform duration-300 hover:scale-105"
@@ -70,8 +78,7 @@ const AppliedJobCard = ({ appliedJob, onWithdraw }: AppliedJobCardProps) => {
           </p>
           <div className="flex flex-wrap items-center gap-4 text-gray-500">
             <span className="flex items-center">
-              <DollarCircleOutlined className="mr-2" />{" "}
-              {appliedJob.salary > 0 ? appliedJob.salary : "Thỏa Thuận"}
+              <DollarCircleOutlined className="mr-2" /> {salaryText}
             </span>
             <span className="flex items-center">
               <EnvironmentOutlined className="mr-2" /> {appliedJob.location}

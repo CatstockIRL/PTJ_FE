@@ -6,6 +6,7 @@ export interface EmployerFollowDto {
   followDate: string;
   avatarUrl?: string;
   logo?: string;
+  logoUrl?: string;
 }
 
 const followService = {

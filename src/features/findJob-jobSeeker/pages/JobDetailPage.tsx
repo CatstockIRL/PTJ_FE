@@ -231,10 +231,12 @@ const JobDetailPage: React.FC = () => {
             )
             .slice(0, 5)
             .map(async (post) => {
-              const salaryDisplay =
-                post.salaryText && post.salaryText.trim().length > 0
-                  ? post.salaryText
-                  : formatSalaryText(post.salary);
+              const salaryDisplay = formatSalaryText(
+                post.salaryMin,
+                post.salaryMax,
+                post.salaryType,
+                post.salaryDisplay
+              );
 
               let logoSource = post.companyLogo;
               if (!logoSource || logoSource.trim().length === 0) {
@@ -558,10 +560,12 @@ const JobDetailPage: React.FC = () => {
     { id: "chi-tiet", label: "Thông tin" },
   ];
 
-  const salaryDisplay =
-    job.salary && job.salary > 0
-      ? `${job.salary.toLocaleString("vi-VN")} VND`
-      : job.salaryText?.trim() || "Thỏa thuận";
+  const salaryDisplay = formatSalaryText(
+    job.salaryMin,
+    job.salaryMax,
+    job.salaryType,
+    job.salaryDisplay
+  );
 
   const postedDate = job.createdAt
     ? new Date(job.createdAt).toLocaleDateString("vi-VN")
@@ -595,7 +599,12 @@ const JobDetailPage: React.FC = () => {
     },
   ];
 
-  const detailItems = [
+  const detailItems: Array<{
+    label: string;
+    value: string;
+    icon: string;
+    helper?: string;
+  }> = [
     {
       label: "Ngành nghề",
       value: job.categoryName || "Không cập nhật",

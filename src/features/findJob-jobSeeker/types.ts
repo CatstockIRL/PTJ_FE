@@ -1,3 +1,5 @@
+import type { SalaryTypeCode } from "../../utils/salary";
+
 export interface JobCategory {
   id: string;
   name: string;
@@ -26,8 +28,10 @@ export interface EmployerPostDtoOut {
   employerId: number;
   title: string;
   description?: string;
-  salary?: number;
-  salaryText?: string | null;
+  salaryMin?: number | null;
+  salaryMax?: number | null;
+  salaryType?: SalaryTypeCode | null;
+  salaryDisplay?: string | null;
   requirements?: string;
   workHours?: string;
   workHourStart?: string | null;
@@ -37,7 +41,7 @@ export interface EmployerPostDtoOut {
   phoneContact?: string;
   categoryName?: string;
   employerName?: string;
-  createdAt: string; 
+  createdAt: string;
   status: string;
   companyLogo?: string;
   imageUrls?: string[];
@@ -57,4 +61,5 @@ export interface JobSearchFilters {
     | "5plus"
     | "negotiable"
     | null;
+  salaryType: SalaryTypeCode | "all" | null;
 }

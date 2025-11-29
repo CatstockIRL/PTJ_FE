@@ -32,6 +32,8 @@ import type {
 import type { Category } from '../../features/category/type';
 import { categoryService } from '../../features/category/service';
 import AdminSectionHeader from './components/AdminSectionHeader';
+import { formatSalaryText } from '../../utils/jobPostHelpers';
+import type { SalaryTypeCode } from '../../utils/salary';
 
 const { Option } = Select;
 
@@ -160,10 +162,12 @@ const AdminJobPostManagementPage: React.FC = () => {
       setReasonSubmitting(false);
     }
   };
-  const formatCurrency = (value?: number | null) =>
-    value !== null && value !== undefined
-      ? `${value.toLocaleString('vi-VN')} VND`
-      : undefined;
+  const formatCurrency = (
+    min?: number | null,
+    max?: number | null,
+    type?: SalaryTypeCode | null,
+    display?: string | null
+  ) => formatSalaryText(min, max, type, display);
   const formatLocation = (
     province?: string | null,
     district?: string | null,
@@ -851,7 +855,12 @@ const AdminJobPostManagementPage: React.FC = () => {
                 <DetailSection title="Thông tin công việc">
                   <DetailField
                     label="Lương"
-                    value={formatCurrency(detailState.data.salary)}
+                    value={formatCurrency(
+                      detailState.data.salaryMin,
+                      detailState.data.salaryMax,
+                      detailState.data.salaryType,
+                      detailState.data.salaryDisplay
+                    )}
                   />
                   <DetailField
                     label="Giờ làm việc"

@@ -27,6 +27,11 @@ import locationService, {
   type LocationOption,
 } from "../../../location/locationService";
 import { DeleteOutlined } from "@ant-design/icons";
+import {
+  isNegotiableSalary,
+  salaryTypeOptions,
+  type SalaryTypeCode,
+} from "../../../../utils/salary";
 
 const FormField: React.FC<{
   label: string;
@@ -232,8 +237,42 @@ export const JobInfoFormSection: React.FC<{
   }, [locationDisplay, data.location, onDataChange]);
 
   useEffect(() => {
-    setIsNegotiable(Boolean(data.salaryText));
-  }, [data.salaryText]);
+    setIsNegotiable(
+      isNegotiableSalary(data.salaryMin, data.salaryMax, data.salaryType)
+    );
+  }, [data.salaryMin, data.salaryMax, data.salaryType]);
+
+  const validateSalaryFields = useCallback(() => {
+    if (isNegotiable) {
+      setValidation((prev) => ({
+        ...prev,
+        salaryRange: false,
+        salaryType: false,
+      }));
+      return;
+    }
+
+    const hasMin =
+      typeof data.salaryMin === "number" && data.salaryMin > 0;
+    const hasMax =
+      typeof data.salaryMax === "number" && data.salaryMax > 0;
+
+    const rangeInvalid =
+      (!hasMin && !hasMax) ||
+      (hasMin &&
+        hasMax &&
+        (data.salaryMax ?? 0) < (data.salaryMin ?? 0));
+
+    setValidation((prev) => ({
+      ...prev,
+      salaryRange: rangeInvalid,
+      salaryType: data.salaryType == null,
+    }));
+  }, [data.salaryMin, data.salaryMax, data.salaryType, isNegotiable]);
+
+  useEffect(() => {
+    validateSalaryFields();
+  }, [validateSalaryFields]);
 
   useEffect(() => {
     if (data.expiredAt) {
@@ -345,10 +384,6 @@ export const JobInfoFormSection: React.FC<{
       isInvalid = !value;
     }
 
-    if (field === "salaryValue") {
-      isInvalid = !isNegotiable && (!value || value <= 0);
-    }
-
     if (["provinceId", "districtId", "wardId"].includes(field as string)) {
       isInvalid = !value;
     }
@@ -368,17 +403,43 @@ export const JobInfoFormSection: React.FC<{
     }
   };
 
+  const clearSalaryDisplayIfNeeded = () => {
+    if (data.salaryDisplay) {
+      handleChange("salaryDisplay", null);
+    }
+  };
+
   const handleSalaryNegotiableChange = (e: CheckboxChangeEvent) => {
     const checked = e.target.checked;
     setIsNegotiable(checked);
 
     if (checked) {
-      handleChange("salaryValue", null);
-      handleChange("salaryText", "Thỏa thuận");
-      setValidation((prev) => ({ ...prev, salaryValue: false }));
-    } else {
-      handleChange("salaryText", null);
+      handleChange("salaryMin", null);
+      handleChange("salaryMax", null);
+      handleChange("salaryType", null);
+    } else if (!data.salaryType) {
+      handleChange("salaryType", 4 as SalaryTypeCode);
     }
+
+    clearSalaryDisplayIfNeeded();
+
+    setValidation((prev) => ({
+      ...prev,
+      salaryRange: false,
+      salaryType: false,
+    }));
+  };
+
+  const handleSalaryNumberChange = (
+    field: "salaryMin" | "salaryMax",
+    value: number | null
+  ) => {
+    clearSalaryDisplayIfNeeded();
+    if (typeof value === "number" && value < 0) {
+      handleChange(field, null);
+      return;
+    }
+    handleChange(field, value ?? null);
   };
 
 
@@ -619,31 +680,69 @@ export const JobInfoFormSection: React.FC<{
         </div>
       </FormField>
 
-      <FormField label="Mức lương dành cho công việc (VND)">
-        <InputNumber
-          size="large"
-          min={0}
-          className={`w-full ${validation.salaryValue ? "border-red-500" : ""}`}
-          placeholder="Nhập mức lương (ví dụ: 15000000)"
-          value={data.salaryValue ?? undefined}
-          onChange={(value) => handleChange("salaryValue", value ?? null)}
-          onBlur={() => handleBlur("salaryValue", data.salaryValue)}
-          disabled={isNegotiable}
-          formatter={(value) =>
-            `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-          }
-          parser={(value) => Number(value!.replace(/\$\s?|(,*)/g, ""))}
-        />
+      <FormField label="Mức lương (VND)">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <InputNumber
+            size="large"
+            min={0}
+            className={`w-full ${validation.salaryRange ? "border-red-500" : ""}`}
+            placeholder="Tối thiểu (VD: 15000000)"
+            value={data.salaryMin ?? undefined}
+            disabled={isNegotiable}
+            onChange={(value) =>
+              handleSalaryNumberChange("salaryMin", value ?? null)
+            }
+            formatter={(value) =>
+              `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+            }
+            parser={(value) => Number(value!.replace(/\$\s?|(,*)/g, ""))}
+          />
+          <InputNumber
+            size="large"
+            min={0}
+            className={`w-full ${validation.salaryRange ? "border-red-500" : ""}`}
+            placeholder="Tối đa"
+            value={data.salaryMax ?? undefined}
+            disabled={isNegotiable}
+            onChange={(value) =>
+              handleSalaryNumberChange("salaryMax", value ?? null)
+            }
+            formatter={(value) =>
+              `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+            }
+            parser={(value) => Number(value!.replace(/\$\s?|(,*)/g, ""))}
+          />
+          <Select
+            size="large"
+            placeholder="Loại lương"
+            value={data.salaryType ?? undefined}
+            disabled={isNegotiable}
+            onChange={(value) => {
+              clearSalaryDisplayIfNeeded();
+              handleChange("salaryType", value);
+            }}
+            options={salaryTypeOptions.map((opt) => ({
+              label: opt.label,
+              value: opt.value,
+            }))}
+            className={validation.salaryType ? "select-invalid" : ""}
+          />
+        </div>
         <Checkbox
           checked={isNegotiable}
           onChange={handleSalaryNegotiableChange}
           className="mt-2"
         >
-          Thỏa thuận (Không hiển thị lương)
+          Thỏa thuận (Không hiển thị mức lương)
         </Checkbox>
-        {validation.salaryValue && (
+        {validation.salaryRange && (
           <p className="text-red-500 text-sm mt-1">
-            Vui lòng nhập mức lương hợp lệ (lớn hơn 0)
+            Vui lòng nhập mức lương hợp lệ.
+          </p>
+        )}
+        {validation.salaryType && (
+          <p className="text-red-500 text-sm mt-1">
+            Vui lòng chọn loại lương.
           </p>
         )}
       </FormField>

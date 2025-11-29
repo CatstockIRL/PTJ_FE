@@ -1,14 +1,17 @@
 import baseService from "../../services/baseService";
 import type { Job } from "../../types/index";
 import type { NewsItem } from "../listNew-JobSeeker/types";
-import { getCompanyLogoSrc, getJobDetailCached } from "../../utils/jobPostHelpers";
+import { getCompanyLogoSrc, getJobDetailCached, formatSalaryText } from "../../utils/jobPostHelpers";
 
 interface BackendJob {
   employerPostId: number;
   employerId: number;
   title: string;
   description: string | null;
-  salary: number | null;
+  salaryMin: number | null;
+  salaryMax: number | null;
+  salaryType: number | null;
+  salaryDisplay?: string | null;
   workHours: string | null;
   location: string | null;
   phoneContact: string | null;
@@ -32,11 +35,12 @@ interface NewsApiResponse {
 }
 
 const mapBackendJobToFrontendJob = async (backendJob: BackendJob): Promise<Job> => {
-  const salaryValue = backendJob.salary ?? null;
-  const salaryText =
-    salaryValue === null || salaryValue <= 0
-      ? "Thỏa thuận"
-      : `${salaryValue.toLocaleString("vi-VN")} VND`;
+  const salaryText = formatSalaryText(
+    backendJob.salaryMin,
+    backendJob.salaryMax,
+    backendJob.salaryType,
+    backendJob.salaryDisplay
+  );
 
   let companyLogoSrc = backendJob.companyLogo;
   if (!companyLogoSrc || companyLogoSrc.trim().length === 0) {

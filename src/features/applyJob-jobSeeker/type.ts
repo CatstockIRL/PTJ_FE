@@ -1,4 +1,6 @@
 // Định nghĩa kiểu dữ liệu cho request body khi nộp đơn
+import type { SalaryTypeCode } from "../../utils/salary";
+
 export interface ApplyJobPayload {
   jobSeekerId: number;
   employerPostId: number;
@@ -23,7 +25,10 @@ export interface JobApplicationResultDto {
     categoryName: string;
     employerName: string;
     location: string;
-    salary: number;
+    salaryMin?: number | null;
+    salaryMax?: number | null;
+    salaryType?: SalaryTypeCode | null;
+    salaryDisplay?: string | null;
     workHours: string;
     phoneContact: string;
     employerId: number;

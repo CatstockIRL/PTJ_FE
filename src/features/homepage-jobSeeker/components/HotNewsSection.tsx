@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import { Empty, Skeleton, Tag } from "antd";
-import { ArrowRightOutlined, FireOutlined } from "@ant-design/icons";
+import { ArrowRightOutlined } from "@ant-design/icons";
 import type { AppDispatch, RootState } from "../../../app/store";
 import { fetchHotNews } from "../hotNewsSlice";
 import type { NewsItem } from "../../listNew-JobSeeker/types";

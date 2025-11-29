@@ -1,3 +1,5 @@
+import type { SalaryTypeCode } from "../../utils/salary";
+
 export interface AdminEmployerPostView {
   employerPostId: number;
   title: string;
@@ -12,7 +14,10 @@ export interface AdminEmployerPostView {
 
 export interface AdminEmployerPostDetailView extends AdminEmployerPostView {
   description?: string;
-  salary?: number;
+  salaryMin?: number | null;
+  salaryMax?: number | null;
+  salaryType?: SalaryTypeCode | null;
+  salaryDisplay?: string | null;
   requirements?: string;
   workHours?: string;
   location?: string;

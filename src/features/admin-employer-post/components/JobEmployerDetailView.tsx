@@ -1,11 +1,14 @@
 import React from "react";
 import { Tag } from "antd";
 import type { AdminEmployerPostDetailView } from "../type";
+import { formatSalaryText } from "../../../utils/jobPostHelpers";
 
-const formatCurrency = (value: number | null | undefined) => {
-  if (!value) return "Thỏa thuận";
-  return `${value.toLocaleString("vi-VN")} VND`;
-};
+const formatCurrency = (
+  min?: number | null,
+  max?: number | null,
+  type?: number | null,
+  display?: string | null
+) => formatSalaryText(min, max, type, display);
 
 const stripHtml = (value?: string | null) => {
   if (!value) return '';
@@ -42,7 +45,14 @@ const JobEmployerDetailView: React.FC<{ post: AdminEmployerPostDetailView }> = (
       <DetailField label="Email NTD">{post.employerEmail}</DetailField>
       <DetailField label="Tên NTD">{post.employerName}</DetailField>
       <DetailField label="Địa điểm">{post.location}</DetailField>
-      <DetailField label="Lương việc làm">{formatCurrency(post.salary)}</DetailField>
+      <DetailField label="Lương việc làm">
+        {formatCurrency(
+          post.salaryMin,
+          post.salaryMax,
+          post.salaryType,
+          post.salaryDisplay
+        )}
+      </DetailField>
       <DetailField label="Giờ làm việc">{post.workHours}</DetailField>
       <DetailField label="Ngành nghề">{post.categoryName}</DetailField>
       <DetailField label="Liên hệ">{post.phoneContact}</DetailField>

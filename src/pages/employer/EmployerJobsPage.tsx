@@ -47,15 +47,12 @@ import type { RootState } from "../../app/store";
 import { JobPostDetailModal } from "../../features/job/components/employer/JobPostDetailModal";
 import { jobApplicationService } from "../../features/applyJob-employer/jobApplicationService";
 import type { ApplicationSummaryDto } from "../../features/applyJob-jobSeeker/type";
+import { formatSalaryText } from "../../utils/jobPostHelpers";
+import { getRepresentativeSalaryValue } from "../../utils/salary";
 
 const { Option } = Select;
 const { Search } = Input;
 const { Text } = Typography;
-
-const formatCurrency = (value: number | null | undefined) => {
-  if (value == null || value <= 0) return "Thỏa thuận";
-  return `${value.toLocaleString("vi-VN")} vnđ`;
-};
 
 const EmployerJobsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -203,8 +200,17 @@ const EmployerJobsPage: React.FC = () => {
     const { field, order } = sortInfo;
     if (field && order) {
       filteredData.sort((a, b) => {
-        const valA = a[field as keyof JobPostView] ?? "";
-        const valB = b[field as keyof JobPostView] ?? "";
+        const resolveValue = (job: JobPostView) => {
+          if (field === "salaryDisplay") {
+            return (
+              getRepresentativeSalaryValue(job.salaryMin, job.salaryMax) ?? -1
+            );
+          }
+          return job[field as keyof JobPostView] ?? "";
+        };
+
+        const valA = resolveValue(a);
+        const valB = resolveValue(b);
 
         let compare = 0;
         if (valA > valB) compare = 1;
@@ -412,7 +418,7 @@ const EmployerJobsPage: React.FC = () => {
       width: "18%",
       sorter: true,
       ellipsis: true,
-      render: (category, record) => (
+      render: (category) => (
         <div>
           <Space>
             <AppstoreOutlined /> {category || "N/A"}
@@ -421,16 +427,21 @@ const EmployerJobsPage: React.FC = () => {
       ),
     },
     {
-      title: " Lương làm việc",
-      dataIndex: "salary",
-      key: "salary",
+      title: " M?c l??ng",
+      dataIndex: "salaryDisplay",
+      key: "salaryDisplay",
       width: "15%",
       sorter: true,
       ellipsis: true,
-      render: (salary) => (
+      render: (_, record) => (
         <Space>
           <MoneyCollectOutlined />
-          {salary === 0 ? "Thỏa thuận" : formatCurrency(salary)}
+          {formatSalaryText(
+            record.salaryMin,
+            record.salaryMax,
+            record.salaryType,
+            record.salaryDisplay
+          )}
         </Space>
       ),
     },
