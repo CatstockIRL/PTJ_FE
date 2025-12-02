@@ -1,5 +1,6 @@
 export interface AdminUser {
   userId: number;
+  displayName?: string | null;
   username: string;
   email: string;
   role: string;

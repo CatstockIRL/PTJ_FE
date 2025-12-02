@@ -1,5 +1,5 @@
-﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+﻿import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import {
   Card,
   Typography,
@@ -12,29 +12,27 @@ import {
   Tag,
   Drawer,
   Modal,
-  Alert,
   message
-} from 'antd';
-import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
+} from "antd";
+import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import {
   ReloadOutlined,
   SearchOutlined,
   EyeOutlined,
   StopOutlined,
   CheckCircleOutlined
-} from '@ant-design/icons';
-import adminJobPostService from '../../features/admin/services/adminJobPost.service';
+} from "@ant-design/icons";
+import adminJobPostService from "../../features/admin/services/adminJobPost.service";
 import type {
   AdminEmployerPost,
   AdminEmployerPostDetail,
   AdminJobSeekerPost,
   AdminJobSeekerPostDetail
-} from '../../features/admin/types/jobPost';
-import type { Category } from '../../features/category/type';
-import { categoryService } from '../../features/category/service';
-import AdminSectionHeader from './components/AdminSectionHeader';
-import { formatSalaryText } from '../../utils/jobPostHelpers';
-import type { SalaryTypeCode } from '../../utils/salary';
+} from "../../features/admin/types/jobPost";
+import type { Category } from "../../features/category/type";
+import { categoryService } from "../../features/category/service";
+import AdminSectionHeader from "./components/AdminSectionHeader";
+import { formatSalaryText } from "../../utils/jobPostHelpers";
 
 const { Option } = Select;
 
@@ -45,10 +43,10 @@ type DetailFieldProps = {
 };
 
 const DetailField: React.FC<DetailFieldProps> = ({ label, value, span = 1 }) => (
-  <div className={`flex flex-col gap-1 ${span === 2 ? 'md:col-span-2' : ''}`}>
+  <div className={`flex flex-col gap-1 ${span === 2 ? "md:col-span-2" : ""}`}>
     <span className="text-sm font-semibold text-gray-600">{label}</span>
     <div className="min-h-[42px] rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800">
-      {value ?? <span className="text-gray-400 italic">ChÆ°a cáº­p nháº­t</span>}
+      {value ?? <span className="text-gray-400 italic">Chưa cập nhật</span>}
     </div>
   </div>
 );
@@ -62,8 +60,8 @@ const DetailSection: React.FC<{ title: string; children: React.ReactNode }> = ({
   </section>
 );
 
-type EmployerStatusFilter = 'all' | 'Active' | 'Blocked' | 'Deleted';
-type JobSeekerStatusFilter = 'all' | 'Active' | 'Archived';
+type EmployerStatusFilter = "all" | "Active" | "Blocked" | "Deleted";
+type JobSeekerStatusFilter = "all" | "Active" | "Archived";
 
 interface EmployerFilters {
   keyword: string;
@@ -78,22 +76,24 @@ interface JobSeekerFilters {
 }
 
 type DetailState =
-  | { type: 'employer'; data: AdminEmployerPostDetail }
-  | { type: 'jobseeker'; data: AdminJobSeekerPostDetail };
+  | { type: "employer"; data: AdminEmployerPostDetail }
+  | { type: "jobseeker"; data: AdminJobSeekerPostDetail };
 
 type ActionContext =
-  | { type: 'employer'; post: AdminEmployerPost }
-  | { type: 'jobseeker'; post: AdminJobSeekerPost };
+  | { type: "employer"; post: AdminEmployerPost }
+  | { type: "jobseeker"; post: AdminJobSeekerPost };
 
 type HighlightRow =
-  | { type: 'employer'; data: AdminEmployerPost }
-  | { type: 'jobseeker'; data: AdminJobSeekerPost };
+  | { type: "employer"; data: AdminEmployerPost }
+  | { type: "jobseeker"; data: AdminJobSeekerPost };
 
 const AdminJobPostManagementPage: React.FC = () => {
   const location = useLocation();
 
-  const [activeTab, setActiveTab] = useState<'employer' | 'jobseeker'>('employer');
-  const [highlightTarget, setHighlightTarget] = useState<{ type: 'employer' | 'jobseeker'; id: number } | null>(null);
+  const [activeTab, setActiveTab] = useState<"employer" | "jobseeker">("employer");
+  const [highlightTarget, setHighlightTarget] = useState<{ type: "employer" | "jobseeker"; id: number } | null>(
+    null
+  );
   const [highlightOpened, setHighlightOpened] = useState(false);
   const [highlightScrolled, setHighlightScrolled] = useState(false);
   const [highlightRow, setHighlightRow] = useState<HighlightRow | null>(null);
@@ -101,8 +101,8 @@ const AdminJobPostManagementPage: React.FC = () => {
   const [employerPosts, setEmployerPosts] = useState<AdminEmployerPost[]>([]);
   const [employerLoading, setEmployerLoading] = useState(false);
   const [employerFilters, setEmployerFilters] = useState<EmployerFilters>({
-    keyword: '',
-    status: 'all'
+    keyword: "",
+    status: "all"
   });
   const [employerPagination, setEmployerPagination] = useState<TablePaginationConfig>({
     current: 1,
@@ -114,8 +114,8 @@ const AdminJobPostManagementPage: React.FC = () => {
   const [jobSeekerPosts, setJobSeekerPosts] = useState<AdminJobSeekerPost[]>([]);
   const [jobSeekerLoading, setJobSeekerLoading] = useState(false);
   const [jobSeekerFilters, setJobSeekerFilters] = useState<JobSeekerFilters>({
-    keyword: '',
-    status: 'all'
+    keyword: "",
+    status: "all"
   });
   const [jobSeekerPagination, setJobSeekerPagination] = useState<TablePaginationConfig>({
     current: 1,
@@ -129,18 +129,17 @@ const AdminJobPostManagementPage: React.FC = () => {
   const [detailState, setDetailState] = useState<DetailState | null>(null);
 
   const [toggleLoadingId, setToggleLoadingId] = useState<number | null>(null);
-  const [toggleType, setToggleType] = useState<'employer' | 'jobseeker' | null>(null);
+  const [toggleType, setToggleType] = useState<"employer" | "jobseeker" | null>(null);
   const [reasonModalOpen, setReasonModalOpen] = useState(false);
   const [reasonSubmitting, setReasonSubmitting] = useState(false);
-  const [reasonValue, setReasonValue] = useState('');
+  const [reasonValue, setReasonValue] = useState("");
   const [actionContext, setActionContext] = useState<ActionContext | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoryLoading, setCategoryLoading] = useState(false);
-
   const resetReasonModal = () => {
     setReasonModalOpen(false);
     setActionContext(null);
-    setReasonValue('');
+    setReasonValue("");
   };
 
   const handleReasonCancel = () => {
@@ -153,7 +152,7 @@ const AdminJobPostManagementPage: React.FC = () => {
     setReasonSubmitting(true);
     try {
       const note = reasonValue.trim() || undefined;
-      if (actionContext.type === 'employer') {
+      if (actionContext.type === "employer") {
         await handleToggleEmployerPost(actionContext.post, note);
       } else {
         await handleToggleJobSeekerPost(actionContext.post, note);
@@ -163,26 +162,22 @@ const AdminJobPostManagementPage: React.FC = () => {
       setReasonSubmitting(false);
     }
   };
-  const formatCurrency = (
+
+  const formatSalary = (
     min?: number | null,
     max?: number | null,
-    type?: SalaryTypeCode | null,
+    type?: number | null,
     display?: string | null
   ) => formatSalaryText(min, max, type, display);
-  const formatLocation = (
-    province?: string | null,
-    district?: string | null,
-    ward?: string | null
-  ) => {
-    const parts = [ward, district, province].filter(
-      (part): part is string => Boolean(part && part.trim())
-    );
-    return parts.length ? parts.join(', ') : undefined;
+
+  const formatLocation = (province?: string | null, district?: string | null, ward?: string | null) => {
+    const parts = [ward, district, province].filter((part): part is string => Boolean(part && part.trim()));
+    return parts.length ? parts.join(", ") : undefined;
   };
 
   const employerFilterParams = useMemo(
     () => ({
-      status: employerFilters.status !== 'all' ? employerFilters.status : undefined,
+      status: employerFilters.status !== "all" ? employerFilters.status : undefined,
       keyword: employerFilters.keyword.trim() || undefined,
       categoryId: employerFilters.categoryId ?? undefined
     }),
@@ -191,7 +186,7 @@ const AdminJobPostManagementPage: React.FC = () => {
 
   const jobSeekerFilterParams = useMemo(
     () => ({
-      status: jobSeekerFilters.status !== 'all' ? jobSeekerFilters.status : undefined,
+      status: jobSeekerFilters.status !== "all" ? jobSeekerFilters.status : undefined,
       keyword: jobSeekerFilters.keyword.trim() || undefined,
       categoryId: jobSeekerFilters.categoryId ?? undefined
     }),
@@ -199,20 +194,20 @@ const AdminJobPostManagementPage: React.FC = () => {
   );
 
   const currentActionVerb = actionContext
-    ? actionContext.type === 'employer'
-      ? actionContext.post.status === 'Blocked'
-        ? 'má»Ÿ khÃ³a'
-        : 'khÃ³a'
-      : actionContext.post.status === 'Archived'
-        ? 'má»Ÿ khÃ³a'
-        : 'khÃ³a'
-    : '';
+    ? actionContext.type === "employer"
+      ? actionContext.post.status === "Blocked"
+        ? "mở khóa"
+        : "khóa"
+      : actionContext.post.status === "Archived"
+        ? "mở khóa"
+        : "khóa"
+    : "";
 
   const currentSubjectLabel = actionContext
-    ? actionContext.type === 'employer'
-      ? 'bÃ i Ä‘Äƒng nhÃ  tuyá»ƒn dá»¥ng'
-      : 'bÃ i Ä‘Äƒng á»©ng viÃªn'
-    : 'bÃ i Ä‘Äƒng';
+    ? actionContext.type === "employer"
+      ? "bài đăng nhà tuyển dụng"
+      : "bài đăng ứng viên"
+    : "bài đăng";
 
   const fetchEmployerPosts = useCallback(
     async (page = employerPagination.current ?? 1, pageSize = employerPagination.pageSize ?? 10) => {
@@ -223,7 +218,7 @@ const AdminJobPostManagementPage: React.FC = () => {
           page,
           pageSize
         });
-        const total = typeof response.total === 'number' ? response.total : response.items.length;
+        const total = typeof response.total === "number" ? response.total : response.items.length;
         setEmployerPosts(response.items);
         setEmployerPagination((prev) => ({
           ...prev,
@@ -232,8 +227,8 @@ const AdminJobPostManagementPage: React.FC = () => {
           total
         }));
       } catch (error) {
-        console.error('Failed to fetch employer posts', error);
-        message.error('KhÃ´ng thá»ƒ táº£i danh sÃ¡ch bÃ i Ä‘Äƒng nhÃ  tuyá»ƒn dá»¥ng');
+        console.error("Failed to fetch employer posts", error);
+        message.error("Không thể tải danh sách bài đăng nhà tuyển dụng");
       } finally {
         setEmployerLoading(false);
       }
@@ -242,10 +237,7 @@ const AdminJobPostManagementPage: React.FC = () => {
   );
 
   const fetchJobSeekerPosts = useCallback(
-    async (
-      page = jobSeekerPagination.current ?? 1,
-      pageSize = jobSeekerPagination.pageSize ?? 10
-    ) => {
+    async (page = jobSeekerPagination.current ?? 1, pageSize = jobSeekerPagination.pageSize ?? 10) => {
       setJobSeekerLoading(true);
       try {
         const response = await adminJobPostService.getJobSeekerPosts({
@@ -253,7 +245,7 @@ const AdminJobPostManagementPage: React.FC = () => {
           page,
           pageSize
         });
-        const total = typeof response.total === 'number' ? response.total : response.items.length;
+        const total = typeof response.total === "number" ? response.total : response.items.length;
         setJobSeekerPosts(response.items);
         setJobSeekerPagination((prev) => ({
           ...prev,
@@ -262,8 +254,8 @@ const AdminJobPostManagementPage: React.FC = () => {
           total
         }));
       } catch (error) {
-        console.error('Failed to fetch job seeker posts', error);
-        message.error('KhÃ´ng thá»ƒ táº£i danh sÃ¡ch bÃ i Ä‘Äƒng á»©ng viÃªn');
+        console.error("Failed to fetch job seeker posts", error);
+        message.error("Không thể tải danh sách bài đăng ứng viên");
       } finally {
         setJobSeekerLoading(false);
       }
@@ -279,13 +271,12 @@ const AdminJobPostManagementPage: React.FC = () => {
     void fetchJobSeekerPosts();
   }, [fetchJobSeekerPosts]);
 
-  // Äá»c tham sá»‘ URL Ä‘á»ƒ tá»± Ä‘á»™ng chuyá»ƒn tab & highlight bÃ i bá»‹ bÃ¡o cÃ¡o
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const typeParam = params.get('type');
-    const highlightParam = params.get('highlight');
+    const typeParam = params.get("type");
+    const highlightParam = params.get("highlight");
     const parsedId = highlightParam ? Number(highlightParam) : NaN;
-    if ((typeParam === 'employer' || typeParam === 'jobseeker') && Number.isFinite(parsedId)) {
+    if ((typeParam === "employer" || typeParam === "jobseeker") && Number.isFinite(parsedId)) {
       setActiveTab(typeParam);
       setHighlightTarget({ type: typeParam, id: parsedId });
       setHighlightOpened(false);
@@ -300,30 +291,26 @@ const AdminJobPostManagementPage: React.FC = () => {
         const data = await categoryService.getAll();
         setCategories(data);
       } catch (error) {
-        console.error('Failed to load categories', error);
-        message.error('KhÃ´ng thá»ƒ táº£i danh sÃ¡ch ngÃ nh nghá»');
+        console.error("Failed to load categories", error);
+        message.error("Không thể tải danh sách ngành nghề");
       } finally {
         setCategoryLoading(false);
       }
     };
     void loadCategories();
   }, []);
-
   const handleEmployerFilterChange = (key: keyof EmployerFilters, value: string | number | null) => {
     setEmployerFilters((prev) => ({
       ...prev,
-      [key]: typeof value === 'number' && Number.isNaN(value) ? undefined : value ?? undefined
+      [key]: typeof value === "number" && Number.isNaN(value) ? undefined : value ?? undefined
     }));
     setEmployerPagination((prev) => ({ ...prev, current: 1 }));
   };
 
-  const handleJobSeekerFilterChange = (
-    key: keyof JobSeekerFilters,
-    value: string | number | null
-  ) => {
+  const handleJobSeekerFilterChange = (key: keyof JobSeekerFilters, value: string | number | null) => {
     setJobSeekerFilters((prev) => ({
       ...prev,
-      [key]: typeof value === 'number' && Number.isNaN(value) ? undefined : value ?? undefined
+      [key]: typeof value === "number" && Number.isNaN(value) ? undefined : value ?? undefined
     }));
     setJobSeekerPagination((prev) => ({ ...prev, current: 1 }));
   };
@@ -338,16 +325,16 @@ const AdminJobPostManagementPage: React.FC = () => {
     void fetchJobSeekerPosts(pagination.current, pagination.pageSize);
   };
 
-  const openDetail = async (type: 'employer' | 'jobseeker', id: number) => {
+  const openDetail = async (type: "employer" | "jobseeker", id: number) => {
     setDetailOpen(true);
     setDetailLoading(true);
     try {
-      if (type === 'employer') {
+      if (type === "employer") {
         const detail = await adminJobPostService.getEmployerPostDetail(id);
         setDetailState({ type, data: detail });
-        if (highlightTarget?.type === 'employer' && highlightTarget.id === id) {
+        if (highlightTarget?.type === "employer" && highlightTarget.id === id) {
           setHighlightRow({
-            type: 'employer',
+            type: "employer",
             data: {
               employerPostId: detail.employerPostId,
               title: detail.title,
@@ -362,9 +349,9 @@ const AdminJobPostManagementPage: React.FC = () => {
       } else {
         const detail = await adminJobPostService.getJobSeekerPostDetail(id);
         setDetailState({ type, data: detail });
-        if (highlightTarget?.type === 'jobseeker' && highlightTarget.id === id) {
+        if (highlightTarget?.type === "jobseeker" && highlightTarget.id === id) {
           setHighlightRow({
-            type: 'jobseeker',
+            type: "jobseeker",
             data: {
               jobSeekerPostId: detail.jobSeekerPostId,
               title: detail.title,
@@ -378,15 +365,14 @@ const AdminJobPostManagementPage: React.FC = () => {
         }
       }
     } catch (error) {
-      console.error('Failed to load post detail', error);
-      message.error('KhÃ´ng thá»ƒ táº£i chi tiáº¿t bÃ i Ä‘Äƒng');
+      console.error("Failed to load post detail", error);
+      message.error("Không thể tải chi tiết bài đăng");
       setDetailOpen(false);
     } finally {
       setDetailLoading(false);
     }
   };
 
-  // Khi cÃ³ highlight tá»« trang bÃ¡o cÃ¡o, tá»± Ä‘á»™ng má»Ÿ drawer chi tiáº¿t má»™t láº§n
   useEffect(() => {
     if (!highlightTarget || highlightOpened) return;
     if (highlightTarget.type === activeTab) {
@@ -395,48 +381,42 @@ const AdminJobPostManagementPage: React.FC = () => {
     }
   }, [activeTab, highlightOpened, highlightTarget]);
 
-  // Cuá»™n tá»›i dÃ²ng Ä‘Æ°á»£c highlight náº¿u Ä‘ang hiá»ƒn thá»‹ trong báº£ng hiá»‡n táº¡i
   useEffect(() => {
     if (!highlightTarget || highlightScrolled) return;
     const isCurrentTab = activeTab === highlightTarget.type;
     if (!isCurrentTab) return;
 
     const targetKey = String(highlightTarget.id);
-    // Ant Table Ä‘áº·t data-row-key á»Ÿ <tr>
-    const selector = `tr[data-row-key=\"${targetKey}\"]`;
-    const container = document.querySelector('.ant-table-body');
+    const selector = `tr[data-row-key="${targetKey}"]`;
+    const container = document.querySelector(".ant-table-body");
 
     const scrollToRow = () => {
       const row = container?.querySelector(selector) as HTMLElement | null;
       if (row) {
-        row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        row.scrollIntoView({ block: "center", behavior: "smooth" });
         setHighlightScrolled(true);
       }
     };
 
-    // defer Ä‘á»ƒ DOM table render xong
     const timer = window.setTimeout(scrollToRow, 100);
     return () => window.clearTimeout(timer);
   }, [activeTab, employerPosts, jobSeekerPosts, highlightTarget, highlightScrolled]);
-
   const handleToggleEmployerPost = async (post: AdminEmployerPost, reason?: string) => {
     setToggleLoadingId(post.employerPostId);
-    setToggleType('employer');
+    setToggleType("employer");
     let shouldRefresh = true;
     try {
       await adminJobPostService.toggleEmployerPostBlocked(post.employerPostId, reason, { notify: false });
       message.success(
-        post.status === 'Blocked'
-          ? 'Da mo khoa bai dang nha tuyen dung'
-          : 'Da khoa bai dang nha tuyen dung'
+        post.status === "Blocked" ? "Đã mở khóa bài đăng nhà tuyển dụng" : "Đã khóa bài đăng nhà tuyển dụng"
       );
     } catch (error: any) {
-      console.error('Failed to toggle employer post', error);
+      console.error("Failed to toggle employer post", error);
       const apiMessage: string | undefined = error?.response?.data?.message;
-      if (apiMessage?.includes('PostHidden')) {
-        message.warning('Trang thai bai da cap nhat, nhung server thieu template PostHidden.');
+      if (apiMessage?.includes("PostHidden")) {
+        message.warning("Trạng thái bài đã cập nhật, nhưng server thiếu template PostHidden.");
       } else {
-        message.error(apiMessage ?? 'Khong the thay doi trang thai bai dang');
+        message.error(apiMessage ?? "Không thể thay đổi trạng thái bài đăng");
         shouldRefresh = false;
       }
     } finally {
@@ -450,22 +430,20 @@ const AdminJobPostManagementPage: React.FC = () => {
 
   const handleToggleJobSeekerPost = async (post: AdminJobSeekerPost, reason?: string) => {
     setToggleLoadingId(post.jobSeekerPostId);
-    setToggleType('jobseeker');
+    setToggleType("jobseeker");
     let shouldRefresh = true;
     try {
       await adminJobPostService.toggleJobSeekerPostArchived(post.jobSeekerPostId, reason, { notify: false });
       message.success(
-        post.status === 'Archived'
-          ? 'Da mo khoa bai dang ung vien'
-          : 'Da khoa bai dang ung vien'
+        post.status === "Archived" ? "Đã mở khóa bài đăng ứng viên" : "Đã khóa bài đăng ứng viên"
       );
     } catch (error: any) {
-      console.error('Failed to toggle job seeker post', error);
+      console.error("Failed to toggle job seeker post", error);
       const apiMessage: string | undefined = error?.response?.data?.message;
-      if (apiMessage?.includes('PostHidden')) {
-        message.warning('Trang thai bai da cap nhat, nhung server thieu template PostHidden.');
+      if (apiMessage?.includes("PostHidden")) {
+        message.warning("Trạng thái bài đã cập nhật, nhưng server thiếu template PostHidden.");
       } else {
-        message.error(apiMessage ?? 'Khong the thay doi trang thai bai dang');
+        message.error(apiMessage ?? "Không thể thay đổi trạng thái bài đăng");
         shouldRefresh = false;
       }
     } finally {
@@ -478,7 +456,7 @@ const AdminJobPostManagementPage: React.FC = () => {
   };
 
   const employerDisplayData = useMemo(() => {
-    if (highlightRow?.type === 'employer') {
+    if (highlightRow?.type === "employer") {
       const filtered = employerPosts.filter((p) => p.employerPostId !== highlightRow.data.employerPostId);
       return [highlightRow.data, ...filtered];
     }
@@ -486,18 +464,17 @@ const AdminJobPostManagementPage: React.FC = () => {
   }, [employerPosts, highlightRow]);
 
   const jobSeekerDisplayData = useMemo(() => {
-    if (highlightRow?.type === 'jobseeker') {
+    if (highlightRow?.type === "jobseeker") {
       const filtered = jobSeekerPosts.filter((p) => p.jobSeekerPostId !== highlightRow.data.jobSeekerPostId);
       return [highlightRow.data, ...filtered];
     }
     return jobSeekerPosts;
   }, [jobSeekerPosts, highlightRow]);
-
   const employerColumns: ColumnsType<AdminEmployerPost> = [
     {
-      title: 'TiÃªu Ä‘á»',
-      dataIndex: 'title',
-      key: 'title',
+      title: "Tiêu đề",
+      dataIndex: "title",
+      key: "title",
       render: (text: string, record) => (
         <Space direction="vertical" size={0}>
           <span className="font-medium">{text}</span>
@@ -507,71 +484,70 @@ const AdminJobPostManagementPage: React.FC = () => {
       )
     },
     {
-      title: 'ChuyÃªn má»¥c',
-      dataIndex: 'categoryName',
-      key: 'categoryName',
+      title: "Chuyên mục",
+      dataIndex: "categoryName",
+      key: "categoryName",
       width: 180,
-      render: (value?: string | null) => value ?? 'ChÆ°a xÃ¡c Ä‘á»‹nh'
+      render: (value?: string | null) => value ?? "Chưa xác định"
     },
     {
-      title: 'Tráº¡ng thÃ¡i',
-      dataIndex: 'status',
-      key: 'status',
+      title: "Trạng thái",
+      dataIndex: "status",
+      key: "status",
       width: 130,
       render: (value: string) => (
-        <Tag color={value === 'Blocked' ? 'red' : 'green'}>
-          {value === 'Blocked' ? 'ÄÃ£ khÃ³a' : value === 'Deleted' ? 'ÄÃ£ xÃ³a' : 'Äang hoáº¡t Ä‘á»™ng'}
+        <Tag color={value === "Blocked" ? "red" : value === "Deleted" ? "default" : "green"}>
+          {value === "Blocked" ? "Đã khóa" : value === "Deleted" ? "Đã xóa" : "Đang hoạt động"}
         </Tag>
       )
     },
     {
-      title: 'Táº¡o lÃºc',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
+      title: "Tạo lúc",
+      dataIndex: "createdAt",
+      key: "createdAt",
       width: 200,
       render: (value: string) =>
-        new Date(value).toLocaleString('vi-VN', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
+        new Date(value).toLocaleString("vi-VN", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit"
         })
     },
     {
-      title: 'HÃ nh Ä‘á»™ng',
-      key: 'actions',
-      fixed: 'right',
+      title: "Hành động",
+      key: "actions",
+      fixed: "right",
       width: 230,
       render: (_, record) => (
         <Space>
-          <Button icon={<EyeOutlined />} size="small" onClick={() => openDetail('employer', record.employerPostId)}>
+          <Button icon={<EyeOutlined />} size="small" onClick={() => openDetail("employer", record.employerPostId)}>
             Xem
           </Button>
           <Button
-            icon={record.status === 'Blocked' ? <CheckCircleOutlined /> : <StopOutlined />}
+            icon={record.status === "Blocked" ? <CheckCircleOutlined /> : <StopOutlined />}
             size="small"
-            type={record.status === 'Blocked' ? 'primary' : 'default'}
-            danger={record.status !== 'Blocked'}
-            loading={toggleType === 'employer' && toggleLoadingId === record.employerPostId}
+            type={record.status === "Blocked" ? "primary" : "default"}
+            danger={record.status !== "Blocked"}
+            loading={toggleType === "employer" && toggleLoadingId === record.employerPostId}
             onClick={() => {
-              setActionContext({ type: 'employer', post: record });
-              setReasonValue('');
+              setActionContext({ type: "employer", post: record });
+              setReasonValue("");
               setReasonModalOpen(true);
             }}
           >
-            {record.status === 'Blocked' ? 'Má»Ÿ khÃ³a' : 'KhÃ³a'}
+            {record.status === "Blocked" ? "Mở khóa" : "Khóa"}
           </Button>
         </Space>
       )
     }
   ];
-
   const jobSeekerColumns: ColumnsType<AdminJobSeekerPost> = [
     {
-      title: 'TiÃªu Ä‘á»',
-      dataIndex: 'title',
-      key: 'title',
+      title: "Tiêu đề",
+      dataIndex: "title",
+      key: "title",
       render: (text: string, record) => (
         <Space direction="vertical" size={0}>
           <span className="font-medium">{text}</span>
@@ -581,97 +557,96 @@ const AdminJobPostManagementPage: React.FC = () => {
       )
     },
     {
-      title: 'ChuyÃªn má»¥c',
-      dataIndex: 'categoryName',
-      key: 'categoryName',
+      title: "Chuyên mục",
+      dataIndex: "categoryName",
+      key: "categoryName",
       width: 180,
-      render: (value?: string | null) => value ?? 'ChÆ°a xÃ¡c Ä‘á»‹nh'
+      render: (value?: string | null) => value ?? "Chưa xác định"
     },
     {
-      title: 'Tráº¡ng thÃ¡i',
-      dataIndex: 'status',
-      key: 'status',
+      title: "Trạng thái",
+      dataIndex: "status",
+      key: "status",
       width: 130,
       render: (value: string) => (
-        <Tag color={value === 'Archived' ? 'orange' : 'green'}>
-          {value === 'Archived' ? 'ÄÃ£ khÃ³a' : 'Äang hoáº¡t Ä‘á»™ng'}
+        <Tag color={value === "Archived" ? "orange" : "green"}>
+          {value === "Archived" ? "Đã khóa" : "Đang hoạt động"}
         </Tag>
       )
     },
     {
-      title: 'Táº¡o lÃºc',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
+      title: "Tạo lúc",
+      dataIndex: "createdAt",
+      key: "createdAt",
       width: 200,
       render: (value: string) =>
-        new Date(value).toLocaleString('vi-VN', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
+        new Date(value).toLocaleString("vi-VN", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit"
         })
     },
     {
-      title: 'HÃ nh Ä‘á»™ng',
-      key: 'actions',
-      fixed: 'right',
+      title: "Hành động",
+      key: "actions",
+      fixed: "right",
       width: 230,
       render: (_, record) => (
         <Space>
-          <Button icon={<EyeOutlined />} size="small" onClick={() => openDetail('jobseeker', record.jobSeekerPostId)}>
+          <Button icon={<EyeOutlined />} size="small" onClick={() => openDetail("jobseeker", record.jobSeekerPostId)}>
             Xem
           </Button>
           <Button
-            icon={record.status === 'Archived' ? <CheckCircleOutlined /> : <StopOutlined />}
+            icon={record.status === "Archived" ? <CheckCircleOutlined /> : <StopOutlined />}
             size="small"
-            type={record.status === 'Archived' ? 'primary' : 'default'}
-            danger={record.status !== 'Archived'}
-            loading={toggleType === 'jobseeker' && toggleLoadingId === record.jobSeekerPostId}
+            type={record.status === "Archived" ? "primary" : "default"}
+            danger={record.status !== "Archived"}
+            loading={toggleType === "jobseeker" && toggleLoadingId === record.jobSeekerPostId}
             onClick={() => {
-              setActionContext({ type: 'jobseeker', post: record });
-              setReasonValue('');
+              setActionContext({ type: "jobseeker", post: record });
+              setReasonValue("");
               setReasonModalOpen(true);
             }}
           >
-            {record.status === 'Archived' ? 'Má»Ÿ khÃ³a' : 'KhÃ³a'}
+            {record.status === "Archived" ? "Mở khóa" : "Khóa"}
           </Button>
         </Space>
       )
     }
   ];
-
   const renderEmployerTab = () => (
     <>
       <Card bordered={false} className="shadow-sm mb-4">
         <Space direction="vertical" size="middle" className="w-full">
           <Input
             prefix={<SearchOutlined />}
-            placeholder="TÃ¬m theo tiÃªu Ä‘á», mÃ´ táº£, email..."
+            placeholder="Tìm theo tiêu đề, mô tả, email..."
             allowClear
             value={employerFilters.keyword}
-            onChange={(event) => handleEmployerFilterChange('keyword', event.target.value)}
+            onChange={(event) => handleEmployerFilterChange("keyword", event.target.value)}
           />
           <Space wrap size="middle">
             <Select
               value={employerFilters.status}
-              onChange={(value: EmployerStatusFilter) => handleEmployerFilterChange('status', value)}
+              onChange={(value: EmployerStatusFilter) => handleEmployerFilterChange("status", value)}
               style={{ width: 220 }}
             >
-              <Option value="all">Táº¥t cáº£ tráº¡ng thÃ¡i</Option>
-              <Option value="Active">Äang hoáº¡t Ä‘á»™ng</Option>
-              <Option value="Blocked">ÄÃ£ khÃ³a</Option>
-              <Option value="Deleted">ÄÃ£ xÃ³a</Option>
+              <Option value="all">Tất cả trạng thái</Option>
+              <Option value="Active">Đang hoạt động</Option>
+              <Option value="Blocked">Đã khóa</Option>
+              <Option value="Deleted">Đã xóa</Option>
             </Select>
             <Select
               allowClear
               showSearch
-              placeholder="Chá»n ngÃ nh nghá»"
+              placeholder="Chọn ngành nghề"
               value={employerFilters.categoryId}
               loading={categoryLoading}
               optionFilterProp="children"
               style={{ minWidth: 220 }}
-              onChange={(value) => handleEmployerFilterChange('categoryId', value ?? null)}
+              onChange={(value) => handleEmployerFilterChange("categoryId", value ?? null)}
             >
               {categories.map((category) => (
                 <Option key={category.categoryId} value={category.categoryId}>
@@ -693,8 +668,8 @@ const AdminJobPostManagementPage: React.FC = () => {
           scroll={{ x: 1000 }}
           onRow={(record) => ({
             style:
-              highlightTarget?.type === 'employer' && record.employerPostId === highlightTarget.id
-                ? { backgroundColor: '#fff7e6', boxShadow: 'inset 4px 0 0 #fa8c16' }
+              highlightTarget?.type === "employer" && record.employerPostId === highlightTarget.id
+                ? { backgroundColor: "#fff7e6", boxShadow: "inset 4px 0 0 #fa8c16" }
                 : undefined
           })}
           onChange={handleEmployerTableChange}
@@ -709,32 +684,30 @@ const AdminJobPostManagementPage: React.FC = () => {
         <Space direction="vertical" size="middle" className="w-full">
           <Input
             prefix={<SearchOutlined />}
-            placeholder="TÃ¬m theo tiÃªu Ä‘á», mÃ´ táº£, email..."
+            placeholder="Tìm theo tiêu đề, mô tả, email..."
             allowClear
             value={jobSeekerFilters.keyword}
-            onChange={(event) => handleJobSeekerFilterChange('keyword', event.target.value)}
+            onChange={(event) => handleJobSeekerFilterChange("keyword", event.target.value)}
           />
           <Space wrap size="middle">
             <Select
               value={jobSeekerFilters.status}
-              onChange={(value: JobSeekerStatusFilter) =>
-                handleJobSeekerFilterChange('status', value)
-              }
+              onChange={(value: JobSeekerStatusFilter) => handleJobSeekerFilterChange("status", value)}
               style={{ width: 220 }}
             >
-              <Option value="all">Táº¥t cáº£ tráº¡ng thÃ¡i</Option>
-              <Option value="Active">Äang hoáº¡t Ä‘á»™ng</Option>
-              <Option value="Archived">ÄÃ£ khÃ³a</Option>
+              <Option value="all">Tất cả trạng thái</Option>
+              <Option value="Active">Đang hoạt động</Option>
+              <Option value="Archived">Đã khóa</Option>
             </Select>
             <Select
               allowClear
               showSearch
-              placeholder="Chá»n ngÃ nh nghá»"
+              placeholder="Chọn ngành nghề"
               value={jobSeekerFilters.categoryId}
               loading={categoryLoading}
               optionFilterProp="children"
               style={{ minWidth: 220 }}
-              onChange={(value) => handleJobSeekerFilterChange('categoryId', value ?? null)}
+              onChange={(value) => handleJobSeekerFilterChange("categoryId", value ?? null)}
             >
               {categories.map((category) => (
                 <Option key={category.categoryId} value={category.categoryId}>
@@ -756,8 +729,8 @@ const AdminJobPostManagementPage: React.FC = () => {
           scroll={{ x: 1000 }}
           onRow={(record) => ({
             style:
-              highlightTarget?.type === 'jobseeker' && record.jobSeekerPostId === highlightTarget.id
-                ? { backgroundColor: '#fff7e6', boxShadow: 'inset 4px 0 0 #fa8c16' }
+              highlightTarget?.type === "jobseeker" && record.jobSeekerPostId === highlightTarget.id
+                ? { backgroundColor: "#fff7e6", boxShadow: "inset 4px 0 0 #fa8c16" }
                 : undefined
           })}
           onChange={handleJobSeekerTableChange}
@@ -765,19 +738,18 @@ const AdminJobPostManagementPage: React.FC = () => {
       </Card>
     </>
   );
-
   return (
     <>
       <AdminSectionHeader
-        title="Quáº£n lÃ½ bÃ i Ä‘Äƒng tuyá»ƒn dá»¥ng "
-        description="Theo dÃµi bÃ i Ä‘Äƒng cá»§a nhÃ  tuyá»ƒn dá»¥ng vÃ  á»©ng viÃªn, xá»­ lÃ½ vi pháº¡m nhanh chÃ³ng."
+        title="Quản lý bài đăng tuyển dụng"
+        description="Theo dõi bài đăng của nhà tuyển dụng và ứng viên, xử lý vi phạm nhanh chóng."
         gradient="from-violet-600 via-purple-500 to-pink-500"
         extra={
           <Button
             icon={<ReloadOutlined />}
-            onClick={() => (activeTab === 'employer' ? fetchEmployerPosts() : fetchJobSeekerPosts())}
+            onClick={() => (activeTab === "employer" ? fetchEmployerPosts() : fetchJobSeekerPosts())}
           >
-            Táº£i láº¡i
+            Tải lại
           </Button>
         }
       />
@@ -785,14 +757,12 @@ const AdminJobPostManagementPage: React.FC = () => {
         <Card className="shadow-sm mb-3 border border-amber-200 bg-amber-50" size="small">
           <Space direction="vertical" size={4}>
             <Typography.Text strong>
-              Äang hiá»ƒn thá»‹ bÃ i bá»‹ bÃ¡o cÃ¡o:{' '}
-              <span className="text-amber-700">
-                {highlightRow?.data.title || `#${highlightTarget.id}`}
-              </span>{' '}
-              {highlightTarget.type === 'employer' ? '(NhÃ  tuyá»ƒn dá»¥ng)' : '(á»¨ng viÃªn)'}
+              Đang hiển thị bài bị báo cáo:{" "}
+              <span className="text-amber-700">{highlightRow?.data.title || `#${highlightTarget.id}`}</span>{" "}
+              {highlightTarget.type === "employer" ? "(Nhà tuyển dụng)" : "(Ứng viên)"}
             </Typography.Text>
             <Typography.Text type="secondary">
-              Há»‡ thá»‘ng Ä‘Ã£ má»Ÿ sáºµn chi tiáº¿t vÃ  tÃ´ sÃ¡ng dÃ²ng tÆ°Æ¡ng á»©ng trong báº£ng.
+              Hệ thống đã mở sẵn chi tiết và tô sáng dòng tương ứng trong bảng.
             </Typography.Text>
           </Space>
         </Card>
@@ -800,23 +770,23 @@ const AdminJobPostManagementPage: React.FC = () => {
 
       <Tabs
         activeKey={activeTab}
-        onChange={(key) => setActiveTab(key as 'employer' | 'jobseeker')}
+        onChange={(key) => setActiveTab(key as "employer" | "jobseeker")}
         items={[
           {
-            key: 'employer',
-            label: 'BÃ i Ä‘Äƒng nhÃ  tuyá»ƒn dá»¥ng',
+            key: "employer",
+            label: "Bài đăng nhà tuyển dụng",
             children: renderEmployerTab()
           },
           {
-            key: 'jobseeker',
-            label: 'BÃ i Ä‘Äƒng á»©ng viÃªn',
+            key: "jobseeker",
+            label: "Bài đăng ứng viên",
             children: renderJobSeekerTab()
           }
         ]}
       />
 
       <Drawer
-        title="Chi tiáº¿t bÃ i Ä‘Äƒng"
+        title="Chi tiết bài đăng"
         placement="right"
         width={720}
         open={detailOpen}
@@ -827,48 +797,45 @@ const AdminJobPostManagementPage: React.FC = () => {
         destroyOnClose
       >
         {detailLoading ? (
-          <p>Äang táº£i...</p>
+          <p>Đang tải...</p>
         ) : detailState ? (
           <div className="space-y-6">
-            <DetailSection title="ThÃ´ng tin chung">
+            <DetailSection title="Thông tin chung">
               <DetailField
-                label="Loáº¡i bÃ i Ä‘Äƒng"
-                value={detailState.type === 'employer' ? 'NhÃ  tuyá»ƒn dá»¥ng' : 'á»¨ng viÃªn'}
+                label="Loại bài đăng"
+                value={detailState.type === "employer" ? "Nhà tuyển dụng" : "Ứng viên"}
               />
-              <DetailField label="TiÃªu Ä‘á»" value={detailState.data.title} span={2} />
-              <DetailField label="ChuyÃªn má»¥c" value={detailState.data.categoryName || undefined} />
+              <DetailField label="Tiêu đề" value={detailState.data.title} span={2} />
+              <DetailField label="Chuyên mục" value={detailState.data.categoryName || undefined} />
             </DetailSection>
 
-            {detailState.type === 'employer' ? (
+            {detailState.type === "employer" ? (
               <>
                 {detailState.data.imageUrls && detailState.data.imageUrls.length > 0 && (
-                  <DetailSection title="HÃ¬nh áº£nh">
+                  <DetailSection title="Hình ảnh">
                     <div className="md:col-span-2 grid grid-cols-2 md:grid-cols-3 gap-3">
                       {detailState.data.imageUrls.map((url: string) => (
                         <div key={url} className="rounded-xl border border-gray-200 overflow-hidden bg-white">
-                          <img src={url} alt="áº¢nh bÃ i Ä‘Äƒng" className="w-full h-32 object-cover" />
+                          <img src={url} alt="Ảnh bài đăng" className="w-full h-32 object-cover" />
                         </div>
                       ))}
                     </div>
                   </DetailSection>
                 )}
 
-                <DetailSection title="ThÃ´ng tin cÃ´ng viá»‡c">
+                <DetailSection title="Thông tin công việc">
                   <DetailField
-                    label="LÆ°Æ¡ng"
-                    value={formatCurrency(
+                    label="Lương"
+                    value={formatSalary(
                       detailState.data.salaryMin,
                       detailState.data.salaryMax,
                       detailState.data.salaryType,
                       detailState.data.salaryDisplay
                     )}
                   />
+                  <DetailField label="Giờ làm việc" value={detailState.data.workHours || undefined} />
                   <DetailField
-                    label="Giá» lÃ m viá»‡c"
-                    value={detailState.data.workHours || undefined}
-                  />
-                  <DetailField
-                    label="Äá»‹a Ä‘iá»ƒm"
+                    label="Địa điểm"
                     value={formatLocation(
                       detailState.data.provinceName,
                       detailState.data.districtName,
@@ -876,60 +843,54 @@ const AdminJobPostManagementPage: React.FC = () => {
                     )}
                   />
                   <DetailField
-                    label="MÃ´ táº£ cÃ´ng viá»‡c"
+                    label="Mô tả công việc"
                     value={
                       detailState.data.description ? (
-                        <div className="whitespace-pre-line leading-relaxed">
-                          {detailState.data.description}
-                        </div>
+                        <div className="whitespace-pre-line leading-relaxed">{detailState.data.description}</div>
                       ) : undefined
                     }
                     span={2}
                   />
                   <DetailField
-                    label="YÃªu cáº§u"
+                    label="Yêu cầu"
                     value={
                       detailState.data.requirements ? (
-                        <div className="whitespace-pre-line leading-relaxed">
-                          {detailState.data.requirements}
-                        </div>
+                        <div className="whitespace-pre-line leading-relaxed">{detailState.data.requirements}</div>
                       ) : undefined
                     }
                     span={2}
                   />
                 </DetailSection>
 
-                <DetailSection title="ThÃ´ng tin liÃªn há»‡">
-                  <DetailField
-                    label="NhÃ  tuyá»ƒn dá»¥ng"
-                    value={detailState.data.employerName || undefined}
-                  />
-                  <DetailField
-                    label="Email liÃªn há»‡"
-                    value={detailState.data.employerEmail || undefined}
-                  />
-                  <DetailField
-                    label="Sá»‘ Ä‘iá»‡n thoáº¡i"
-                    value={detailState.data.phoneContact || undefined}
-                  />
+                <DetailSection title="Thông tin liên hệ">
+                  <DetailField label="Nhà tuyển dụng" value={detailState.data.employerName || undefined} />
+                  <DetailField label="Email liên hệ" value={detailState.data.employerEmail || undefined} />
+                  <DetailField label="Số điện thoại" value={detailState.data.phoneContact || undefined} />
                 </DetailSection>
               </>
             ) : (
               <>
-                <Alert
-                  type="info"
-                  message="Thong tin ho so ung vien da duoc an tren trang quan tri."
-                  showIcon
-                />
-
-                <DetailSection title="Mo ta bai dang">
+                <DetailSection title="Hồ sơ ứng viên">
+                  <DetailField label="Họ tên" value={detailState.data.fullName || undefined} />
+                  <DetailField label="Email" value={detailState.data.jobSeekerEmail || undefined} />
+                  <DetailField label="Giới tính" value={detailState.data.gender || undefined} />
                   <DetailField
-                    label="Thong tin"
+                    label="Khu vực"
+                    value={formatLocation(
+                      detailState.data.provinceName,
+                      detailState.data.districtName,
+                      detailState.data.wardName
+                    )}
+                  />
+                  <DetailField label="Giờ làm mong muốn" value={detailState.data.preferredWorkHours || undefined} />
+                </DetailSection>
+
+                <DetailSection title="Mô tả">
+                  <DetailField
+                    label="Thông tin"
                     value={
                       detailState.data.description ? (
-                        <div className="whitespace-pre-line leading-relaxed">
-                          {detailState.data.description}
-                        </div>
+                        <div className="whitespace-pre-line leading-relaxed">{detailState.data.description}</div>
                       ) : undefined
                     }
                     span={2}
@@ -939,38 +900,38 @@ const AdminJobPostManagementPage: React.FC = () => {
             )}
           </div>
         ) : (
-          <p>KhÃ´ng cÃ³ dá»¯ liá»‡u.</p>
+          <p>Không có dữ liệu.</p>
         )}
       </Drawer>
 
       <Modal
         title={
           actionContext
-            ? `${actionContext.type === 'employer' ? 'BÃ i Ä‘Äƒng nhÃ  tuyá»ƒn dá»¥ng' : 'BÃ i Ä‘Äƒng á»©ng viÃªn'} - ${
+            ? `${actionContext.type === "employer" ? "Bài đăng nhà tuyển dụng" : "Bài đăng ứng viên"} - ${
                 actionContext.post.title
               }`
-            : 'Nháº­p lÃ½ do'
+            : "Nhập lý do"
         }
         open={reasonModalOpen}
         onCancel={handleReasonCancel}
         onOk={handleReasonConfirm}
         confirmLoading={reasonSubmitting}
-        okText="XÃ¡c nháº­n"
-        cancelText="Há»§y"
+        okText="Xác nhận"
+        cancelText="Hủy"
       >
         <Space direction="vertical" size="small" className="w-full">
           <Typography.Text>
-            Vui lÃ²ng nháº­p lÃ½ do Ä‘á»ƒ {currentActionVerb || 'thá»±c hiá»‡n'} {currentSubjectLabel}.
+            Vui lòng nhập lý do để {currentActionVerb || "thực hiện"} {currentSubjectLabel}.
           </Typography.Text>
           <Input.TextArea
             rows={4}
             value={reasonValue}
             onChange={(event) => setReasonValue(event.target.value)}
-            placeholder="Nháº­p lÃ½ do gá»­i tá»›i ngÆ°á»i Ä‘Äƒng bÃ i (tÃ¹y chá»n)"
+            placeholder="Nhập lý do gửi tới người đăng bài (tùy chọn)"
             maxLength={500}
           />
           <Typography.Text type="secondary">
-            LÃ½ do nÃ y sáº½ Ä‘Æ°á»£c gá»­i trong thÃ´ng bÃ¡o Ä‘áº¿n ngÆ°á»i dÃ¹ng.
+            Lý do này sẽ được gửi trong thông báo đến người dùng.
           </Typography.Text>
         </Space>
       </Modal>

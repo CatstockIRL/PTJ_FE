@@ -11,9 +11,12 @@ import {
   message,
   Drawer,
   Avatar,
-  Divider
+  Divider,
+  Modal,
+  Tabs
 } from 'antd';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
+import type { TabsProps } from 'antd';
 import {
   ReloadOutlined,
   SearchOutlined,
@@ -21,10 +24,16 @@ import {
   UserSwitchOutlined
 } from '@ant-design/icons';
 import adminUserService from '../../features/admin/services/adminUser.service';
+import adminEmployerRegistrationService from '../../features/admin/services/adminEmployerRegistration.service';
 import type { AdminUser, AdminUserDetail } from '../../features/admin/types/user';
+import type {
+  AdminEmployerRegListItem,
+  AdminEmployerRegStatus,
+} from '../../features/admin/types/employerRegistration';
 import AdminSectionHeader from './components/AdminSectionHeader';
 
 const { Option } = Select;
+const { TextArea } = Input;
 
 type DetailFieldProps = {
   label: string;
@@ -57,6 +66,11 @@ type FilterState = {
   keyword: string;
 };
 
+type RegFilterState = {
+  status: 'All' | AdminEmployerRegStatus;
+  keyword: string;
+};
+
 const roleOptions = [
   { label: 'Tất cả vai trò', value: 'all' },
   { label: 'Admin', value: 'Admin' },
@@ -65,6 +79,7 @@ const roleOptions = [
 ];
 
 const AdminAccountManagementPage: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'accounts' | 'registrations'>('accounts');
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
@@ -83,6 +98,19 @@ const AdminAccountManagementPage: React.FC = () => {
   const [detailLoading, setDetailLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState<AdminUserDetail | null>(null);
   const [toggleLoadingId, setToggleLoadingId] = useState<number | null>(null);
+  const [regRequests, setRegRequests] = useState<AdminEmployerRegListItem[]>([]);
+  const [regLoading, setRegLoading] = useState(false);
+  const [regActionLoadingId, setRegActionLoadingId] = useState<number | null>(null);
+  const [regFilters, setRegFilters] = useState<RegFilterState>({
+    status: 'Pending',
+    keyword: ''
+  });
+  const [regPagination, setRegPagination] = useState<TablePaginationConfig>({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+    showSizeChanger: true
+  });
 
   const normalizedFilters = useMemo(() => {
     const statusMap: Record<FilterState['status'], boolean | undefined> = {
@@ -105,6 +133,15 @@ const AdminAccountManagementPage: React.FC = () => {
       pageSize: pagination.pageSize
     };
   }, [filters, pagination.current, pagination.pageSize]);
+
+  const normalizedRegFilters = useMemo(() => {
+    return {
+      status: regFilters.status === 'All' ? undefined : regFilters.status,
+      keyword: regFilters.keyword.trim() || undefined,
+      page: regPagination.current,
+      pageSize: regPagination.pageSize
+    };
+  }, [regFilters, regPagination.current, regPagination.pageSize]);
 
   const fetchUsers = useCallback(
     async (page = pagination.current ?? 1, pageSize = pagination.pageSize ?? 10) => {
@@ -141,6 +178,37 @@ const AdminAccountManagementPage: React.FC = () => {
     setPagination((prev) => ({ ...prev, current: 1 }));
   };
 
+  const handleRegFilterChange = (key: keyof RegFilterState, value: string) => {
+    setRegFilters((prev) => ({ ...prev, [key]: value }));
+    setRegPagination((prev) => ({ ...prev, current: 1 }));
+  };
+
+  const fetchRegistrations = useCallback(
+    async (page = regPagination.current ?? 1, pageSize = regPagination.pageSize ?? 10) => {
+      setRegLoading(true);
+      try {
+        const response = await adminEmployerRegistrationService.getRequests({
+          ...normalizedRegFilters,
+          page,
+          pageSize
+        });
+        setRegRequests(response.items);
+        setRegPagination((prev) => ({
+          ...prev,
+          current: page,
+          pageSize,
+          total: response.total
+        }));
+      } catch (error) {
+        console.error('Failed to load employer registrations', error);
+        message.error('Không thể tải danh sách hồ sơ nhà tuyển dụng chờ duyệt');
+      } finally {
+        setRegLoading(false);
+      }
+    },
+    [normalizedRegFilters, regPagination.current, regPagination.pageSize]
+  );
+
   const handleTableChange = (newPagination: TablePaginationConfig) => {
     setPagination((prev) => ({
       ...prev,
@@ -148,6 +216,20 @@ const AdminAccountManagementPage: React.FC = () => {
       pageSize: newPagination.pageSize
     }));
   };
+
+  const handleRegTableChange = (newPagination: TablePaginationConfig) => {
+    setRegPagination((prev) => ({
+      ...prev,
+      current: newPagination.current,
+      pageSize: newPagination.pageSize
+    }));
+  };
+
+  useEffect(() => {
+    if (activeTab === 'registrations' && regRequests.length === 0) {
+      void fetchRegistrations();
+    }
+  }, [activeTab, fetchRegistrations, regRequests.length]);
 
   const openDetail = async (userId: number) => {
     setDetailOpen(true);
@@ -165,6 +247,10 @@ const AdminAccountManagementPage: React.FC = () => {
   };
 
   const handleToggleActive = async (user: AdminUser) => {
+    if (user.role === 'Admin') {
+      message.warning('Admin không thể khóa/mở khóa tài khoản của mình.');
+      return;
+    }
     setToggleLoadingId(user.userId);
     try {
       await adminUserService.toggleActive(user.userId, { notify: false });
@@ -192,14 +278,68 @@ const AdminAccountManagementPage: React.FC = () => {
     }
   };
 
+  const handleApproveRegistration = async (request: AdminEmployerRegListItem) => {
+    setRegActionLoadingId(request.requestId);
+    try {
+      await adminEmployerRegistrationService.approve(request.requestId);
+      message.success(`Đã phê duyệt hồ sơ. Email xác thực đã được gửi tới ${request.email}.`);
+      await Promise.all([fetchRegistrations(), fetchUsers()]);
+    } catch (error: any) {
+      console.error('Failed to approve employer registration', error);
+      const apiMessage: string | undefined = error?.response?.data?.message;
+      message.error(apiMessage ?? 'Không phê duyệt hồ sơ');
+    } finally {
+      setRegActionLoadingId(null);
+    }
+  };
+
+  const handleRejectRegistration = (request: AdminEmployerRegListItem) => {
+    let reason = '';
+    Modal.confirm({
+      title: 'Từ chối hồ sơ',
+      content: (
+        <TextArea
+          autoSize={{ minRows: 3 }}
+          placeholder="Nhập lý do từ chối"
+          onChange={(e) => {
+            reason = e.target.value;
+          }}
+        />
+      ),
+      okText: 'Từ chối',
+      cancelText: 'Hủy',
+      okButtonProps: { danger: true },
+      async onOk() {
+        if (!reason.trim()) {
+          message.warning('Vui lòng nhập lý do.');
+          return Promise.reject();
+        }
+        setRegActionLoadingId(request.requestId);
+        try {
+          await adminEmployerRegistrationService.reject(request.requestId, reason.trim());
+          message.success('Đã từ chối hồ sơ.');
+          await fetchRegistrations();
+        } catch (error: any) {
+          console.error('Failed to reject employer registration', error);
+          const apiMessage: string | undefined = error?.response?.data?.message;
+          message.error(apiMessage ?? 'Không từ chối được hồ sơ');
+          return Promise.reject();
+        } finally {
+          setRegActionLoadingId(null);
+        }
+        return Promise.resolve();
+      }
+    });
+  };
+
   const columns: ColumnsType<AdminUser> = [
     {
       title: 'Người dùng',
-      dataIndex: 'username',
-      key: 'username',
+      dataIndex: 'displayName',
+      key: 'displayName',
       render: (text, record) => (
         <Space direction="vertical" size={0}>
-          <span className="font-medium">{text}</span>
+          <span className="font-medium">{text || record.username}</span>
           <span className="text-gray-500 text-xs">{record.email}</span>
         </Space>
       )
@@ -273,33 +413,102 @@ const AdminAccountManagementPage: React.FC = () => {
           >
             Chi tiết
           </Button>
+          {record.role !== 'Admin' && (
+            <Button
+              icon={<UserSwitchOutlined />}
+              size="small"
+              danger={record.isActive}
+              loading={toggleLoadingId === record.userId}
+              onClick={() => handleToggleActive(record)}
+            >
+              {record.isActive ? 'Khóa' : 'Mở khóa'}
+            </Button>
+          )}
+        </Space>
+      )
+    }
+  ];
+
+
+  const regColumns: ColumnsType<AdminEmployerRegListItem> = [
+    {
+      title: 'Ten nha tuyen dung',
+      dataIndex: 'companyName',
+      key: 'companyName',
+      render: (value: string, record) => (
+        <Space direction="vertical" size={0}>
+          <span className="font-medium">{value}</span>
+          <span className="text-gray-500 text-xs">{record.email}</span>
+        </Space>
+      )
+    },
+    {
+      title: 'Tai khoan',
+      dataIndex: 'username',
+      key: 'username',
+      render: (value: string) => <span className="text-gray-700">{value}</span>
+    },
+    {
+      title: 'SDT lien he',
+      dataIndex: 'contactPhone',
+      key: 'contactPhone'
+    },
+    {
+      title: 'Trang thai',
+      dataIndex: 'status',
+      key: 'status',
+      render: (value: AdminEmployerRegStatus) => {
+        const color =
+          value === 'Pending' ? 'orange' : value === 'Approved' ? 'green' : 'red';
+        return <Tag color={color}>{value}</Tag>;
+      },
+      width: 140
+    },
+    {
+      title: 'Gui luc',
+      dataIndex: 'createdAt',
+      key: 'createdAt',
+      render: (value: string) =>
+        new Date(value).toLocaleString('vi-VN', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
+      width: 190
+    },
+    {
+      title: 'Hanh dong',
+      key: 'regActions',
+      width: 200,
+      render: (_, record) => (
+        <Space>
           <Button
-            icon={<UserSwitchOutlined />}
+            type="primary"
             size="small"
-            danger={record.isActive}
-            loading={toggleLoadingId === record.userId}
-            onClick={() => handleToggleActive(record)}
+            disabled={record.status !== 'Pending'}
+            loading={regActionLoadingId === record.requestId}
+            onClick={() => handleApproveRegistration(record)}
           >
-            {record.isActive ? 'Khóa' : 'Mở khóa'}
+            Phe duyet
+          </Button>
+          <Button
+            size="small"
+            danger
+            disabled={record.status !== 'Pending'}
+            loading={regActionLoadingId === record.requestId}
+            onClick={() => handleRejectRegistration(record)}
+          >
+            Tu choi
           </Button>
         </Space>
       )
     }
   ];
 
-  return (
+  const accountTabContent = (
     <>
-      <AdminSectionHeader
-        title="Quản lý tài khoản"
-        description="Giám sát trạng thái hoạt động, xác thực và thông tin người dùng trên hệ thống."
-        gradient="from-sky-600 via-blue-500 to-indigo-500"
-        extra={
-          <Button icon={<ReloadOutlined />} onClick={() => fetchUsers()} loading={loading} ghost>
-            Tải lại
-          </Button>
-        }
-      />
-
       <Card
         bordered={false}
         className="shadow-sm mb-4 border-0 bg-white/90 backdrop-blur-lg"
@@ -358,6 +567,98 @@ const AdminAccountManagementPage: React.FC = () => {
           onChange={handleTableChange}
         />
       </Card>
+    </>
+  );
+
+  const registrationTabContent = (
+    <Card
+      bordered={false}
+      className="shadow-sm border-0 bg-white/90 backdrop-blur-lg"
+      bodyStyle={{ padding: 20 }}
+    >
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <Typography.Title level={5} className="!mb-0">
+              Duyệt đăng ký nhà tuyển dụng
+            </Typography.Title>
+            <Typography.Text type="secondary">
+              Danh sách tài khoản employer chờ phê duyệt để chuyển sang người dùng chính thức.
+            </Typography.Text>
+          </div>
+          <Space wrap>
+            <Input
+              allowClear
+              placeholder="Tìm theo email, tên công ty..."
+              prefix={<SearchOutlined />}
+              value={regFilters.keyword}
+              onChange={(e) => handleRegFilterChange('keyword', e.target.value)}
+            />
+            <Select
+              value={regFilters.status}
+              style={{ minWidth: 180 }}
+              onChange={(value) => handleRegFilterChange('status', value)}
+            >
+              <Option value="All">Tất cả trạng thái</Option>
+              <Option value="Pending">Chờ duyệt</Option>
+              <Option value="Approved">Đã duyệt</Option>
+              <Option value="Rejected">Đã từ chối</Option>
+            </Select>
+            <Button icon={<ReloadOutlined />} onClick={() => fetchRegistrations()} loading={regLoading}>
+              Làm mới
+            </Button>
+          </Space>
+        </div>
+        <Table
+          rowKey="requestId"
+          loading={regLoading}
+          dataSource={regRequests}
+          columns={regColumns}
+          pagination={regPagination}
+          scroll={{ x: 900 }}
+          onChange={handleRegTableChange}
+        />
+      </div>
+    </Card>
+  );
+
+  const tabItems: TabsProps['items'] = [
+    {
+      key: 'accounts',
+      label: 'Quản lý tài khoản',
+      children: accountTabContent,
+    },
+    {
+      key: 'registrations',
+      label: 'Duyệt đăng ký nhà tuyển dụng',
+      children: registrationTabContent,
+    },
+  ];
+
+
+  return (
+    <>
+      <AdminSectionHeader
+        title="Quan ly tai khoan"
+        description="Giam sat trang thai hoat dong, xac thuc va thong tin nguoi dung tren he thong."
+        gradient="from-sky-600 via-blue-500 to-indigo-500"
+        extra={
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={() => (activeTab === 'accounts' ? fetchUsers() : fetchRegistrations())}
+            loading={activeTab === 'accounts' ? loading : regLoading}
+            ghost
+          >
+            Tai lai
+          </Button>
+        }
+      />
+
+      <Tabs
+        activeKey={activeTab}
+        onChange={(key) => setActiveTab(key as 'accounts' | 'registrations')}
+        items={tabItems}
+      />
 
       <Drawer
         title="Chi tiết tài khoản"
@@ -371,30 +672,37 @@ const AdminAccountManagementPage: React.FC = () => {
           <p>Đang tải...</p>
         ) : selectedUser ? (
           <Space direction="vertical" size="large" className="w-full">
-            <div className="flex flex-col items-center text-center">
-              <Avatar
-                size={96}
-                src={selectedUser.avatarUrl ?? undefined}
-                alt={selectedUser.username}
-                style={{ marginBottom: 12 }}
-              >
-                {selectedUser.username?.charAt(0)?.toUpperCase()}
-              </Avatar>
-              <Typography.Title level={4} style={{ marginBottom: 0 }}>
-                {selectedUser.username}
-              </Typography.Title>
-              <Typography.Text type="secondary">{selectedUser.email}</Typography.Text>
-              <Space style={{ marginTop: 8 }}>
-                <Tag color="purple">{selectedUser.role}</Tag>
-                <Tag color={selectedUser.isActive ? 'green' : 'red'}>
-                  {selectedUser.isActive ? 'Đang hoạt động' : 'Bị khóa'}
-                </Tag>
-                <Tag color={selectedUser.isVerified ? 'blue' : 'orange'}>
-                  {selectedUser.isVerified ? 'Đã xác thực' : 'Chưa xác thực'}
-                </Tag>
-              </Space>
-            </div>
-
+            {(() => {
+              const displayName =
+                selectedUser.role === 'Employer'
+                  ? selectedUser.companyName || selectedUser.displayName || selectedUser.username
+                  : selectedUser.fullName || selectedUser.displayName || selectedUser.username;
+              return (
+                <div className="flex flex-col items-center text-center">
+                  <Avatar
+                    size={96}
+                    src={selectedUser.avatarUrl ?? undefined}
+                    alt={displayName}
+                    style={{ marginBottom: 12 }}
+                  >
+                    {displayName?.charAt(0)?.toUpperCase()}
+                  </Avatar>
+                  <Typography.Title level={4} style={{ marginBottom: 0 }}>
+                    {displayName}
+                  </Typography.Title>
+                  <Typography.Text type="secondary">{selectedUser.email}</Typography.Text>
+                  <Space style={{ marginTop: 8 }}>
+                    <Tag color="purple">{selectedUser.role}</Tag>
+                    <Tag color={selectedUser.isActive ? 'green' : 'red'}>
+                      {selectedUser.isActive ? 'Đang hoạt động' : 'Bị khóa'}
+                    </Tag>
+                    <Tag color={selectedUser.isVerified ? 'blue' : 'orange'}>
+                      {selectedUser.isVerified ? 'Đã xác thực' : 'Chưa xác thực'}
+                    </Tag>
+                  </Space>
+                </div>
+              );
+            })()}
             <Divider plain>Thông tin chi tiết</Divider>
 
             <DetailSection title="Thông tin tài khoản">

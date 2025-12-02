@@ -414,14 +414,9 @@ const JobSeekerPostsPage: React.FC = () => {
         trimText(a.categoryName).localeCompare(trimText(b.categoryName)),
       sortDirections: ["ascend", "descend"],
       render: (_, record) => (
-        <div>
-          <span className="font-medium text-gray-800">
-            {record.categoryName || "Chưa chọn"}
-          </span>
-          {record.subCategoryName && (
-            <div className="text-xs text-gray-500">{record.subCategoryName}</div>
-          )}
-        </div>
+        <span className="font-medium text-gray-800">
+          {record.categoryName || "Chưa chọn"}
+        </span>
       ),
     },
     {

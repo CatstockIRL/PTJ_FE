@@ -141,13 +141,13 @@ export const EmployerHeader: React.FC<EmployerHeaderProps> = ({
               to="/login"
               className="text-white hover:text-gray-200 text-sm font-medium"
             >
-              ÄÄƒng nháº­p
+             Đăng nhập
             </NavLink>
             <NavLink
               to="/nha-tuyen-dung/register"
               className="text-white hover:text-gray-200 text-sm font-medium"
             >
-              ÄÄƒng kÃ½
+              Đăng xuất
             </NavLink>
           </div>
         )}
@@ -159,14 +159,14 @@ export const EmployerHeader: React.FC<EmployerHeaderProps> = ({
             to="/login"
             className="text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
           >
-            Cho ngÆ°á»i tÃ¬m viá»‡c
+            Cho người tìm việc
           </NavLink>
         ) : (
           <NavLink
             to="/nha-tuyen-dung"
             className="text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
           >
-            NhÃ  tuyá»ƒn dá»¥ng
+            Nhà tuyển dụng
           </NavLink>
         )}
       </div>

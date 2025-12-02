@@ -77,6 +77,8 @@ interface ResolveFormValues {
 
 interface ResolveSystemFormValues extends AdminResolveSystemReportPayload {}
 
+type ResolveAction = ResolveFormValues['actionTaken'];
+
 const AdminReportManagementPage: React.FC = () => {
   const [activeSection, setActiveSection] = useState<SectionKey>('posts');
   const [postTab, setPostTab] = useState<PostTabKey>('pending');
@@ -129,6 +131,7 @@ const AdminReportManagementPage: React.FC = () => {
   const [resolveModalOpen, setResolveModalOpen] = useState(false);
   const [resolveSubmitting, setResolveSubmitting] = useState(false);
   const [resolvingReportId, setResolvingReportId] = useState<number | null>(null);
+  const [resolvingReport, setResolvingReport] = useState<AdminReport | null>(null);
   const [resolveForm] = Form.useForm<ResolveFormValues>();
 
   const [systemResolveModalOpen, setSystemResolveModalOpen] = useState(false);
@@ -302,18 +305,23 @@ const AdminReportManagementPage: React.FC = () => {
     detail: AdminReportDetail
   ): Promise<ReportedPostDetail | undefined> => {
     try {
-      const postType = detail.postType || (detail.employerPostId ? 'EmployerPost' : detail.jobSeekerPostId ? 'JobSeekerPost' : undefined);
-      const postId =
-        detail.employerPostId ??
-        detail.jobSeekerPostId ??
-        (detail.postId ?? undefined);
+      const normalizedType = (detail.postType || '').toLowerCase();
+      const isEmployerPost =
+        normalizedType.includes('employer') || (!!detail.employerPostId && normalizedType === '');
+      const isJobSeekerPost =
+        normalizedType.includes('jobseeker') || (!!detail.jobSeekerPostId && normalizedType === '');
 
-      if (postType === 'EmployerPost' && postId) {
-        const data = await adminJobPostService.getEmployerPostDetail(postId);
+      const employerPostId =
+        detail.employerPostId ?? (isEmployerPost ? detail.postId ?? undefined : undefined);
+      const jobSeekerPostId =
+        detail.jobSeekerPostId ?? (isJobSeekerPost ? detail.postId ?? undefined : undefined);
+
+      if (employerPostId) {
+        const data = await adminJobPostService.getEmployerPostDetail(employerPostId);
         return { kind: 'employer', data };
       }
-      if (postType === 'JobSeekerPost' && postId) {
-        const data = await adminJobPostService.getJobSeekerPostDetail(postId);
+      if (jobSeekerPostId) {
+        const data = await adminJobPostService.getJobSeekerPostDetail(jobSeekerPostId);
         return { kind: 'jobseeker', data };
       }
     } catch (error) {
@@ -345,9 +353,12 @@ const AdminReportManagementPage: React.FC = () => {
   };
 
   const openResolveModal = (reportId: number) => {
+    const reportContext = pendingReports.find((report) => report.reportId === reportId) ?? null;
     setResolvingReportId(reportId);
+    setResolvingReport(reportContext);
     resolveForm.resetFields();
-    resolveForm.setFieldsValue({ actionTaken: 'Warn' });
+    const actions = resolveActionOptionsForType(reportContext?.reportType, reportContext?.postType);
+    resolveForm.setFieldsValue({ actionTaken: actions[0] ?? 'Warn' });
     setResolveModalOpen(true);
   };
 
@@ -355,13 +366,42 @@ const AdminReportManagementPage: React.FC = () => {
     if (resolvingReportId === null) return;
     setResolveSubmitting(true);
     try {
-      await adminReportService.resolveReport(resolvingReportId, values);
+      const resolveData = await adminReportService.getReportDetail(resolvingReportId);
+      const fallbackTypeFromContext = resolvingReport?.reportType?.toLowerCase() || '';
+      const affectedPostId =
+        resolveData.employerPostId ??
+        resolveData.jobSeekerPostId ??
+        resolveData.postId ??
+        resolvingReport?.postId ??
+        null;
+      const affectedPostType =
+        resolveData.postType ||
+        (resolveData.employerPostId || resolvingReport?.reportType === 'EmployerPost'
+          ? 'EmployerPost'
+          : resolveData.jobSeekerPostId || resolvingReport?.reportType === 'JobSeekerPost'
+            ? 'JobSeekerPost'
+            : fallbackTypeFromContext.includes('employer')
+              ? 'EmployerPost'
+              : fallbackTypeFromContext.includes('jobseeker')
+                ? 'JobSeekerPost'
+                : undefined);
+
+      const payload = {
+        actionTaken: values.actionTaken,
+        reason: values.reason?.trim() || undefined,
+        affectedPostId: affectedPostId ?? null,
+        affectedPostType: (affectedPostType as 'EmployerPost' | 'JobSeekerPost' | undefined) ?? null
+      };
+
+      await adminReportService.resolveReport(resolvingReportId, payload);
       message.success('Đã xử lý report thành công');
       setResolveModalOpen(false);
+      setResolvingReport(null);
       await Promise.all([fetchPendingReports(), fetchSolvedReports()]);
     } catch (error) {
       console.error('Failed to resolve report', error);
-      message.error('Không thể xử lý report');
+      const apiMessage: string | undefined = (error as any)?.response?.data?.message;
+      message.error(apiMessage ?? 'Không thể xử lý report');
     } finally {
       setResolveSubmitting(false);
     }
@@ -491,6 +531,49 @@ const AdminReportManagementPage: React.FC = () => {
         })
       : '---';
 
+  const resolveActionLabel = (action: string) => {
+    switch (action) {
+      case 'BanUser':
+        return 'Cấm người dùng';
+      case 'UnbanUser':
+        return 'Bỏ cấm người dùng';
+      case 'DeletePost':
+        return 'Xóa bài đăng';
+      case 'Warn':
+        return 'Cảnh báo';
+      case 'Ignore':
+        return 'Bỏ qua';
+      default:
+        return action;
+    }
+  };
+
+  const resolveActionOptionsForType = (
+    reportType?: string | null,
+    postType?: string | null
+  ): ResolveAction[] => {
+    const normalizedType = (reportType ?? '').toLowerCase();
+    const normalizedPostType = (postType ?? '').toLowerCase();
+    const isPostReport =
+      normalizedType === 'employerpost' ||
+      normalizedType === 'jobseekerpost' ||
+      normalizedPostType === 'employerpost' ||
+      normalizedPostType === 'jobseekerpost' ||
+      normalizedType.includes('post') ||
+      normalizedPostType.includes('post');
+    return isPostReport ? ['Warn', 'DeletePost', 'Ignore'] : ['BanUser', 'UnbanUser', 'Warn', 'Ignore'];
+  };
+
+  const resolveActionOptions = useMemo(
+    () => resolveActionOptionsForType(resolvingReport?.reportType, resolvingReport?.postType),
+    [resolvingReport?.postType, resolvingReport?.reportType]
+  );
+
+  const resolveActionTag = (action: string) => {
+    const color = action === 'DeletePost' || action === 'BanUser' ? 'red' : action === 'Warn' ? 'orange' : 'green';
+    return <Tag color={color}>{resolveActionLabel(action)}</Tag>;
+  };
+
   const pendingColumns: ColumnsType<AdminReport> = [
     {
       title: 'Loại',
@@ -562,7 +645,7 @@ const AdminReportManagementPage: React.FC = () => {
       title: 'Hành động',
       dataIndex: 'actionTaken',
       key: 'actionTaken',
-      render: (value: string) => <Tag color="green">{value}</Tag>
+      render: (value: string) => resolveActionTag(value)
     },
     {
       title: 'Admin xử lý',
@@ -1033,7 +1116,10 @@ const AdminReportManagementPage: React.FC = () => {
       <Modal
         title="Xử lý report"
         open={resolveModalOpen}
-        onCancel={() => setResolveModalOpen(false)}
+        onCancel={() => {
+          setResolvingReport(null);
+          setResolveModalOpen(false);
+        }}
         onOk={() => resolveForm.submit()}
         confirmLoading={resolveSubmitting}
         okText="Xác nhận"
@@ -1046,11 +1132,11 @@ const AdminReportManagementPage: React.FC = () => {
             rules={[{ required: true, message: 'Vui lòng chọn hành động' }]}
           >
             <Select placeholder="Chọn cách xử lý">
-              <Option value="BanUser">Cấm người dùng</Option>
-              <Option value="UnbanUser">Bỏ cấm người dùng</Option>
-              <Option value="DeletePost">Xóa bài đăng</Option>
-              <Option value="Warn">Cảnh báo</Option>
-              <Option value="Ignore">Bỏ qua</Option>
+              {resolveActionOptions.map((action) => (
+                <Option key={action} value={action}>
+                  {resolveActionLabel(action)}
+                </Option>
+              ))}
             </Select>
           </Form.Item>
 

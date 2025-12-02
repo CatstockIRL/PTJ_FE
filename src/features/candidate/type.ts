@@ -11,7 +11,6 @@ export interface JobSeekerPostDtoOut {
   preferredLocation?: string;
   phoneContact?: string;
   categoryName?: string;
-  subCategoryName?: string | null;
   seekerName?: string;
   createdAt: string;
   status?: string;
