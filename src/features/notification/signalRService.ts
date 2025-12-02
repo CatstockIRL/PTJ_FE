@@ -1,5 +1,8 @@
 import * as signalR from "@microsoft/signalr";
+import { API_BASE_URL } from "../../services/baseService";
 import type { Notification } from "./types";
+
+const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, "");
 
 class SignalRService {
   private connection: signalR.HubConnection | null = null;
@@ -9,7 +12,7 @@ class SignalRService {
     if (this.connection?.state === signalR.HubConnectionState.Connected) return;
 
     this.connection = new signalR.HubConnectionBuilder()
-      .withUrl(`https://localhost:7100/hubs/notification?userId=${userId}`, {
+      .withUrl(`${API_ORIGIN}/hubs/notification?userId=${userId}`, {
         skipNegotiation: true,
         transport: signalR.HttpTransportType.WebSockets,
       })

@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+﻿import React, { useEffect } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../features/auth/hooks";
 import { Button, Dropdown, Avatar, message } from "antd";
@@ -29,14 +29,27 @@ export const EmployerHeader: React.FC<EmployerHeaderProps> = ({
   const location = useLocation();
   const employerProfile = useAppSelector((state) => state.profile.profile);
   const employerProfileLoading = useAppSelector((state) => state.profile.loading);
+  const employerProfileError = useAppSelector((state) => state.profile.error);
+  const isAdminRoute = location.pathname.startsWith("/admin");
   const shouldLoadEmployerProfile =
-    !!user && (user.roles.includes(ROLES.EMPLOYER) || user.roles.includes(ROLES.ADMIN));
+    !!user && user.roles.includes(ROLES.EMPLOYER) && !isAdminRoute;
 
   useEffect(() => {
-    if (shouldLoadEmployerProfile && !employerProfile && !employerProfileLoading) {
+    if (
+      shouldLoadEmployerProfile &&
+      !employerProfile &&
+      !employerProfileLoading &&
+      !employerProfileError
+    ) {
       dispatch(fetchEmployerProfile());
     }
-  }, [dispatch, employerProfile, employerProfileLoading, shouldLoadEmployerProfile]);
+  }, [
+    dispatch,
+    employerProfile,
+    employerProfileError,
+    employerProfileLoading,
+    shouldLoadEmployerProfile,
+  ]);
 
   const fallbackAvatar = (user as any)?.avatarUrl || user?.avatar || undefined;
   const avatarSrc = employerProfile?.avatarUrl || fallbackAvatar;
@@ -51,20 +64,24 @@ export const EmployerHeader: React.FC<EmployerHeaderProps> = ({
     dispatch(logout());
     removeAccessToken();
     navigate("/login");
-    message.success("Đăng xuất thành công!");
+    message.success("ÄÄƒng xuáº¥t thÃ nh cÃ´ng!");
   };
 
   const dropdownItems = [
-    {
-      key: "1",
-      label: <NavLink to="/nha-tuyen-dung/ho-so">Hồ sơ của tôi</NavLink>,
-    },
+    ...(location.pathname.startsWith("/admin") || !user?.roles.includes(ROLES.EMPLOYER)
+      ? []
+      : [
+          {
+            key: "profile",
+            label: <NavLink to="/nha-tuyen-dung/ho-so">Hồ sơ của tôi</NavLink>,
+          },
+        ]),
     {
       key: "change-password",
       label: <NavLink to="/nha-tuyen-dung/doi-mat-khau">Đổi mật khẩu</NavLink>,
     },
     {
-      key: "2",
+      key: "logout",
       label: "Đăng xuất",
       icon: <LogoutOutlined />,
       danger: true,
@@ -91,7 +108,7 @@ export const EmployerHeader: React.FC<EmployerHeaderProps> = ({
           to="/nha-tuyen-dung/dashboard"
           className="text-white hover:text-gray-200 text-sm font-medium"
         >
-          Trang chủ
+          Trang chá»§
         </NavLink>
       </div>
 
@@ -124,13 +141,13 @@ export const EmployerHeader: React.FC<EmployerHeaderProps> = ({
               to="/login"
               className="text-white hover:text-gray-200 text-sm font-medium"
             >
-              Đăng nhập
+              ÄÄƒng nháº­p
             </NavLink>
             <NavLink
               to="/nha-tuyen-dung/register"
               className="text-white hover:text-gray-200 text-sm font-medium"
             >
-              Đăng ký
+              ÄÄƒng kÃ½
             </NavLink>
           </div>
         )}
@@ -142,14 +159,14 @@ export const EmployerHeader: React.FC<EmployerHeaderProps> = ({
             to="/login"
             className="text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
           >
-            Cho người tìm việc
+            Cho ngÆ°á»i tÃ¬m viá»‡c
           </NavLink>
         ) : (
           <NavLink
             to="/nha-tuyen-dung"
             className="text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
           >
-            Nhà tuyển dụng
+            NhÃ  tuyá»ƒn dá»¥ng
           </NavLink>
         )}
       </div>
@@ -158,3 +175,4 @@ export const EmployerHeader: React.FC<EmployerHeaderProps> = ({
 };
 
 export default EmployerHeader;
+

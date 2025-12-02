@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
   Card,
@@ -12,6 +12,7 @@ import {
   Tag,
   Drawer,
   Modal,
+  Alert,
   message
 } from 'antd';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
@@ -47,7 +48,7 @@ const DetailField: React.FC<DetailFieldProps> = ({ label, value, span = 1 }) => 
   <div className={`flex flex-col gap-1 ${span === 2 ? 'md:col-span-2' : ''}`}>
     <span className="text-sm font-semibold text-gray-600">{label}</span>
     <div className="min-h-[42px] rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800">
-      {value ?? <span className="text-gray-400 italic">Chưa cập nhật</span>}
+      {value ?? <span className="text-gray-400 italic">ChÆ°a cáº­p nháº­t</span>}
     </div>
   </div>
 );
@@ -200,18 +201,18 @@ const AdminJobPostManagementPage: React.FC = () => {
   const currentActionVerb = actionContext
     ? actionContext.type === 'employer'
       ? actionContext.post.status === 'Blocked'
-        ? 'mở khóa'
-        : 'khóa'
+        ? 'má»Ÿ khÃ³a'
+        : 'khÃ³a'
       : actionContext.post.status === 'Archived'
-        ? 'mở khóa'
-        : 'khóa'
+        ? 'má»Ÿ khÃ³a'
+        : 'khÃ³a'
     : '';
 
   const currentSubjectLabel = actionContext
     ? actionContext.type === 'employer'
-      ? 'bài đăng nhà tuyển dụng'
-      : 'bài đăng ứng viên'
-    : 'bài đăng';
+      ? 'bÃ i Ä‘Äƒng nhÃ  tuyá»ƒn dá»¥ng'
+      : 'bÃ i Ä‘Äƒng á»©ng viÃªn'
+    : 'bÃ i Ä‘Äƒng';
 
   const fetchEmployerPosts = useCallback(
     async (page = employerPagination.current ?? 1, pageSize = employerPagination.pageSize ?? 10) => {
@@ -232,7 +233,7 @@ const AdminJobPostManagementPage: React.FC = () => {
         }));
       } catch (error) {
         console.error('Failed to fetch employer posts', error);
-        message.error('Không thể tải danh sách bài đăng nhà tuyển dụng');
+        message.error('KhÃ´ng thá»ƒ táº£i danh sÃ¡ch bÃ i Ä‘Äƒng nhÃ  tuyá»ƒn dá»¥ng');
       } finally {
         setEmployerLoading(false);
       }
@@ -262,7 +263,7 @@ const AdminJobPostManagementPage: React.FC = () => {
         }));
       } catch (error) {
         console.error('Failed to fetch job seeker posts', error);
-        message.error('Không thể tải danh sách bài đăng ứng viên');
+        message.error('KhÃ´ng thá»ƒ táº£i danh sÃ¡ch bÃ i Ä‘Äƒng á»©ng viÃªn');
       } finally {
         setJobSeekerLoading(false);
       }
@@ -278,7 +279,7 @@ const AdminJobPostManagementPage: React.FC = () => {
     void fetchJobSeekerPosts();
   }, [fetchJobSeekerPosts]);
 
-  // Đọc tham số URL để tự động chuyển tab & highlight bài bị báo cáo
+  // Äá»c tham sá»‘ URL Ä‘á»ƒ tá»± Ä‘á»™ng chuyá»ƒn tab & highlight bÃ i bá»‹ bÃ¡o cÃ¡o
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const typeParam = params.get('type');
@@ -300,7 +301,7 @@ const AdminJobPostManagementPage: React.FC = () => {
         setCategories(data);
       } catch (error) {
         console.error('Failed to load categories', error);
-        message.error('Không thể tải danh sách ngành nghề');
+        message.error('KhÃ´ng thá»ƒ táº£i danh sÃ¡ch ngÃ nh nghá»');
       } finally {
         setCategoryLoading(false);
       }
@@ -378,14 +379,14 @@ const AdminJobPostManagementPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to load post detail', error);
-      message.error('Không thể tải chi tiết bài đăng');
+      message.error('KhÃ´ng thá»ƒ táº£i chi tiáº¿t bÃ i Ä‘Äƒng');
       setDetailOpen(false);
     } finally {
       setDetailLoading(false);
     }
   };
 
-  // Khi có highlight từ trang báo cáo, tự động mở drawer chi tiết một lần
+  // Khi cÃ³ highlight tá»« trang bÃ¡o cÃ¡o, tá»± Ä‘á»™ng má»Ÿ drawer chi tiáº¿t má»™t láº§n
   useEffect(() => {
     if (!highlightTarget || highlightOpened) return;
     if (highlightTarget.type === activeTab) {
@@ -394,14 +395,14 @@ const AdminJobPostManagementPage: React.FC = () => {
     }
   }, [activeTab, highlightOpened, highlightTarget]);
 
-  // Cuộn tới dòng được highlight nếu đang hiển thị trong bảng hiện tại
+  // Cuá»™n tá»›i dÃ²ng Ä‘Æ°á»£c highlight náº¿u Ä‘ang hiá»ƒn thá»‹ trong báº£ng hiá»‡n táº¡i
   useEffect(() => {
     if (!highlightTarget || highlightScrolled) return;
     const isCurrentTab = activeTab === highlightTarget.type;
     if (!isCurrentTab) return;
 
     const targetKey = String(highlightTarget.id);
-    // Ant Table đặt data-row-key ở <tr>
+    // Ant Table Ä‘áº·t data-row-key á»Ÿ <tr>
     const selector = `tr[data-row-key=\"${targetKey}\"]`;
     const container = document.querySelector('.ant-table-body');
 
@@ -413,7 +414,7 @@ const AdminJobPostManagementPage: React.FC = () => {
       }
     };
 
-    // defer để DOM table render xong
+    // defer Ä‘á»ƒ DOM table render xong
     const timer = window.setTimeout(scrollToRow, 100);
     return () => window.clearTimeout(timer);
   }, [activeTab, employerPosts, jobSeekerPosts, highlightTarget, highlightScrolled]);
@@ -494,7 +495,7 @@ const AdminJobPostManagementPage: React.FC = () => {
 
   const employerColumns: ColumnsType<AdminEmployerPost> = [
     {
-      title: 'Tiêu đề',
+      title: 'TiÃªu Ä‘á»',
       dataIndex: 'title',
       key: 'title',
       render: (text: string, record) => (
@@ -506,25 +507,25 @@ const AdminJobPostManagementPage: React.FC = () => {
       )
     },
     {
-      title: 'Chuyên mục',
+      title: 'ChuyÃªn má»¥c',
       dataIndex: 'categoryName',
       key: 'categoryName',
       width: 180,
-      render: (value?: string | null) => value ?? 'Chưa xác định'
+      render: (value?: string | null) => value ?? 'ChÆ°a xÃ¡c Ä‘á»‹nh'
     },
     {
-      title: 'Trạng thái',
+      title: 'Tráº¡ng thÃ¡i',
       dataIndex: 'status',
       key: 'status',
       width: 130,
       render: (value: string) => (
         <Tag color={value === 'Blocked' ? 'red' : 'green'}>
-          {value === 'Blocked' ? 'Đã khóa' : value === 'Deleted' ? 'Đã xóa' : 'Đang hoạt động'}
+          {value === 'Blocked' ? 'ÄÃ£ khÃ³a' : value === 'Deleted' ? 'ÄÃ£ xÃ³a' : 'Äang hoáº¡t Ä‘á»™ng'}
         </Tag>
       )
     },
     {
-      title: 'Tạo lúc',
+      title: 'Táº¡o lÃºc',
       dataIndex: 'createdAt',
       key: 'createdAt',
       width: 200,
@@ -538,7 +539,7 @@ const AdminJobPostManagementPage: React.FC = () => {
         })
     },
     {
-      title: 'Hành động',
+      title: 'HÃ nh Ä‘á»™ng',
       key: 'actions',
       fixed: 'right',
       width: 230,
@@ -559,7 +560,7 @@ const AdminJobPostManagementPage: React.FC = () => {
               setReasonModalOpen(true);
             }}
           >
-            {record.status === 'Blocked' ? 'Mở khóa' : 'Khóa'}
+            {record.status === 'Blocked' ? 'Má»Ÿ khÃ³a' : 'KhÃ³a'}
           </Button>
         </Space>
       )
@@ -568,7 +569,7 @@ const AdminJobPostManagementPage: React.FC = () => {
 
   const jobSeekerColumns: ColumnsType<AdminJobSeekerPost> = [
     {
-      title: 'Tiêu đề',
+      title: 'TiÃªu Ä‘á»',
       dataIndex: 'title',
       key: 'title',
       render: (text: string, record) => (
@@ -580,25 +581,25 @@ const AdminJobPostManagementPage: React.FC = () => {
       )
     },
     {
-      title: 'Chuyên mục',
+      title: 'ChuyÃªn má»¥c',
       dataIndex: 'categoryName',
       key: 'categoryName',
       width: 180,
-      render: (value?: string | null) => value ?? 'Chưa xác định'
+      render: (value?: string | null) => value ?? 'ChÆ°a xÃ¡c Ä‘á»‹nh'
     },
     {
-      title: 'Trạng thái',
+      title: 'Tráº¡ng thÃ¡i',
       dataIndex: 'status',
       key: 'status',
       width: 130,
       render: (value: string) => (
         <Tag color={value === 'Archived' ? 'orange' : 'green'}>
-          {value === 'Archived' ? 'Đã khóa' : 'Đang hoạt động'}
+          {value === 'Archived' ? 'ÄÃ£ khÃ³a' : 'Äang hoáº¡t Ä‘á»™ng'}
         </Tag>
       )
     },
     {
-      title: 'Tạo lúc',
+      title: 'Táº¡o lÃºc',
       dataIndex: 'createdAt',
       key: 'createdAt',
       width: 200,
@@ -612,7 +613,7 @@ const AdminJobPostManagementPage: React.FC = () => {
         })
     },
     {
-      title: 'Hành động',
+      title: 'HÃ nh Ä‘á»™ng',
       key: 'actions',
       fixed: 'right',
       width: 230,
@@ -633,7 +634,7 @@ const AdminJobPostManagementPage: React.FC = () => {
               setReasonModalOpen(true);
             }}
           >
-            {record.status === 'Archived' ? 'Mở khóa' : 'Khóa'}
+            {record.status === 'Archived' ? 'Má»Ÿ khÃ³a' : 'KhÃ³a'}
           </Button>
         </Space>
       )
@@ -646,7 +647,7 @@ const AdminJobPostManagementPage: React.FC = () => {
         <Space direction="vertical" size="middle" className="w-full">
           <Input
             prefix={<SearchOutlined />}
-            placeholder="Tìm theo tiêu đề, mô tả, email..."
+            placeholder="TÃ¬m theo tiÃªu Ä‘á», mÃ´ táº£, email..."
             allowClear
             value={employerFilters.keyword}
             onChange={(event) => handleEmployerFilterChange('keyword', event.target.value)}
@@ -657,15 +658,15 @@ const AdminJobPostManagementPage: React.FC = () => {
               onChange={(value: EmployerStatusFilter) => handleEmployerFilterChange('status', value)}
               style={{ width: 220 }}
             >
-              <Option value="all">Tất cả trạng thái</Option>
-              <Option value="Active">Đang hoạt động</Option>
-              <Option value="Blocked">Đã khóa</Option>
-              <Option value="Deleted">Đã xóa</Option>
+              <Option value="all">Táº¥t cáº£ tráº¡ng thÃ¡i</Option>
+              <Option value="Active">Äang hoáº¡t Ä‘á»™ng</Option>
+              <Option value="Blocked">ÄÃ£ khÃ³a</Option>
+              <Option value="Deleted">ÄÃ£ xÃ³a</Option>
             </Select>
             <Select
               allowClear
               showSearch
-              placeholder="Chọn ngành nghề"
+              placeholder="Chá»n ngÃ nh nghá»"
               value={employerFilters.categoryId}
               loading={categoryLoading}
               optionFilterProp="children"
@@ -708,7 +709,7 @@ const AdminJobPostManagementPage: React.FC = () => {
         <Space direction="vertical" size="middle" className="w-full">
           <Input
             prefix={<SearchOutlined />}
-            placeholder="Tìm theo tiêu đề, mô tả, email..."
+            placeholder="TÃ¬m theo tiÃªu Ä‘á», mÃ´ táº£, email..."
             allowClear
             value={jobSeekerFilters.keyword}
             onChange={(event) => handleJobSeekerFilterChange('keyword', event.target.value)}
@@ -721,14 +722,14 @@ const AdminJobPostManagementPage: React.FC = () => {
               }
               style={{ width: 220 }}
             >
-              <Option value="all">Tất cả trạng thái</Option>
-              <Option value="Active">Đang hoạt động</Option>
-              <Option value="Archived">Đã khóa</Option>
+              <Option value="all">Táº¥t cáº£ tráº¡ng thÃ¡i</Option>
+              <Option value="Active">Äang hoáº¡t Ä‘á»™ng</Option>
+              <Option value="Archived">ÄÃ£ khÃ³a</Option>
             </Select>
             <Select
               allowClear
               showSearch
-              placeholder="Chọn ngành nghề"
+              placeholder="Chá»n ngÃ nh nghá»"
               value={jobSeekerFilters.categoryId}
               loading={categoryLoading}
               optionFilterProp="children"
@@ -768,15 +769,15 @@ const AdminJobPostManagementPage: React.FC = () => {
   return (
     <>
       <AdminSectionHeader
-        title="Quản lý bài đăng tuyển dụng "
-        description="Theo dõi bài đăng của nhà tuyển dụng và ứng viên, xử lý vi phạm nhanh chóng."
+        title="Quáº£n lÃ½ bÃ i Ä‘Äƒng tuyá»ƒn dá»¥ng "
+        description="Theo dÃµi bÃ i Ä‘Äƒng cá»§a nhÃ  tuyá»ƒn dá»¥ng vÃ  á»©ng viÃªn, xá»­ lÃ½ vi pháº¡m nhanh chÃ³ng."
         gradient="from-violet-600 via-purple-500 to-pink-500"
         extra={
           <Button
             icon={<ReloadOutlined />}
             onClick={() => (activeTab === 'employer' ? fetchEmployerPosts() : fetchJobSeekerPosts())}
           >
-            Tải lại
+            Táº£i láº¡i
           </Button>
         }
       />
@@ -784,14 +785,14 @@ const AdminJobPostManagementPage: React.FC = () => {
         <Card className="shadow-sm mb-3 border border-amber-200 bg-amber-50" size="small">
           <Space direction="vertical" size={4}>
             <Typography.Text strong>
-              Đang hiển thị bài bị báo cáo:{' '}
+              Äang hiá»ƒn thá»‹ bÃ i bá»‹ bÃ¡o cÃ¡o:{' '}
               <span className="text-amber-700">
                 {highlightRow?.data.title || `#${highlightTarget.id}`}
               </span>{' '}
-              {highlightTarget.type === 'employer' ? '(Nhà tuyển dụng)' : '(Ứng viên)'}
+              {highlightTarget.type === 'employer' ? '(NhÃ  tuyá»ƒn dá»¥ng)' : '(á»¨ng viÃªn)'}
             </Typography.Text>
             <Typography.Text type="secondary">
-              Hệ thống đã mở sẵn chi tiết và tô sáng dòng tương ứng trong bảng.
+              Há»‡ thá»‘ng Ä‘Ã£ má»Ÿ sáºµn chi tiáº¿t vÃ  tÃ´ sÃ¡ng dÃ²ng tÆ°Æ¡ng á»©ng trong báº£ng.
             </Typography.Text>
           </Space>
         </Card>
@@ -803,19 +804,19 @@ const AdminJobPostManagementPage: React.FC = () => {
         items={[
           {
             key: 'employer',
-            label: 'Bài đăng nhà tuyển dụng',
+            label: 'BÃ i Ä‘Äƒng nhÃ  tuyá»ƒn dá»¥ng',
             children: renderEmployerTab()
           },
           {
             key: 'jobseeker',
-            label: 'Bài đăng ứng viên',
+            label: 'BÃ i Ä‘Äƒng á»©ng viÃªn',
             children: renderJobSeekerTab()
           }
         ]}
       />
 
       <Drawer
-        title="Chi tiết bài đăng"
+        title="Chi tiáº¿t bÃ i Ä‘Äƒng"
         placement="right"
         width={720}
         open={detailOpen}
@@ -826,35 +827,35 @@ const AdminJobPostManagementPage: React.FC = () => {
         destroyOnClose
       >
         {detailLoading ? (
-          <p>Đang tải...</p>
+          <p>Äang táº£i...</p>
         ) : detailState ? (
           <div className="space-y-6">
-            <DetailSection title="Thông tin chung">
+            <DetailSection title="ThÃ´ng tin chung">
               <DetailField
-                label="Loại bài đăng"
-                value={detailState.type === 'employer' ? 'Nhà tuyển dụng' : 'Ứng viên'}
+                label="Loáº¡i bÃ i Ä‘Äƒng"
+                value={detailState.type === 'employer' ? 'NhÃ  tuyá»ƒn dá»¥ng' : 'á»¨ng viÃªn'}
               />
-              <DetailField label="Tiêu đề" value={detailState.data.title} span={2} />
-              <DetailField label="Chuyên mục" value={detailState.data.categoryName || undefined} />
+              <DetailField label="TiÃªu Ä‘á»" value={detailState.data.title} span={2} />
+              <DetailField label="ChuyÃªn má»¥c" value={detailState.data.categoryName || undefined} />
             </DetailSection>
 
             {detailState.type === 'employer' ? (
               <>
                 {detailState.data.imageUrls && detailState.data.imageUrls.length > 0 && (
-                  <DetailSection title="Hình ảnh">
+                  <DetailSection title="HÃ¬nh áº£nh">
                     <div className="md:col-span-2 grid grid-cols-2 md:grid-cols-3 gap-3">
                       {detailState.data.imageUrls.map((url: string) => (
                         <div key={url} className="rounded-xl border border-gray-200 overflow-hidden bg-white">
-                          <img src={url} alt="Ảnh bài đăng" className="w-full h-32 object-cover" />
+                          <img src={url} alt="áº¢nh bÃ i Ä‘Äƒng" className="w-full h-32 object-cover" />
                         </div>
                       ))}
                     </div>
                   </DetailSection>
                 )}
 
-                <DetailSection title="Thông tin công việc">
+                <DetailSection title="ThÃ´ng tin cÃ´ng viá»‡c">
                   <DetailField
-                    label="Lương"
+                    label="LÆ°Æ¡ng"
                     value={formatCurrency(
                       detailState.data.salaryMin,
                       detailState.data.salaryMax,
@@ -863,11 +864,11 @@ const AdminJobPostManagementPage: React.FC = () => {
                     )}
                   />
                   <DetailField
-                    label="Giờ làm việc"
+                    label="Giá» lÃ m viá»‡c"
                     value={detailState.data.workHours || undefined}
                   />
                   <DetailField
-                    label="Địa điểm"
+                    label="Äá»‹a Ä‘iá»ƒm"
                     value={formatLocation(
                       detailState.data.provinceName,
                       detailState.data.districtName,
@@ -875,7 +876,7 @@ const AdminJobPostManagementPage: React.FC = () => {
                     )}
                   />
                   <DetailField
-                    label="Mô tả công việc"
+                    label="MÃ´ táº£ cÃ´ng viá»‡c"
                     value={
                       detailState.data.description ? (
                         <div className="whitespace-pre-line leading-relaxed">
@@ -886,7 +887,7 @@ const AdminJobPostManagementPage: React.FC = () => {
                     span={2}
                   />
                   <DetailField
-                    label="Yêu cầu"
+                    label="YÃªu cáº§u"
                     value={
                       detailState.data.requirements ? (
                         <div className="whitespace-pre-line leading-relaxed">
@@ -898,53 +899,32 @@ const AdminJobPostManagementPage: React.FC = () => {
                   />
                 </DetailSection>
 
-                <DetailSection title="Thông tin liên hệ">
+                <DetailSection title="ThÃ´ng tin liÃªn há»‡">
                   <DetailField
-                    label="Nhà tuyển dụng"
+                    label="NhÃ  tuyá»ƒn dá»¥ng"
                     value={detailState.data.employerName || undefined}
                   />
                   <DetailField
-                    label="Email liên hệ"
+                    label="Email liÃªn há»‡"
                     value={detailState.data.employerEmail || undefined}
                   />
                   <DetailField
-                    label="Số điện thoại"
+                    label="Sá»‘ Ä‘iá»‡n thoáº¡i"
                     value={detailState.data.phoneContact || undefined}
                   />
                 </DetailSection>
               </>
             ) : (
               <>
-                <DetailSection title="Hồ sơ ứng viên">
-                  <DetailField
-                    label="Họ tên"
-                    value={detailState.data.fullName || undefined}
-                  />
-                  <DetailField
-                    label="Email"
-                    value={detailState.data.jobSeekerEmail || undefined}
-                  />
-                  <DetailField
-                    label="Giới tính"
-                    value={detailState.data.gender || undefined}
-                  />
-                  <DetailField
-                    label="Khu vực"
-                    value={formatLocation(
-                      detailState.data.provinceName,
-                      detailState.data.districtName,
-                      detailState.data.wardName
-                    )}
-                  />
-                  <DetailField
-                    label="Giờ làm mong muốn"
-                    value={detailState.data.preferredWorkHours || undefined}
-                  />
-                </DetailSection>
+                <Alert
+                  type="info"
+                  message="Thong tin ho so ung vien da duoc an tren trang quan tri."
+                  showIcon
+                />
 
-                <DetailSection title="Mô tả">
+                <DetailSection title="Mo ta bai dang">
                   <DetailField
-                    label="Thông tin"
+                    label="Thong tin"
                     value={
                       detailState.data.description ? (
                         <div className="whitespace-pre-line leading-relaxed">
@@ -959,38 +939,38 @@ const AdminJobPostManagementPage: React.FC = () => {
             )}
           </div>
         ) : (
-          <p>Không có dữ liệu.</p>
+          <p>KhÃ´ng cÃ³ dá»¯ liá»‡u.</p>
         )}
       </Drawer>
 
       <Modal
         title={
           actionContext
-            ? `${actionContext.type === 'employer' ? 'Bài đăng nhà tuyển dụng' : 'Bài đăng ứng viên'} - ${
+            ? `${actionContext.type === 'employer' ? 'BÃ i Ä‘Äƒng nhÃ  tuyá»ƒn dá»¥ng' : 'BÃ i Ä‘Äƒng á»©ng viÃªn'} - ${
                 actionContext.post.title
               }`
-            : 'Nhập lý do'
+            : 'Nháº­p lÃ½ do'
         }
         open={reasonModalOpen}
         onCancel={handleReasonCancel}
         onOk={handleReasonConfirm}
         confirmLoading={reasonSubmitting}
-        okText="Xác nhận"
-        cancelText="Hủy"
+        okText="XÃ¡c nháº­n"
+        cancelText="Há»§y"
       >
         <Space direction="vertical" size="small" className="w-full">
           <Typography.Text>
-            Vui lòng nhập lý do để {currentActionVerb || 'thực hiện'} {currentSubjectLabel}.
+            Vui lÃ²ng nháº­p lÃ½ do Ä‘á»ƒ {currentActionVerb || 'thá»±c hiá»‡n'} {currentSubjectLabel}.
           </Typography.Text>
           <Input.TextArea
             rows={4}
             value={reasonValue}
             onChange={(event) => setReasonValue(event.target.value)}
-            placeholder="Nhập lý do gửi tới người đăng bài (tùy chọn)"
+            placeholder="Nháº­p lÃ½ do gá»­i tá»›i ngÆ°á»i Ä‘Äƒng bÃ i (tÃ¹y chá»n)"
             maxLength={500}
           />
           <Typography.Text type="secondary">
-            Lý do này sẽ được gửi trong thông báo đến người dùng.
+            LÃ½ do nÃ y sáº½ Ä‘Æ°á»£c gá»­i trong thÃ´ng bÃ¡o Ä‘áº¿n ngÆ°á»i dÃ¹ng.
           </Typography.Text>
         </Space>
       </Modal>

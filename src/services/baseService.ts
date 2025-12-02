@@ -1,7 +1,7 @@
 import axios, { type AxiosInstance, AxiosError, type InternalAxiosRequestConfig } from 'axios';
 
-const API_BASE_URL = 'https://localhost:7100/api';
-
+// Cho phép override API base qua env; mặc định dùng HTTPS nội bộ.
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'https://localhost:7100/api';
 
 
 const getAccessToken = (): string | null => {
