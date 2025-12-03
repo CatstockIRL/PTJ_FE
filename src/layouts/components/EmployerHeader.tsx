@@ -1,4 +1,4 @@
-﻿import React, { useEffect } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../features/auth/hooks";
 import { Button, Dropdown, Avatar, message } from "antd";
@@ -7,12 +7,14 @@ import {
   DownOutlined,
   LogoutOutlined,
   MenuFoldOutlined,
+  BugOutlined,
 } from "@ant-design/icons";
 import { ROLES } from "../../constants/roles";
 import { logout } from "../../features/auth/slice";
 import { removeAccessToken } from "../../services/baseService";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
-import { fetchEmployerProfile } from "../../features/employer/slice/profileSlice";
+import { fetchEmployerProfile, clearProfile as clearEmployerProfile } from "../../features/employer/slice/profileSlice";
+import SystemReportModal from "../../features/report/components/SystemReportModal";
 
 const LogoWhite = "/vite.svg";
 
@@ -33,6 +35,7 @@ export const EmployerHeader: React.FC<EmployerHeaderProps> = ({
   const isAdminRoute = location.pathname.startsWith("/admin");
   const shouldLoadEmployerProfile =
     !!user && user.roles.includes(ROLES.EMPLOYER) && !isAdminRoute;
+  const [reportModalOpen, setReportModalOpen] = useState(false);
 
   useEffect(() => {
     if (
@@ -62,6 +65,7 @@ export const EmployerHeader: React.FC<EmployerHeaderProps> = ({
 
   const handleLogout = () => {
     dispatch(logout());
+    dispatch(clearEmployerProfile());
     removeAccessToken();
     navigate("/login");
     message.success("Đăng xuất thành công!");
@@ -77,6 +81,11 @@ export const EmployerHeader: React.FC<EmployerHeaderProps> = ({
           },
         ]),
     {
+      key: "system-report",
+      label: <span onClick={() => setReportModalOpen(true)}>Dịch vụ hỗ trợ hệ thống</span>,
+      icon: <BugOutlined />,
+    },
+    {
       key: "change-password",
       label: <NavLink to="/nha-tuyen-dung/doi-mat-khau">Đổi mật khẩu</NavLink>,
     },
@@ -90,6 +99,7 @@ export const EmployerHeader: React.FC<EmployerHeaderProps> = ({
   ];
 
   return (
+    <>
     <header
       className="bg-blue-900 text-white shadow-md py-4 px-6 flex items-center justify-between sticky top-0 z-10"
       style={{ height: "68px" }}
@@ -171,6 +181,8 @@ export const EmployerHeader: React.FC<EmployerHeaderProps> = ({
         )}
       </div>
     </header>
+    <SystemReportModal open={reportModalOpen} onClose={() => setReportModalOpen(false)} />
+    </>
   );
 };
 

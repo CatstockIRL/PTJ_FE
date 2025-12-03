@@ -31,6 +31,12 @@ const LoginForm: React.FC = () => {
 
     message.success(successMessage);
 
+    if (normalizedRoles.includes('PendingEmployer')) {
+      message.info('Tài khoản nhà tuyển dụng đang chờ admin phê duyệt.');
+      navigate('/login', { replace: true });
+      return;
+    }
+
     if (normalizedRoles.includes(ROLES.ADMIN)) {
       navigate('/admin/dashboard');
       return;

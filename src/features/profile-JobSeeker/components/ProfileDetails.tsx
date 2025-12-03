@@ -90,15 +90,18 @@ const ProfileDetails: React.FC<ProfileDetailsProps> = ({ profile, loading, error
       return;
     }
 
+    const normalizeId = (value?: number | null) =>
+      value && value > 0 ? value : undefined;
+
     form.setFieldsValue({
       fullName: profile.fullName ?? '',
       gender: profile.gender ?? undefined,
       birthYear: profile.birthYear ?? undefined,
       contactPhone: profile.contactPhone ?? '',
       fullLocation: profile.fullLocation ?? '',
-      provinceId: profile.provinceId ?? undefined,
-      districtId: profile.districtId ?? undefined,
-      wardId: profile.wardId ?? undefined,
+      provinceId: normalizeId(profile.provinceId),
+      districtId: normalizeId(profile.districtId),
+      wardId: normalizeId(profile.wardId),
     });
     setPreviewUrl(profile.profilePicture ?? undefined);
     setAvatarFile(null);
@@ -199,6 +202,12 @@ const ProfileDetails: React.FC<ProfileDetailsProps> = ({ profile, loading, error
   const handleSubmit = async (values: FormValues) => {
     const payload: JobSeekerProfileUpdateDto = {
       ...values,
+      provinceId: values.provinceId && values.provinceId > 0 ? values.provinceId : undefined,
+      districtId: values.districtId && values.districtId > 0 ? values.districtId : undefined,
+      wardId: values.wardId && values.wardId > 0 ? values.wardId : undefined,
+      fullLocation: values.fullLocation?.trim() || undefined,
+      contactPhone: values.contactPhone?.trim(),
+      fullName: values.fullName?.trim(),
     };
 
     if (avatarFile) {

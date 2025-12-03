@@ -61,10 +61,14 @@ const JobDetailPage: React.FC = () => {
     visible: boolean;
     submitting: boolean;
     reason: string;
+    reportType: string;
+    customReportType: string;
   }>({
     visible: false,
     submitting: false,
     reason: "",
+    reportType: "",
+    customReportType: "",
   });
 
   const navRef = useRef<HTMLDivElement>(null);
@@ -318,7 +322,7 @@ const JobDetailPage: React.FC = () => {
     if (!job) {
       return;
     }
-    setReportModal({ visible: true, submitting: false, reason: "" });
+    setReportModal({ visible: true, submitting: false, reason: "", reportType: "", customReportType: "" });
   };
 
   const submitJobReport = async () => {
@@ -326,6 +330,13 @@ const JobDetailPage: React.FC = () => {
       return;
     }
     const reason = reportModal.reason.trim();
+    const selectedType = reportModal.reportType.trim();
+    const customType = reportModal.customReportType.trim();
+    const reportType = selectedType === "Other" ? customType : selectedType;
+    if (!reportType) {
+      message.warning("Vui lòng chọn loại báo cáo.");
+      return;
+    }
     if (!reason) {
       message.warning("Vui lòng nhập lý do báo cáo.");
       return;
@@ -334,11 +345,12 @@ const JobDetailPage: React.FC = () => {
     try {
       await reportService.reportPost({
         postId: job.employerPostId,
-        postType: "EmployerPost",
+        affectedPostType: "EmployerPost",
+        reportType,
         reason,
       });
       message.success("Đã gửi báo cáo tới quản trị viên.");
-      setReportModal({ visible: false, submitting: false, reason: "" });
+      setReportModal({ visible: false, submitting: false, reason: "", reportType: "", customReportType: "" });
     } catch (error: any) {
       message.error(
         error?.response?.data?.message ||
@@ -1040,7 +1052,7 @@ const JobDetailPage: React.FC = () => {
         title="Báo cáo tin tuyển dụng"
         open={reportModal.visible}
         onCancel={() =>
-          setReportModal({ visible: false, submitting: false, reason: "" })
+          setReportModal({ visible: false, submitting: false, reason: "", reportType: "", customReportType: "" })
         }
         onOk={submitJobReport}
         okText="Gửi báo cáo"
@@ -1051,6 +1063,31 @@ const JobDetailPage: React.FC = () => {
           Bạn hãy chia sẻ lý do báo cáo để chúng tôi có thể xử lý tin tuyển dụng
           này nhanh nhất có thể.
         </p>
+        <div className="mb-3">
+          <Select
+            placeholder="Chọn loại báo cáo"
+            className="w-full"
+            value={reportModal.reportType || undefined}
+            onChange={(value) => setReportModal((prev) => ({ ...prev, reportType: value }))}
+            options={[
+              { label: "Tin giả / lừa đảo", value: "Fraud" },
+              { label: "Nội dung không phù hợp", value: "Inappropriate" },
+              { label: "Trùng lặp / Spam", value: "Spam" },
+              { label: "Khác", value: "Other" },
+            ]}
+          />
+        </div>
+        {reportModal.reportType === "Other" && (
+          <div className="mb-3">
+            <Input
+              placeholder="Nhập loại báo cáo khác"
+              value={reportModal.customReportType}
+              onChange={(e) =>
+                setReportModal((prev) => ({ ...prev, customReportType: e.target.value }))
+              }
+            />
+          </div>
+        )}
         <TextArea
           rows={4}
           value={reportModal.reason}

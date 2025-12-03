@@ -56,13 +56,30 @@ const processQueue = (error: any) => {
   failedQueue = [];
 };
 
+const isExpiredTokenError = (error: AxiosError) => {
+  const status = error.response?.status;
+  const message =
+    (error.response?.data as any)?.message ||
+    (error.response?.data as any)?.Message ||
+    error.message;
+
+  if (status === 403 && typeof message === 'string') {
+    const lower = message.toLowerCase();
+    return lower.includes('expired') || lower.includes('token expired');
+  }
+  return false;
+};
+
 
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    const shouldRefresh =
+      (error.response?.status === 401 || isExpiredTokenError(error)) && !originalRequest._retry;
+
+    if (shouldRefresh) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });

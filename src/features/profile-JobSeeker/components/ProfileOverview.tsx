@@ -37,6 +37,9 @@ const ProfileOverview: React.FC<ProfileOverviewProps> = ({ profile, loading, ema
   const genderLabel = profile.gender
     ? genderLabelMap[profile.gender] ?? profile.gender
     : 'Chưa cập nhật';
+  const locationText =
+    profile.location && profile.location !== '0' ? profile.location : 'Chưa cập nhật';
+  const birthYearText = profile.birthYear && profile.birthYear > 0 ? profile.birthYear : 'Chưa cập nhật';
 
   return (
     <div className="space-y-4">
@@ -49,7 +52,7 @@ const ProfileOverview: React.FC<ProfileOverviewProps> = ({ profile, loading, ema
             {genderLabel}
           </Descriptions.Item>
           <Descriptions.Item label="Năm sinh">
-            {profile.birthYear || 'Chưa cập nhật'}
+            {birthYearText}
           </Descriptions.Item>
         </Descriptions>
       </Card>
@@ -69,7 +72,7 @@ const ProfileOverview: React.FC<ProfileOverviewProps> = ({ profile, loading, ema
             </span>
           </Descriptions.Item>
           <Descriptions.Item label="Địa chỉ chi tiết">
-            {profile.location || 'Chưa cập nhật'}
+            {locationText}
           </Descriptions.Item>
         </Descriptions>
       </Card>

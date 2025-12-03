@@ -125,22 +125,6 @@ const EmployerSidebar: React.FC<SidebarProps> = ({ isOpen }) => {
         />
       </div>
 
-      {user && (
-        <div className="p-4 flex-shrink-0 border-top border-gray-200">
-          <div className={`flex items-center space-x-3 ${!isOpen ? "justify-center" : ""}`}>
-            <Avatar size={40} icon={<UserOutlined />} className="bg-blue-600">
-              {user.username.charAt(0).toUpperCase()}
-            </Avatar>
-
-            {isOpen && (
-              <div>
-                <div className="font-semibold text-sm text-gray-800">{user.username}</div>
-                <div className="text-xs text-gray-500">{user.email}</div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </aside>
   );
 };

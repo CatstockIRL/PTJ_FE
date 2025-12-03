@@ -19,3 +19,17 @@ export interface AdminEmployerRegDetail extends AdminEmployerRegListItem {
   adminNote?: string | null;
   reviewedAt?: string | null;
 }
+
+export interface GoogleEmployerRegList {
+  id: number;
+  displayName: string;
+  email: string;
+  pictureUrl?: string | null;
+  status: string;
+  createdAt: string;
+}
+
+export interface GoogleEmployerRegDetail extends GoogleEmployerRegList {
+  reviewedAt?: string | null;
+  adminNote?: string | null;
+}

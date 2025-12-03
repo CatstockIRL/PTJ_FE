@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { Button, Dropdown, Avatar, message } from "antd";
 import {
@@ -14,6 +14,7 @@ import {
   SendOutlined,
   FileDoneOutlined,
   LockOutlined,
+  BugOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "../../features/auth/hooks";
 import { ROLES } from "../../constants/roles";
@@ -24,6 +25,9 @@ import LogoImage from "../../assets/logo.png";
 import NotificationDropdown from "../../features/notification/components/NotificationDropdown";
 import { useAppSelector, useAppDispatch } from "../../app/hooks";
 import { fetchJobSeekerProfile } from "../../features/profile-JobSeeker/slice/profileSlice";
+import { clearJobSeekerProfile } from "../../features/profile-JobSeeker/slice/profileSlice";
+import { clearProfile as clearEmployerProfile } from "../../features/employer/slice/profileSlice";
+import SystemReportModal from "../../features/report/components/SystemReportModal";
 
 const LogoWhite = LogoImage;
 const LogoColor = LogoImage;
@@ -75,9 +79,10 @@ const GuestDropdown = () => (
 interface UserDropdownProps {
   user: User;
   onLogout: () => void;
+  onReport: () => void;
 }
 
-const UserDropdown: React.FC<UserDropdownProps> = ({ user, onLogout }) => {
+const UserDropdown: React.FC<UserDropdownProps> = ({ user, onLogout, onReport }) => {
   const overviewLinks = [
     { icon: <UserOutlined />, text: "Hồ sơ của tôi", path: "/tai-khoan" },
     { icon: <LockOutlined />, text: "Đổi mật khẩu", path: "/doi-mat-khau" },
@@ -107,7 +112,9 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ user, onLogout }) => {
           <p className="font-semibold text-lg leading-tight truncate">
             {user.username}
           </p>
-          <p className="text-xs text-white/80 truncate">Tài khoản đã xác thực</p>
+          <p className={`text-xs truncate ${user.verified ? "text-white/80" : "text-yellow-100"}`}>
+            {user.verified ? "Tài khoản đã xác thực" : "Tài khoản chưa xác thực"}
+          </p>
         </div>
       </div>
 
@@ -176,9 +183,14 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ user, onLogout }) => {
           </div>
         </div>
 
-        <Button danger onClick={onLogout} icon={<LogoutOutlined />} className="w-full">
-          Đăng xuất
-        </Button>
+        <div className="flex flex-col gap-2">
+          <Button onClick={onReport} icon={<BugOutlined />} className="w-full">
+            Dịch vụ hỗ trợ hệ thống
+          </Button>
+          <Button danger onClick={onLogout} icon={<LogoutOutlined />} className="w-full">
+            Đăng xuất
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -191,6 +203,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const jobSeekerProfile = useAppSelector((state) => state.jobSeekerProfile.profile);
   const jobSeekerProfileLoading = useAppSelector((state) => state.jobSeekerProfile.loading);
   const isJobSeeker = !!user && user.roles.includes(ROLES.JOB_SEEKER);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
 
   useEffect(() => {
     if (isJobSeeker && !jobSeekerProfile && !jobSeekerProfileLoading) {
@@ -206,6 +219,8 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
 
   const handleLogout = () => {
     dispatch(logout());
+    dispatch(clearJobSeekerProfile());
+    dispatch(clearEmployerProfile());
     removeAccessToken();
     navigate("/");
     message.success("Đăng xuất thành công!");
@@ -218,6 +233,11 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
         label: <NavLink to="/nha-tuyen-dung/ho-so">Hồ sơ của tôi</NavLink>,
       },
       {
+        key: "system-report",
+        label: <span onClick={() => setReportModalOpen(true)}>Dịch vụ hỗ trợ hệ thống</span>,
+        icon: <BugOutlined />,
+      },
+      {
         key: "2",
         label: "Đăng xuất",
         icon: <LogoutOutlined />,
@@ -227,6 +247,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
     ];
 
     return (
+      <>
       <header
         className="bg-blue-900 text-white shadow-md py-4 px-6 flex items-center justify-between sticky top-0 z-30"
         style={{ height: "68px" }}
@@ -267,10 +288,13 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           </NavLink>
         </div>
       </header>
+      <SystemReportModal open={reportModalOpen} onClose={() => setReportModalOpen(false)} />
+      </>
     );
   }
 
   return (
+    <>
     <header
       className="bg-white shadow-md py-4 px-6 flex items-center justify-between sticky top-0 z-30"
       style={{ height: "68px" }}
@@ -324,7 +348,17 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
       <div className="flex items-center space-x-3">
         <NotificationDropdown />
         <Dropdown
-          popupRender={() => (user ? <UserDropdown user={user} onLogout={handleLogout} /> : <GuestDropdown />)}
+          popupRender={() =>
+            user ? (
+              <UserDropdown
+                user={user}
+                onLogout={handleLogout}
+                onReport={() => setReportModalOpen(true)}
+              />
+            ) : (
+              <GuestDropdown />
+            )
+          }
           placement="bottomRight"
           trigger={["hover"]}
         >
@@ -351,6 +385,8 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
         )}
       </div>
     </header>
+    <SystemReportModal open={reportModalOpen} onClose={() => setReportModalOpen(false)} />
+    </>
   );
 };
 

@@ -331,6 +331,16 @@ const AdminJobPostManagementPage: React.FC = () => {
     try {
       if (type === "employer") {
         const detail = await adminJobPostService.getEmployerPostDetail(id);
+        setEmployerPosts((prev) =>
+          prev.map((p) =>
+            p.employerPostId === id
+              ? {
+                  ...p,
+                  status: detail.status
+                }
+              : p
+          )
+        );
         setDetailState({ type, data: detail });
         if (highlightTarget?.type === "employer" && highlightTarget.id === id) {
           setHighlightRow({
@@ -348,6 +358,16 @@ const AdminJobPostManagementPage: React.FC = () => {
         }
       } else {
         const detail = await adminJobPostService.getJobSeekerPostDetail(id);
+        setJobSeekerPosts((prev) =>
+          prev.map((p) =>
+            p.jobSeekerPostId === id
+              ? {
+                  ...p,
+                  status: detail.status
+                }
+              : p
+          )
+        );
         setDetailState({ type, data: detail });
         if (highlightTarget?.type === "jobseeker" && highlightTarget.id === id) {
           setHighlightRow({

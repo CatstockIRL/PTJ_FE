@@ -29,6 +29,7 @@ import type { AdminUser, AdminUserDetail } from '../../features/admin/types/user
 import type {
   AdminEmployerRegListItem,
   AdminEmployerRegStatus,
+  GoogleEmployerRegList,
 } from '../../features/admin/types/employerRegistration';
 import AdminSectionHeader from './components/AdminSectionHeader';
 
@@ -79,7 +80,7 @@ const roleOptions = [
 ];
 
 const AdminAccountManagementPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'accounts' | 'registrations'>('accounts');
+  const [activeTab, setActiveTab] = useState<'accounts' | 'registrations' | 'google'>('accounts');
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
@@ -111,6 +112,9 @@ const AdminAccountManagementPage: React.FC = () => {
     total: 0,
     showSizeChanger: true
   });
+  const [googleRegs, setGoogleRegs] = useState<GoogleEmployerRegList[]>([]);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleActionLoadingId, setGoogleActionLoadingId] = useState<number | null>(null);
 
   const normalizedFilters = useMemo(() => {
     const statusMap: Record<FilterState['status'], boolean | undefined> = {
@@ -231,6 +235,25 @@ const AdminAccountManagementPage: React.FC = () => {
     }
   }, [activeTab, fetchRegistrations, regRequests.length]);
 
+  const fetchGoogleRegistrations = useCallback(async () => {
+    setGoogleLoading(true);
+    try {
+      const data = await adminEmployerRegistrationService.getGoogleRequests();
+      setGoogleRegs(data);
+    } catch (error) {
+      console.error('Failed to load google employer registrations', error);
+      message.error('Không thể tải danh sách hồ sơ Google NTD');
+    } finally {
+      setGoogleLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'google' && googleRegs.length === 0) {
+      void fetchGoogleRegistrations();
+    }
+  }, [activeTab, fetchGoogleRegistrations, googleRegs.length]);
+
   const openDetail = async (userId: number) => {
     setDetailOpen(true);
     setDetailLoading(true);
@@ -326,6 +349,60 @@ const AdminAccountManagementPage: React.FC = () => {
           return Promise.reject();
         } finally {
           setRegActionLoadingId(null);
+        }
+        return Promise.resolve();
+      }
+    });
+  };
+
+  const handleApproveGoogle = async (item: GoogleEmployerRegList) => {
+    setGoogleActionLoadingId(item.id);
+    try {
+      await adminEmployerRegistrationService.approveGoogle(item.id);
+      message.success('Đã duyệt hồ sơ Google NTD.');
+      await Promise.all([fetchGoogleRegistrations(), fetchUsers()]);
+    } catch (error: any) {
+      console.error('Failed to approve Google employer registration', error);
+      const apiMessage: string | undefined = error?.response?.data?.message;
+      message.error(apiMessage ?? 'Không thể duyệt hồ sơ Google.');
+    } finally {
+      setGoogleActionLoadingId(null);
+    }
+  };
+
+  const handleRejectGoogle = (item: GoogleEmployerRegList) => {
+    let reason = '';
+    Modal.confirm({
+      title: 'Từ chối hồ sơ Google',
+      content: (
+        <TextArea
+          autoSize={{ minRows: 3 }}
+          placeholder="Nhập lý do từ chối"
+          onChange={(e) => {
+            reason = e.target.value;
+          }}
+        />
+      ),
+      okText: 'Từ chối',
+      cancelText: 'Hủy',
+      okButtonProps: { danger: true, loading: googleActionLoadingId === item.id },
+      async onOk() {
+        if (!reason.trim()) {
+          message.warning('Vui lòng nhập lý do.');
+          return Promise.reject();
+        }
+        setGoogleActionLoadingId(item.id);
+        try {
+          await adminEmployerRegistrationService.rejectGoogle(item.id, reason.trim());
+          message.success('Đã từ chối hồ sơ Google.');
+          await fetchGoogleRegistrations();
+        } catch (error: any) {
+          console.error('Failed to reject Google employer registration', error);
+          const apiMessage: string | undefined = error?.response?.data?.message;
+          message.error(apiMessage ?? 'Không thể từ chối hồ sơ Google.');
+          return Promise.reject();
+        } finally {
+          setGoogleActionLoadingId(null);
         }
         return Promise.resolve();
       }
@@ -622,6 +699,94 @@ const AdminAccountManagementPage: React.FC = () => {
     </Card>
   );
 
+  const regPaginationProps = {
+    ...regPagination,
+    onChange: (page: number, pageSize?: number) => fetchRegistrations(page, pageSize)
+  };
+
+  const googleColumns: ColumnsType<GoogleEmployerRegList> = [
+    {
+      title: 'Tên hiển thị',
+      dataIndex: 'displayName',
+      key: 'displayName',
+      render: (value: string, record) => (
+        <Space direction="vertical" size={0}>
+          <span className="font-medium">{value}</span>
+          <span className="text-gray-500 text-xs">{record.email}</span>
+        </Space>
+      )
+    },
+    {
+      title: 'Trạng thái',
+      dataIndex: 'status',
+      key: 'status',
+      width: 140,
+      render: (value: string) => (
+        <Tag color={value === 'Pending' ? 'orange' : value === 'Approved' ? 'green' : 'red'}>
+          {value}
+        </Tag>
+      )
+    },
+    {
+      title: 'Ngày tạo',
+      dataIndex: 'createdAt',
+      key: 'createdAt',
+      width: 200,
+      render: (value: string) =>
+        new Date(value).toLocaleString('vi-VN', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+    },
+    {
+      title: 'Hành động',
+      key: 'googleActions',
+      width: 220,
+      render: (_, record) => (
+        <Space>
+          <Button
+            type="primary"
+            size="small"
+            disabled={record.status !== 'Pending'}
+            loading={googleActionLoadingId === record.id}
+            onClick={() => handleApproveGoogle(record)}
+          >
+            Duyệt
+          </Button>
+          <Button
+            size="small"
+            danger
+            disabled={record.status !== 'Pending'}
+            loading={googleActionLoadingId === record.id}
+            onClick={() => handleRejectGoogle(record)}
+          >
+            Từ chối
+          </Button>
+        </Space>
+      )
+    }
+  ];
+
+  const googleTabContent = (
+    <Card
+      bordered={false}
+      className="shadow-sm border-0 bg-white/90 backdrop-blur-lg"
+      bodyStyle={{ padding: 20 }}
+    >
+      <Table
+        rowKey="id"
+        loading={googleLoading}
+        dataSource={googleRegs}
+        columns={googleColumns}
+        pagination={false}
+        scroll={{ x: 900 }}
+      />
+    </Card>
+  );
+
   const tabItems: TabsProps['items'] = [
     {
       key: 'accounts',
@@ -633,9 +798,12 @@ const AdminAccountManagementPage: React.FC = () => {
       label: 'Duyệt đăng ký nhà tuyển dụng',
       children: registrationTabContent,
     },
+    {
+      key: 'google',
+      label: 'Duyệt NTD Google',
+      children: googleTabContent,
+    },
   ];
-
-
   return (
     <>
       <AdminSectionHeader

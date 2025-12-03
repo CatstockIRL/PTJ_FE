@@ -40,7 +40,9 @@ const adminSystemReportService = {
   },
 
   async resolveSystemReport(reportId: number, payload: AdminResolveSystemReportPayload) {
-    return await baseService.post(`/admin/system-reports/${reportId}/resolve`, payload);
+    // Dù chọn MarkSolved hay Ignore, back-end hiện chỉ nhận trạng thái; đều coi như đã xử lý.
+    const status = 'Solved';
+    return await baseService.put(`/admin/system-reports/${reportId}`, { status });
   }
 };
 

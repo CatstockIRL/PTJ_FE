@@ -76,7 +76,22 @@ const GoogleRoleSelectionPage: React.FC = () => {
     setProcessingRole(role);
     try {
       const response = await googleComplete({ idToken: onboardingData.idToken, role });
+
+      if (response.requiresApproval) {
+        clearGoogleOnboardingData();
+        message.success(
+          response.message ||
+            'Đã gửi yêu cầu tạo tài khoản nhà tuyển dụng. Vui lòng chờ admin phê duyệt.'
+        );
+        navigate('/login', { replace: true });
+        return;
+      }
+
       const { accessToken, user } = response;
+
+      if (!accessToken || !user) {
+        throw new Error('Không nhận được token sau khi đăng nhập Google.');
+      }
 
       const normalizedRoles =
         Array.isArray(user.roles) && user.roles.length > 0
@@ -142,7 +157,7 @@ const GoogleRoleSelectionPage: React.FC = () => {
             return (
               <Card
                 key={role}
-                bordered={false}
+                variant="bordered"
                 className="h-full rounded-3xl shadow-2xl border border-white/60 bg-white/90 backdrop-blur hover:-translate-y-1 transition"
                 cover={
                   <div className="px-6 pt-6">

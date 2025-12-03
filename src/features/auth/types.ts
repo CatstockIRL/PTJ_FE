@@ -8,12 +8,15 @@ export interface User {
 }
 
 export interface LoginResponse {
-  accessToken: string;
-  expiresIn: number;
+  accessToken?: string;
+  expiresIn?: number;
   refreshToken?: string;
   user: User;
   role?: string | null;
   warning?: string | null;
+  requiresApproval?: boolean;
+  success?: boolean;
+  message?: string;
 }
 
 export interface RegisterJobSeekerPayload {

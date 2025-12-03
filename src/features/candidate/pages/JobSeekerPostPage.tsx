@@ -128,12 +128,16 @@ const JobSeekerPostsPage: React.FC = () => {
     postTitle: string;
     reason: string;
     submitting: boolean;
+    reportType: string;
+    customReportType: string;
   }>({
     visible: false,
     postId: null,
     postTitle: "",
     reason: "",
     submitting: false,
+    reportType: "",
+    customReportType: "",
   });
 
   const { categories, status: categoryStatus } = useCategories();
@@ -340,6 +344,8 @@ const JobSeekerPostsPage: React.FC = () => {
       postTitle: post.title,
       reason: "",
       submitting: false,
+      reportType: "",
+      customReportType: "",
     });
   };
 
@@ -348,6 +354,13 @@ const JobSeekerPostsPage: React.FC = () => {
       return;
     }
     const reason = reportModal.reason.trim();
+    const selectedType = reportModal.reportType.trim();
+    const customType = reportModal.customReportType.trim();
+    const reportType = selectedType === "Other" ? customType : selectedType;
+    if (!reportType) {
+      message.warning("Vui lòng chọn loại báo cáo.");
+      return;
+    }
     if (!reason) {
       message.warning("Vui lòng nhập lý do báo cáo.");
       return;
@@ -356,7 +369,8 @@ const JobSeekerPostsPage: React.FC = () => {
     try {
       await reportService.reportPost({
         postId: reportModal.postId,
-        postType: "JobSeekerPost",
+        affectedPostType: "JobSeekerPost",
+        reportType,
         reason,
       });
       message.success("Đã gửi báo cáo bài đăng tìm việc.");
@@ -366,6 +380,8 @@ const JobSeekerPostsPage: React.FC = () => {
         postTitle: "",
         reason: "",
         submitting: false,
+        reportType: "",
+        customReportType: "",
       });
     } catch (error: any) {
       message.error(
@@ -820,6 +836,8 @@ const JobSeekerPostsPage: React.FC = () => {
               postTitle: "",
               reason: "",
               submitting: false,
+              reportType: "",
+              customReportType: "",
             })
           }
           onOk={handleSubmitReport}
@@ -831,6 +849,36 @@ const JobSeekerPostsPage: React.FC = () => {
             Vui lòng mô tả lý do bạn muốn báo cáo bài đăng tìm việc này. Thông
             tin sẽ được gửi tới quản trị viên.
           </p>
+          <div className="mb-3">
+            <Select
+              placeholder="Chọn loại báo cáo"
+              className="w-full"
+              value={reportModal.reportType || undefined}
+              onChange={(value) =>
+                setReportModal((prev) => ({ ...prev, reportType: value }))
+              }
+              options={[
+                { label: "Tin giả / lừa đảo", value: "Fraud" },
+                { label: "Nội dung không phù hợp", value: "Inappropriate" },
+                { label: "Trùng lặp / Spam", value: "Spam" },
+                { label: "Khác", value: "Other" },
+              ]}
+            />
+          </div>
+          {reportModal.reportType === "Other" && (
+            <div className="mb-3">
+              <Input
+                placeholder="Nhập loại báo cáo khác"
+                value={reportModal.customReportType}
+                onChange={(e) =>
+                  setReportModal((prev) => ({
+                    ...prev,
+                    customReportType: e.target.value,
+                  }))
+                }
+              />
+            </div>
+          )}
           <TextArea
             rows={4}
             value={reportModal.reason}

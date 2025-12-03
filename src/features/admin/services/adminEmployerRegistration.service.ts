@@ -3,6 +3,8 @@ import {
   type AdminEmployerRegDetail,
   type AdminEmployerRegListItem,
   type AdminEmployerRegStatus,
+  type GoogleEmployerRegList,
+  type GoogleEmployerRegDetail,
 } from '../types/employerRegistration';
 import { adaptPagedResult, type PagedResult, type RawPagedResponse } from './pagedResultHelper';
 
@@ -45,6 +47,22 @@ const adminEmployerRegistrationService = {
 
   async reject(id: number, reason: string): Promise<void> {
     await baseService.post(`/admin/employer-registrations/${id}/reject`, { reason });
+  },
+
+  async getGoogleRequests(): Promise<GoogleEmployerRegList[]> {
+    return await baseService.get<GoogleEmployerRegList[]>('/admin/employer-registrations/google');
+  },
+
+  async getGoogleDetail(id: number): Promise<GoogleEmployerRegDetail> {
+    return await baseService.get<GoogleEmployerRegDetail>(`/admin/employer-registrations/google/${id}`);
+  },
+
+  async approveGoogle(id: number): Promise<void> {
+    await baseService.post(`/admin/employer-registrations/google/${id}/approve`);
+  },
+
+  async rejectGoogle(id: number, reason: string): Promise<void> {
+    await baseService.post(`/admin/employer-registrations/google/${id}/reject`, { reason });
   },
 };
 

@@ -31,6 +31,7 @@ import { useNavigate } from 'react-router-dom';
 import type {
   AdminReport,
   AdminReportDetail,
+  AdminResolveReportPayload,
   AdminResolveSystemReportPayload,
   AdminSolvedReport,
   AdminSystemReport,
@@ -71,7 +72,7 @@ type DetailRecord =
   | { type: 'system'; data: AdminSystemReportDetail };
 
 interface ResolveFormValues {
-  actionTaken: 'BanUser' | 'UnbanUser' | 'DeletePost' | 'Warn' | 'Ignore';
+  actionTaken: 'BlockPost' | 'HidePost' | 'Warn' | 'Ignore';
   reason?: string;
 }
 
@@ -211,7 +212,7 @@ const AdminReportManagementPage: React.FC = () => {
           pageSize
         });
         setSolvedReports(response.items);
-        addReportTypes(response.items.map((item) => item.reportType));
+        addReportTypes(response.items.map((item) => item.reportType).filter((v): v is string => Boolean(v)));
         setSolvedPagination((prev) => ({
           ...prev,
           current: page,
@@ -366,31 +367,9 @@ const AdminReportManagementPage: React.FC = () => {
     if (resolvingReportId === null) return;
     setResolveSubmitting(true);
     try {
-      const resolveData = await adminReportService.getReportDetail(resolvingReportId);
-      const fallbackTypeFromContext = resolvingReport?.reportType?.toLowerCase() || '';
-      const affectedPostId =
-        resolveData.employerPostId ??
-        resolveData.jobSeekerPostId ??
-        resolveData.postId ??
-        resolvingReport?.postId ??
-        null;
-      const affectedPostType =
-        resolveData.postType ||
-        (resolveData.employerPostId || resolvingReport?.reportType === 'EmployerPost'
-          ? 'EmployerPost'
-          : resolveData.jobSeekerPostId || resolvingReport?.reportType === 'JobSeekerPost'
-            ? 'JobSeekerPost'
-            : fallbackTypeFromContext.includes('employer')
-              ? 'EmployerPost'
-              : fallbackTypeFromContext.includes('jobseeker')
-                ? 'JobSeekerPost'
-                : undefined);
-
-      const payload = {
+      const payload: AdminResolveReportPayload = {
         actionTaken: values.actionTaken,
         reason: values.reason?.trim() || undefined,
-        affectedPostId: affectedPostId ?? null,
-        affectedPostType: (affectedPostType as 'EmployerPost' | 'JobSeekerPost' | undefined) ?? null
       };
 
       await adminReportService.resolveReport(resolvingReportId, payload);
@@ -480,13 +459,13 @@ const AdminReportManagementPage: React.FC = () => {
       case 'Pending':
         return (
           <Tag icon={<ExclamationCircleOutlined />} color="orange">
-            Cho xu ly
+            Cho xử lý
           </Tag>
         );
       case 'Solved':
         return (
           <Tag icon={<CheckCircleOutlined />} color="green">
-            Da xu ly
+            Đã xử lý
           </Tag>
         );
       default:
@@ -533,12 +512,10 @@ const AdminReportManagementPage: React.FC = () => {
 
   const resolveActionLabel = (action: string) => {
     switch (action) {
-      case 'BanUser':
-        return 'Cấm người dùng';
-      case 'UnbanUser':
-        return 'Bỏ cấm người dùng';
-      case 'DeletePost':
-        return 'Xóa bài đăng';
+      case 'BlockPost':
+        return 'Chặn bài đăng';
+      case 'HidePost':
+        return 'Ẩn bài đăng';
       case 'Warn':
         return 'Cảnh báo';
       case 'Ignore':
@@ -561,7 +538,7 @@ const AdminReportManagementPage: React.FC = () => {
       normalizedPostType === 'jobseekerpost' ||
       normalizedType.includes('post') ||
       normalizedPostType.includes('post');
-    return isPostReport ? ['Warn', 'DeletePost', 'Ignore'] : ['BanUser', 'UnbanUser', 'Warn', 'Ignore'];
+    return isPostReport ? ['BlockPost', 'Warn', 'Ignore'] : ['Warn', 'Ignore'];
   };
 
   const resolveActionOptions = useMemo(
@@ -570,7 +547,7 @@ const AdminReportManagementPage: React.FC = () => {
   );
 
   const resolveActionTag = (action: string) => {
-    const color = action === 'DeletePost' || action === 'BanUser' ? 'red' : action === 'Warn' ? 'orange' : 'green';
+    const color = action === 'BlockPost' ? 'red' : action === 'HidePost' ? 'volcano' : action === 'Warn' ? 'orange' : 'green';
     return <Tag color={color}>{resolveActionLabel(action)}</Tag>;
   };
 
@@ -623,10 +600,10 @@ const AdminReportManagementPage: React.FC = () => {
             Xem
           </Button>
           <Button icon={<ToolOutlined />} type="primary" size="small" onClick={() => openResolveModal(record.reportId)}>
-            Xu ly
+            Xử lý
           </Button>
           <Button size="small" shape="round" onClick={() => openReportedPostFromList(record.reportId)}>
-            Bai dang
+            Bài đăng
           </Button>
         </Space>
       )
@@ -639,7 +616,8 @@ const AdminReportManagementPage: React.FC = () => {
       dataIndex: 'reportType',
       key: 'reportType',
       width: 180,
-      render: (value?: string | null) => (value ? reportTypeTag(value) : '---')
+      render: (_: string | undefined, record) =>
+        record.reportType ? reportTypeTag(record.reportType) : '---'
     },
     {
       title: 'Hành động',
@@ -678,7 +656,7 @@ const AdminReportManagementPage: React.FC = () => {
             Xem
           </Button>
           <Button size="small" shape="round" onClick={() => openReportedPostFromList(record.reportId)}>
-            Bai dang
+            Bài đăng
           </Button>
         </Space>
       )
@@ -941,9 +919,9 @@ const AdminReportManagementPage: React.FC = () => {
             onChange={(value) => handleSystemFilterChange('status', value)}
             style={{ width: 220 }}
           >
-            <Option value="all">Tat ca trang thai</Option>
-            <Option value="Pending">Cho xu ly</Option>
-            <Option value="Solved">Da xu ly</Option>
+            <Option value="all">Tất cả trạng thái</Option>
+            <Option value="Pending">Chờ xử lý</Option>
+            <Option value="Solved">Dã xử lý</Option>
           </Select>
         </Space>
       </Card>
