@@ -49,7 +49,7 @@ const profileService = {
   },
 
   async getEmployerProfileByUserId(userId: number): Promise<Profile> {
-    return await baseService.get<Profile>(`/EmployerProfile/public/${userId}`);
+    return await baseService.get<Profile>(`/EmployerProfile/${userId}`);
   },
 
   async updateEmployerProfile(payload: ProfileUpdateRequest): Promise<Profile> {

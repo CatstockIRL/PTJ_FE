@@ -3,14 +3,19 @@ import type { Employer, EmployerFilter, EmployerRanking } from '../types';
 import type { PaginatedJobResponse, JobPostView } from '../../job/jobTypes';
 
 const JOB_LIST_API_URL = '/EmployerPost/all';
-const PUBLIC_PROFILE_API_URL = '/EmployerProfile/public';
+const PUBLIC_PROFILE_API_URL = '/EmployerProfile';
 
 interface EmployerPublicProfileApi {
+  userId?: number;
   displayName?: string;
   avatarUrl?: string;
+  location?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  website?: string;
+  description?: string;
   address?: string;
   email?: string;
-  description?: string;
 }
 
 type EmployerJobPostView = JobPostView & { employerId?: number };
@@ -29,8 +34,8 @@ const enrichWithProfile = async (employer: Employer): Promise<Employer> => {
       ...employer,
       name: profile.displayName || employer.name,
       logo: profile.avatarUrl || employer.logo || '',
-      address: profile.address || employer.address,
-      email: profile.email || employer.email,
+      address: profile.location || profile.address || employer.address,
+      email: profile.contactEmail || profile.email || employer.email,
       description: profile.description || employer.description || '',
     };
   } catch (error) {

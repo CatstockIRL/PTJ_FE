@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useAppSelector } from "../../../app/hooks";
 import followService, { type EmployerFollowDto } from "../followService";
 import defaultLogo from "../../../assets/no-logo.png";
+import { getEmployerPublicProfile } from "../../listEmployer-jobSeeker/services/service";
 
 const FollowedEmployersPage: React.FC = () => {
   const navigate = useNavigate();
@@ -30,7 +31,25 @@ const FollowedEmployersPage: React.FC = () => {
             item.logoUrlSmall ??
             item.logo_path,
         }));
-        setItems(mappedItems);
+        const enrichedItems = await Promise.all(
+          mappedItems.map(async (item) => {
+            if (item.logoUrl || !item.employerId) {
+              return item;
+            }
+            try {
+              const profile = await getEmployerPublicProfile(item.employerId);
+              return {
+                ...item,
+                employerName: profile.displayName || item.employerName,
+                logoUrl: profile.avatarUrl || item.logoUrl || "",
+              };
+            } catch (error) {
+              console.warn("Không thể tải profile nhà tuyển dụng", item.employerId, error);
+              return item;
+            }
+          })
+        );
+        setItems(enrichedItems);
       } catch (err: any) {
         message.error("Không thể tải danh sách theo dõi.");
       } finally {
@@ -107,7 +126,7 @@ const FollowedEmployersPage: React.FC = () => {
                     }
                   />
                   <span className="rounded-full border border-slate-200 px-3 py-1 text-sm text-slate-600">
-                    Nhân sự
+                    Nhà tuyển dụng
                   </span>
                 </List.Item>
               )}

@@ -4,7 +4,7 @@ import type { Job } from "../../types";
 import { formatSalaryText } from "../../utils/jobPostHelpers";
 
 // URL API
-const PROFILE_API_URL = '/EmployerProfile/public';
+const PROFILE_API_URL = '/EmployerProfile';
 const JOB_API_URL = '/EmployerPost/by-user';
 
 export const getEmployerFullDetail = async (userId: number | string) => {
