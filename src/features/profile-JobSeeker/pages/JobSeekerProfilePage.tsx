@@ -78,7 +78,7 @@ const JobSeekerProfilePage: React.FC = () => {
       <div className="container mx-auto mt-8 px-4">
         <Card
           className="rounded-3xl shadow-lg border border-slate-100"
-          bodyStyle={{ padding: 20 }}
+          styles={{ body: { padding: 20 } }}
         >
           <Tabs
             defaultActiveKey="overview"
