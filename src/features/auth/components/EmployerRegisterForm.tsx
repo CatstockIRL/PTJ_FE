@@ -56,13 +56,8 @@ const EmployerRegisterForm: React.FC = () => {
       <div className="flex h-full w-full flex-col items-center justify-center rounded-3xl border border-blue-100 bg-white/90 p-8 text-center shadow-xl">
         <Alert
           type="success"
-<<<<<<< Updated upstream
-          message="Đăng ký nhà tuyển dụng thành công!"
-          description="Kiểm tra email để xác minh tài khoản trước khi đăng nhập quản trị."
-=======
           message="Gửi yêu cầu đăng ký thành công."
           description="Vui lòng chờ quản trị viên phê duyệt. Sau khi được duyệt, email xác thực sẽ được gửi tới bạn."
->>>>>>> Stashed changes
           showIcon
           className="mb-6 text-left"
         />

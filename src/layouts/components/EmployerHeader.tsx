@@ -64,7 +64,7 @@ export const EmployerHeader: React.FC<EmployerHeaderProps> = ({
     dispatch(logout());
     removeAccessToken();
     navigate("/login");
-    message.success("ÄÄƒng xuáº¥t thÃ nh cÃ´ng!");
+    message.success("Đăng xuất thành công!");
   };
 
   const dropdownItems = [
