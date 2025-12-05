@@ -87,7 +87,7 @@ const EmployerRegisterForm: React.FC = () => {
         <Form.Item
           label="Tên công ty"
           name="companyName"
-          rules={[{ required: true, message: 'Vui lòng nhập tên công ty.' }]}
+rules={[{ required: true, message: 'Vui lòng nhập tên công ty.' }]}
         >
           <Input
             size="large"
@@ -179,7 +179,7 @@ const EmployerRegisterForm: React.FC = () => {
           ]}
         >
           <Input
-            size="large"
+size="large"
             placeholder="VD: 0912345678"
             prefix={<PhoneOutlined className="text-slate-400" />}
           />
