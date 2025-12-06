@@ -8,8 +8,10 @@ export interface CreatePaymentLinkResponse {
   success?: boolean;
   message?: string;
   checkoutUrl?: string;
+  orderCode?: string | null;
   qrCodeUrl?: string | null;
   expiredAt?: string | null;
+  transactionId?: number | null;
 }
 
 const createPaymentLink = async (planId: number): Promise<CreatePaymentLinkResponse> => {

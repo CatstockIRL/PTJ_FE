@@ -34,6 +34,7 @@ import SavedJobsPage from "../features/savedJob-jobSeeker/pages/SavedJobsPage";
 import AppliedJobsPage from "../features/applyJob-jobSeeker/pages/AppliedJobsPage";
 import AdminDashboard from "../pages/admin/AdminDashboard";
 import AdminAccountManagementPage from "../pages/admin/AdminAccountManagementPage";
+import AdminPlanManagementPage from "../pages/admin/AdminPlanManagementPage";
 import AdminNewsManagementPage from "../pages/admin/AdminNewsManagementPage";
 import AdminJobPostManagementPage from "../pages/admin/AdminJobPostManagementPage";
 import AdminCategoryManagementPage from "../pages/admin/AdminCategoryManagementPage";
@@ -163,6 +164,7 @@ export const AppRoutes: React.FC = () => {
             path="admin/accounts"
             element={<AdminAccountManagementPage />}
           />
+          <Route path="admin/plans" element={<AdminPlanManagementPage />} />
           <Route path="admin/news" element={<AdminNewsManagementPage />} />
           <Route
             path="admin/job-posts"

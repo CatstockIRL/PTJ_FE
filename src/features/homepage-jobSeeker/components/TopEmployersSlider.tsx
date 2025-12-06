@@ -103,15 +103,15 @@ const TopEmployersSlider: React.FC = () => {
     return (
       <div
         key={employer.id}
-        className="flex h-full flex-col rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-amber-50 p-[1px] shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+        className="flex h-full flex-col rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 via-white to-blue-50 p-[1px] shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
       >
         <div className="flex h-full flex-col rounded-2xl bg-white/90 p-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-amber-50 p-2 ring-1 ring-amber-100">
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-blue-50 p-2 ring-1 ring-blue-100">
               <img src={employer.logo || defaultLogo} alt={employer.name} className="h-full w-full object-contain" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs uppercase text-amber-500">Top {rank}</p>
+              <p className="text-xs uppercase text-blue-600">Top {rank}</p>
               <p className="truncate text-base font-semibold text-slate-900">{employer.name}</p>
               <p className="text-sm text-slate-500">
                 {employer.jobCount} việc đang tuyển
@@ -123,14 +123,14 @@ const TopEmployersSlider: React.FC = () => {
             <Button
               size="small"
               type="default"
-              className="h-9 rounded-xl border-amber-200 bg-white text-amber-700 font-semibold hover:border-amber-300"
+              className="h-9 rounded-xl border-blue-200 bg-white text-blue-700 font-semibold hover:border-blue-300"
               loading={actionLoadingId === employer.id}
               onClick={() => toggleFollow(employer.id)}
             >
               {isFollowing ? "Đang theo dõi" : "+ Theo dõi"}
             </Button>
             <Link to={`/nha-tuyen-dung/chi-tiet/${employer.id}`} className="ml-auto">
-              <Tag color="gold" className="m-0 rounded-full px-3 py-1">
+              <Tag color="blue" className="m-0 rounded-full px-3 py-1">
                 Xem chi tiết
               </Tag>
             </Link>
@@ -147,9 +147,9 @@ const TopEmployersSlider: React.FC = () => {
         style={{ width: "min(1400px, calc(100vw - 64px))" }}
       >
         <div
-          className="relative min-h-[140px] bg-gradient-to-r from-amber-600 via-amber-500 to-amber-700 text-white"
+          className="relative min-h-[140px] bg-gradient-to-r from-blue-700 via-blue-600 to-blue-800 text-white"
           style={{
-            backgroundImage: `linear-gradient(120deg, rgba(245,158,11,0.95), rgba(217,119,6,0.9)), url('${bannerImageUrl}')`,
+            backgroundImage: `linear-gradient(120deg, rgba(59,130,246,0.95), rgba(37,99,235,0.9)), url('${bannerImageUrl}')`,
             backgroundSize: "cover",
             backgroundPosition: "center",
           }}
@@ -158,7 +158,7 @@ const TopEmployersSlider: React.FC = () => {
           <div className="relative flex flex-col gap-3 px-6 py-6 sm:px-10 sm:py-8 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-lg font-semibold drop-shadow-sm">Nhà tuyển dụng tiêu biểu</p>
-              <p className="text-sm text-amber-100 drop-shadow-sm">
+              <p className="text-sm text-blue-50 drop-shadow-sm">
                 Hàng trăm nhà tuyển dụng uy tín đang tuyển dụng • Cập nhật liên tục
               </p>
             </div>
@@ -199,11 +199,11 @@ const TopEmployersSlider: React.FC = () => {
             >
               {highlight && (
                 <div
-                  className="row-span-3 rounded-2xl bg-gradient-to-br from-amber-500 via-amber-600 to-slate-900 p-6 text-white shadow-xl md:p-7 lg:row-span-3 lg:row-start-1"
+                  className="row-span-3 rounded-2xl bg-gradient-to-br from-blue-500 via-blue-700 to-slate-900 p-6 text-white shadow-xl md:p-7 lg:row-span-3 lg:row-start-1"
                   style={{ gridRowStart: 1, gridRowEnd: 4 }}
                 >
                   <div className="flex h-full flex-col items-center text-center">
-              <Tag color="gold" className="mb-3 rounded-full px-4 py-1.5 text-sm font-semibold">
+              <Tag color="blue" className="mb-3 rounded-full px-4 py-1.5 text-sm font-semibold">
                 Top 1
               </Tag>
 
@@ -216,17 +216,17 @@ const TopEmployersSlider: React.FC = () => {
                     </div>
 
                     <h3 className="text-xl font-bold leading-tight md:text-2xl">{highlight.name}</h3>
-                    <p className="text-amber-100">{highlight.locations[0] || "Ngành/địa điểm đang cập nhật"}</p>
+                    <p className="text-blue-50">{highlight.locations[0] || "Ngành/địa điểm đang cập nhật"}</p>
 
                     <div className="mt-4 flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-semibold">
-                      <span className="rounded-full bg-white/20 px-2 py-1 text-xs text-amber-100">Việc làm</span>
+                      <span className="rounded-full bg-white/20 px-2 py-1 text-xs text-blue-50">Việc làm</span>
                       <span className="text-white">{highlight.jobCount} việc đang tuyển</span>
                     </div>
 
                     <div className="mt-auto flex w-full flex-col gap-3 pt-6">
                       <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
                         <Button
-                          className="h-11 rounded-xl bg-white text-amber-700 shadow-sm hover:brightness-105 sm:w-40"
+                          className="h-11 rounded-xl bg-white text-blue-700 shadow-sm hover:brightness-105 sm:w-40"
                           loading={actionLoadingId === highlight.id}
                           onClick={() => toggleFollow(highlight.id)}
                         >
@@ -234,7 +234,7 @@ const TopEmployersSlider: React.FC = () => {
                         </Button>
                         <Link
                           to={`/nha-tuyen-dung/chi-tiet/${highlight.id}`}
-                          className="inline-flex h-11 items-center justify-center rounded-xl bg-amber-100 px-4 font-semibold text-amber-800 shadow-sm transition hover:brightness-105 sm:w-40"
+                          className="inline-flex h-11 items-center justify-center rounded-xl bg-blue-100 px-4 font-semibold text-blue-800 shadow-sm transition hover:brightness-105 sm:w-40"
                         >
                           Xem chi tiết
                         </Link>

@@ -26,6 +26,8 @@ import {
 import adminUserService from '../../features/admin/services/adminUser.service';
 import adminEmployerRegistrationService from '../../features/admin/services/adminEmployerRegistration.service';
 import type { AdminUser, AdminUserDetail } from '../../features/admin/types/user';
+import adminPlanService from '../../features/admin/services/adminPlan.service';
+import type { AdminSubscriptionHistory, AdminTransactionHistory } from '../../features/admin/types/adminPlan';
 import type {
   AdminEmployerRegListItem,
   AdminEmployerRegStatus,
@@ -81,6 +83,8 @@ type RegFilterState = {
   keyword: string;
 };
 
+const formatDate = (value?: string | null) => (value ? new Date(value).toLocaleString('vi-VN') : '—');
+
 const roleOptions = [
   { label: 'Tất cả vai trò', value: 'all' },
   { label: 'Admin', value: 'Admin' },
@@ -124,6 +128,9 @@ const AdminAccountManagementPage: React.FC = () => {
   const [googleRegs, setGoogleRegs] = useState<GoogleEmployerRegList[]>([]);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleActionLoadingId, setGoogleActionLoadingId] = useState<number | null>(null);
+  const [subHistory, setSubHistory] = useState<AdminSubscriptionHistory[]>([]);
+  const [transactionHistory, setTransactionHistory] = useState<AdminTransactionHistory[]>([]);
+  const [planLoading, setPlanLoading] = useState(false);
 
   const normalizedFilters = useMemo(() => {
     const statusMap: Record<FilterState['status'], boolean | undefined> = {
@@ -155,6 +162,71 @@ const AdminAccountManagementPage: React.FC = () => {
       pageSize: regPagination.pageSize
     };
   }, [regFilters, regPagination]);
+
+  const subscriptionColumns: ColumnsType<AdminSubscriptionHistory> = useMemo(
+    () => [
+      {
+        title: 'Goi',
+        dataIndex: 'planName',
+        key: 'planName',
+        render: (_: string, record) => record.planName || `#${record.planId ?? ''}`
+      },
+      {
+        title: 'Gia',
+        dataIndex: 'price',
+        key: 'price',
+        render: (value?: number) => (typeof value === 'number' ? `${value.toLocaleString('vi-VN')} VND` : '-')
+      },
+      {
+        title: 'Bai con',
+        dataIndex: 'remainingPosts',
+        key: 'remainingPosts',
+        render: (value?: number) => (typeof value === 'number' ? value : '-')
+      },
+      {
+        title: 'Trang thai',
+        dataIndex: 'status',
+        key: 'status',
+        render: (status?: string) => {
+          const color = status === 'Active' ? 'green' : status === 'Expired' ? 'red' : 'default';
+          return <Tag color={color}>{status || '-'}</Tag>;
+        }
+      },
+      { title: 'Bat dau', dataIndex: 'startDate', key: 'startDate', render: (value?: string) => formatDate(value) },
+      { title: 'Ket thuc', dataIndex: 'endDate', key: 'endDate', render: (value?: string) => formatDate(value) },
+    ],
+    []
+  );
+
+  const transactionColumns: ColumnsType<AdminTransactionHistory> = useMemo(
+    () => [
+      {
+        title: 'Giao dich',
+        dataIndex: 'transactionId',
+        key: 'transactionId',
+        render: (value: number, record) => `#${value} | ${record.planName || `Plan ${record.planId ?? ''}`}`
+      },
+      {
+        title: 'So tien',
+        dataIndex: 'amount',
+        key: 'amount',
+        render: (value?: number) => (typeof value === 'number' ? `${value.toLocaleString('vi-VN')} VND` : '-')
+      },
+      {
+        title: 'Trang thai',
+        dataIndex: 'status',
+        key: 'status',
+        render: (status?: string) => {
+          const color = status === 'Paid' ? 'green' : status === 'Pending' ? 'orange' : 'default';
+          return <Tag color={color}>{status || '-'}</Tag>;
+        }
+      },
+      { title: 'Ma order', dataIndex: 'payOsorderCode', key: 'payOsorderCode', render: (v?: string) => v || '-' },
+      { title: 'Tao luc', dataIndex: 'createdAt', key: 'createdAt', render: (v?: string) => formatDate(v) },
+      { title: 'Thanh toan', dataIndex: 'paidAt', key: 'paidAt', render: (v?: string) => formatDate(v) },
+    ],
+    []
+  );
 
   const fetchUsers = useCallback(
     async (page: number, pageSize: number) => {
@@ -280,12 +352,38 @@ const AdminAccountManagementPage: React.FC = () => {
     }
   }, [activeTab, fetchGoogleRegistrations, googleRegs.length]);
 
+  const fetchPlanAndTransactions = useCallback(
+    async (userId: number) => {
+      setPlanLoading(true);
+      try {
+        const [subs, trans] = await Promise.all([
+          adminPlanService.getSubscriptionsByUser(userId),
+          adminPlanService.getTransactionsByUser(userId)
+        ]);
+        setSubHistory(subs);
+        setTransactionHistory(trans);
+      } catch (error) {
+        console.error('Failed to load plan/transactions', error);
+        message.error('Khong the tai lich su goi/thanh toan.');
+      } finally {
+        setPlanLoading(false);
+      }
+    },
+    []
+  );
+
   const openDetail = async (userId: number) => {
     setDetailOpen(true);
     setDetailLoading(true);
     try {
       const detail = await adminUserService.getUserDetail(userId);
       setSelectedUser(detail);
+      if (detail.role === 'Employer') {
+        await fetchPlanAndTransactions(userId);
+      } else {
+        setSubHistory([]);
+        setTransactionHistory([]);
+      }
     } catch (error) {
       console.error('Failed to fetch user detail', error);
       message.error('Không thể tải chi tiết tài khoản');
@@ -970,6 +1068,44 @@ const AdminAccountManagementPage: React.FC = () => {
                 }
               />
             </DetailSection>
+
+            {selectedUser.role === 'Employer' && (
+              <section className="space-y-3">
+                <Typography.Title level={5} className="!mb-1">
+                  Goi dang ky & thanh toan
+                </Typography.Title>
+
+                <Card size="small" className="border border-slate-200 shadow-sm">
+                  <Typography.Title level={5} className="!mb-3">
+                    Lich su goi (subscription)
+                  </Typography.Title>
+                  <Table
+                    size="small"
+                    rowKey={(record) => record.subscriptionId}
+                    dataSource={subHistory}
+                    columns={subscriptionColumns}
+                    pagination={false}
+                    loading={planLoading}
+                    locale={{ emptyText: 'Chua co goi' }}
+                  />
+                </Card>
+
+                <Card size="small" className="border border-slate-200 shadow-sm">
+                  <Typography.Title level={5} className="!mb-3">
+                    Lich su thanh toan
+                  </Typography.Title>
+                  <Table
+                    size="small"
+                    rowKey={(record) => record.transactionId}
+                    dataSource={transactionHistory}
+                    columns={transactionColumns}
+                    pagination={false}
+                    loading={planLoading}
+                    locale={{ emptyText: 'Chua co giao dich' }}
+                  />
+                </Card>
+              </section>
+            )}
           </Space>
         ) : (
           <p>Không có dữ liệu.</p>

@@ -1,16 +1,23 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRightOutlined,
   CheckCircleFilled,
   CrownOutlined,
   ThunderboltOutlined,
   SafetyCertificateOutlined,
+  QrcodeOutlined,
+  ClockCircleOutlined,
 } from "@ant-design/icons";
 import { Avatar, Button, Card, Modal, Tag, message } from "antd";
+import { QRCodeCanvas } from "qrcode.react";
+import { useLocation } from "react-router-dom";
+import * as signalR from "@microsoft/signalr";
+
 import { useAuth } from "../../features/auth/hooks";
-import employerPaymentService from "../../features/payment/employerPaymentService";
 import { useAppSelector } from "../../app/hooks";
 import type { User } from "../../features/auth/types";
+import employerPaymentService from "../../features/payment/employerPaymentService";
+import baseService, { API_BASE_URL } from "../../services/baseService";
 
 type PlanOption = {
   planId: number;
@@ -22,12 +29,35 @@ type PlanOption = {
   features: string[];
 };
 
+type PaymentData = {
+  planId: number;
+  checkoutUrl: string;
+  orderCode: string | null;
+  qrCodeUrl: string;
+  expiredAt: string;
+};
+
+type PlanStatus = {
+  label?: string;
+  remainingPosts?: number | null;
+  isPremium: boolean;
+};
+
 const EmployerUpgradePage: React.FC = () => {
   const { user } = useAuth();
   const employerProfile = useAppSelector((state) => state.profile.profile);
+  const location = useLocation();
+  const ORDER_CODE_KEY = "payosOrderCode";
+
   const [selectedPlan, setSelectedPlan] = useState<PlanOption | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [loadingPlanId, setLoadingPlanId] = useState<number | null>(null);
+  const [paymentData, setPaymentData] = useState<PaymentData | null>(null);
+  const [countdownMs, setCountdownMs] = useState<number | null>(null);
+  const [planStatus, setPlanStatus] = useState<PlanStatus>({ isPremium: false, remainingPosts: null });
+  const planRef = useRef<number | null>(null);
+  const expiredNotifiedRef = useRef(false);
+  const hubRef = useRef<signalR.HubConnection | null>(null);
 
   type UserWithOptionalFields = User & { avatarUrl?: string | null; fullName?: string | null };
   const typedUser: UserWithOptionalFields | undefined = user
@@ -53,11 +83,8 @@ const EmployerUpgradePage: React.FC = () => {
         planId: 2,
         name: "Medium",
         price: 30000,
-        description: "Đủ tính năng cần thiết, đăng 6 bài trong kỳ và nhận CV đều đặn.",
-        features: [
-          "Đăng tối đa 6 bài / kỳ",
-          "Tự động nổi bật bài đăng trong 3 ngày đầu",
-        ],
+        description: "Đủ tính năng cần thiết, đăng tối đa 6 bài/khóa và nhận CV đều đặn.",
+        features: ["Đăng tối đa 6 bài / khóa", "Tăng nổi bật bài đăng trong 3 ngày đầu"],
       },
       {
         planId: 3,
@@ -65,12 +92,8 @@ const EmployerUpgradePage: React.FC = () => {
         price: 90000,
         badge: "Đề xuất",
         highlight: true,
-        description: "Tăng tốc tuyển dụng: 15 bài/kỳ, ưu tiên hiển thị và hỗ trợ chuyên sâu.",
-        features: [
-          "Đăng tối đa 15 bài / kỳ",
-          "Đề xuất bài viết ưu tiên lên đầu danh sách",
-          "Đẩy top trang chủ 7 ngày",
-        ],
+        description: "Tăng tốc tuyển dụng: 15 bài/khóa, ưu tiên hiển thị và hỗ trợ chuyên sâu.",
+        features: ["Đăng tối đa 15 bài / khóa", "Ưu tiên xuất bài viết lên danh sách", "Đẩy top trang chủ 7 ngày"],
       },
     ],
     []
@@ -79,6 +102,133 @@ const EmployerUpgradePage: React.FC = () => {
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(value);
 
+  const formatCountdown = (ms: number | null) => {
+    if (ms === null) return "--:--";
+    const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+    const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
+    const seconds = String(totalSeconds % 60).padStart(2, "0");
+    return `${minutes}:${seconds}`;
+  };
+
+  const fetchPlanStatus = useCallback(async () => {
+    const userId = user?.id;
+    if (!userId) return;
+    try {
+      const res = await baseService.get(`/EmployerPost/remaining-posts/${userId}`);
+      const data = (res as any)?.data ?? res;
+
+      const remaining =
+        typeof data === "number"
+          ? data
+          : data?.remainingPosts ?? data?.remaining ?? data?.remainingPost ?? null;
+      const planRaw =
+        (typeof data === "object" && data
+          ? data.planName ||
+            data.plan ||
+            data.planLevel ||
+            data.tier ||
+            data.name ||
+            (typeof data.planId === "number" ? `Plan #${data.planId}` : undefined)
+          : undefined) || undefined;
+      const planLabel = typeof planRaw === "string" ? planRaw.trim() : planRaw;
+      const planIdRaw = typeof data === "object" && data ? data.planId ?? data.planID ?? undefined : undefined;
+      const planId = typeof planIdRaw === "string" ? Number(planIdRaw) : planIdRaw;
+      const planLower = typeof planLabel === "string" ? planLabel.toLowerCase() : "";
+      const isPremium =
+        planId === 3 ||
+        (planLower && (planLower.includes("premium") || planLower === "pre" || planLower.startsWith("pre")));
+
+      setPlanStatus({
+        label: planLabel,
+        remainingPosts: typeof remaining === "number" ? remaining : null,
+        isPremium: Boolean(isPremium),
+      });
+    } catch (error) {
+      console.error("remaining-posts error", error);
+      setPlanStatus({ isPremium: false, remainingPosts: null });
+    }
+  }, [user?.userId]);
+
+  useEffect(() => {
+    void fetchPlanStatus();
+  }, [fetchPlanStatus]);
+
+  const fetchPaymentLink = useCallback(
+    async (planId: number, reason: "manual" | "auto" | "expire" = "manual") => {
+      planRef.current = planId;
+      if (reason === "manual") {
+        setLoadingPlanId(planId);
+      }
+
+      try {
+        const res = await employerPaymentService.createPaymentLink(planId);
+        if (!res.checkoutUrl || !res.qrCodeUrl || !res.expiredAt) {
+          throw new Error(res.message || "Không nhận đủ dữ liệu thanh toán.");
+        }
+
+        setPaymentData({
+          planId,
+          checkoutUrl: res.checkoutUrl,
+          orderCode: res.orderCode ?? null,
+          qrCodeUrl: res.qrCodeUrl,
+          expiredAt: res.expiredAt,
+        });
+        if (res.orderCode) {
+          sessionStorage.setItem(ORDER_CODE_KEY, res.orderCode);
+        }
+
+        if (reason === "manual") {
+          message.success("Đã tạo/lấy QR thanh toán. Quét mã hoặc bấm Thanh toán.");
+        } else if (reason === "expire") {
+          message.warning("QR đã hết hạn, đang lấy mã mới.");
+        }
+      } catch (error) {
+        let errorMsg = "Không thể tạo liên kết thanh toán. Vui lòng thử lại.";
+        if (error && typeof error === "object" && "response" in error) {
+          const maybeResponse = (error as { response?: { data?: { message?: string } } }).response;
+          if (maybeResponse?.data?.message) {
+            errorMsg = maybeResponse.data.message;
+          }
+        } else if (error instanceof Error && error.message) {
+          errorMsg = error.message;
+        }
+        message.error(errorMsg);
+      } finally {
+        setLoadingPlanId(null);
+      }
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (!paymentData?.expiredAt) {
+      setCountdownMs(null);
+      return;
+    }
+
+    const expiredTime = new Date(paymentData.expiredAt).getTime();
+    if (Number.isNaN(expiredTime)) {
+      setCountdownMs(null);
+      return;
+    }
+
+    const tick = () => setCountdownMs(expiredTime - Date.now());
+    tick();
+    const timer = window.setInterval(tick, 1000);
+    return () => window.clearInterval(timer);
+  }, [paymentData?.expiredAt]);
+
+  useEffect(() => {
+    if (countdownMs !== null && countdownMs <= 0) {
+      if (!expiredNotifiedRef.current) {
+        expiredNotifiedRef.current = true;
+        message.warning("QR đã hết hạn. Vui lòng tạo QR mới để tiếp tục.");
+      }
+    } else {
+      expiredNotifiedRef.current = false;
+    }
+  }, [countdownMs]);
+
   const handleChoosePlan = (plan: PlanOption) => {
     setSelectedPlan(plan);
     setConfirmOpen(true);
@@ -86,36 +236,170 @@ const EmployerUpgradePage: React.FC = () => {
 
   const handleConfirmPayment = async () => {
     if (!selectedPlan) return;
-    setLoadingPlanId(selectedPlan.planId);
-
-    try {
-      const res = await employerPaymentService.createPaymentLink(selectedPlan.planId);
-      const checkoutUrl = res.checkoutUrl;
-
-      if (!checkoutUrl) {
-        throw new Error(res.message || "Không nhận được đường dẫn thanh toán.");
-      }
-
-      message.success("Đang chuyển tới trang thanh toán PayOS...");
-      window.location.href = checkoutUrl;
-    } catch (error) {
-      let errorMsg = "Không thể tạo liên kết thanh toán. Vui lòng thử lại.";
-
-      if (error && typeof error === "object" && "response" in error) {
-        const maybeResponse = (error as { response?: { data?: { message?: string } } }).response;
-        if (maybeResponse?.data?.message) {
-          errorMsg = maybeResponse.data.message;
-        }
-      } else if (error instanceof Error && error.message) {
-        errorMsg = error.message;
-      }
-
-      message.error(errorMsg);
-    } finally {
-      setLoadingPlanId(null);
-      setConfirmOpen(false);
-    }
+    await fetchPaymentLink(selectedPlan.planId, "manual");
+    setConfirmOpen(false);
   };
+
+  const handleCancelPayment = () => {
+    const orderCode = paymentData?.orderCode;
+    const clearState = () => {
+      setPaymentData(null);
+      setCountdownMs(null);
+      planRef.current = null;
+      sessionStorage.removeItem(ORDER_CODE_KEY);
+    };
+
+    const doCancel = async () => {
+      if (orderCode) {
+        try {
+          await baseService.get(`/payment/cancel?orderCode=${orderCode}`);
+        } catch {
+          // ignore
+        }
+      }
+      clearState();
+      message.info("Đã hủy giao dịch. Vui lòng thực hiện lại nếu bạn muốn thanh toán.");
+    };
+
+    void doCancel();
+  };
+
+  // Xử lý khi quay lại từ PayOS (success / cancel)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const status = params.get("status")?.toUpperCase();
+    const paymentFlag = params.get("payment")?.toLowerCase();
+    const orderCode = params.get("orderCode");
+
+    const clearState = () => {
+      setPaymentData(null);
+      setCountdownMs(null);
+      planRef.current = null;
+    };
+
+    const checkSuccess = async () => {
+      if (!orderCode) {
+        clearState();
+        message.success("Bạn đã nâng cấp gói thành công. Cảm ơn đã sử dụng dịch vụ!");
+        void fetchPlanStatus();
+        return;
+      }
+      try {
+        const res = await baseService.get<{ success?: boolean; message?: string; status?: string }>(
+          `/payment/success?orderCode=${orderCode}`
+        );
+        if (res?.success) {
+          message.success("Bạn đã nâng cấp gói thành công. Cảm ơn đã sử dụng dịch vụ!");
+          void fetchPlanStatus();
+        } else {
+          message.warning(res?.message || "Thanh toán chưa được PayOS xác nhận.");
+        }
+      } catch {
+        message.warning("Không kiểm tra được trạng thái thanh toán, vui lòng thử lại.");
+      } finally {
+        clearState();
+      }
+    };
+
+    const checkCancel = async () => {
+      if (orderCode) {
+        try {
+          await baseService.get(`/payment/cancel?orderCode=${orderCode}`);
+        } catch {
+          /* ignore */
+        }
+      }
+      clearState();
+      message.info("Bạn đã hủy thanh toán.");
+    };
+
+    if (status === "CANCELLED" || paymentFlag === "cancel") {
+      void checkCancel();
+    } else if (orderCode) {
+      // Có orderCode thì ưu tiên kiểm tra success
+      void checkSuccess();
+    } else if (status === "PAID" || paymentFlag === "success") {
+      void checkSuccess();
+    }
+  }, [location.search, fetchPlanStatus]);
+
+  // Kiểm tra orderCode còn lưu trong session (F5)
+  useEffect(() => {
+    if (paymentData) return;
+    const storedOrderCode = sessionStorage.getItem(ORDER_CODE_KEY);
+    if (!storedOrderCode) return;
+
+    const checkStored = async () => {
+      try {
+        const res = await baseService.get<{ success?: boolean; message?: string; status?: string }>(
+          `/payment/success?orderCode=${storedOrderCode}`
+        );
+        if (res?.success) {
+          message.success("Bạn đã nâng cấp gói thành công. Cảm ơn đã sử dụng dịch vụ!");
+          void fetchPlanStatus();
+        } else {
+          message.info(res?.message || "Giao dịch chưa được xử lý. Vui lòng kiểm tra lịch sử thanh toán.");
+        }
+      } catch {
+        message.warning("Không kiểm tra được trạng thái giao dịch. Vui lòng kiểm tra lịch sử thanh toán.");
+      } finally {
+        sessionStorage.removeItem(ORDER_CODE_KEY);
+        setPaymentData(null);
+        setCountdownMs(null);
+        planRef.current = null;
+      }
+    };
+
+    void checkStored();
+  }, [paymentData, fetchPlanStatus]);
+
+  // SignalR realtime khi PayOS webhook trả về
+  useEffect(() => {
+    const token = sessionStorage.getItem("accessToken") || "";
+    const connection = new signalR.HubConnectionBuilder()
+      .withUrl(`${API_BASE_URL.replace("/api", "")}/hubs/payment`, {
+        accessTokenFactory: () => token,
+      })
+      .withAutomaticReconnect()
+      .build();
+
+    hubRef.current = connection;
+
+    connection.on("PaymentStatusChanged", (payload: { orderCode?: string; status?: string }) => {
+      const storedOrderCode = sessionStorage.getItem(ORDER_CODE_KEY);
+      if (payload?.status === "Paid" && (!storedOrderCode || payload.orderCode === storedOrderCode)) {
+        sessionStorage.removeItem(ORDER_CODE_KEY);
+        setPaymentData(null);
+        setCountdownMs(null);
+        planRef.current = null;
+        message.success("Bạn đã nâng cấp gói thành công. Cảm ơn đã sử dụng dịch vụ!");
+        void fetchPlanStatus();
+      }
+      if (payload?.status === "Cancelled" && (!storedOrderCode || payload.orderCode === storedOrderCode)) {
+        sessionStorage.removeItem(ORDER_CODE_KEY);
+        setPaymentData(null);
+        setCountdownMs(null);
+        planRef.current = null;
+        message.info("Giao dịch đã bị hủy.");
+      }
+    });
+
+    connection.start().catch(() => {
+      // ignore start errors; vẫn còn fallback qua returnUrl
+    });
+
+    return () => {
+      if (hubRef.current) {
+        hubRef.current.stop().catch(() => {});
+        hubRef.current = null;
+      }
+    };
+  }, [fetchPlanStatus]);
+
+  const isExpired = countdownMs !== null && countdownMs <= 0;
+  const currentPlanLabel = planStatus.label;
+  const isPremium = planStatus.isPremium;
+  const badgeText = isPremium ? (currentPlanLabel?.toUpperCase() || "PREMIUM") : null;
 
   return (
     <div className="space-y-8 relative overflow-hidden">
@@ -129,9 +413,7 @@ const EmployerUpgradePage: React.FC = () => {
             <Tag color="gold" className="bg-white/20 border-0 text-xs font-semibold px-3 py-1 rounded-full w-fit shadow">
               Thanh toán an toàn qua PayOS
             </Tag>
-            <h1 className="text-3xl font-bold leading-tight">
-              Nâng cấp tài khoản nhà tuyển dụng
-            </h1>
+            <h1 className="text-3xl font-bold leading-tight">Nâng cấp tài khoản nhà tuyển dụng</h1>
             <p className="text-sm text-white/80">
               Chọn gói phù hợp, xác nhận thanh toán, chúng tôi sẽ đưa bạn tới trang PayOS để hoàn tất giao dịch.
             </p>
@@ -144,24 +426,44 @@ const EmployerUpgradePage: React.FC = () => {
               </span>
             </div>
           </div>
-          <div className="relative bg-white/20 rounded-xl p-4 min-w-[260px] space-y-2 backdrop-blur border border-amber-200/70 shadow-inner">
-            <Tag color="gold" className="absolute top-2 right-2 font-semibold">
-              PRE
-            </Tag>
+          <div
+            className={`relative rounded-xl p-4 min-w-[260px] space-y-2 backdrop-blur shadow-inner ${
+              isPremium ? "bg-white/20 border border-amber-200/70" : "bg-white/10 border border-white/20"
+            }`}
+          >
+            {badgeText && (
+              <Tag color="gold" className="absolute top-2 right-2 font-semibold">
+                {badgeText}
+              </Tag>
+            )}
             <p className="text-xs uppercase tracking-wide text-white/80">Tài khoản</p>
             <div className="flex items-center gap-3">
               <Avatar
                 size={46}
                 src={avatarSrc}
-                className="ring-2 ring-amber-200 bg-amber-100 text-amber-700"
+                className={`ring-2 ${isPremium ? "ring-amber-200 bg-amber-100 text-amber-700" : "ring-white/40 bg-white/20 text-white"}`}
               >
                 {!avatarSrc && displayName ? displayName.charAt(0).toUpperCase() : null}
               </Avatar>
               <div>
-                <p className="text-lg font-extrabold bg-gradient-to-r from-amber-200 via-white to-pink-200 bg-clip-text text-transparent drop-shadow-sm">
+                <p
+                  className={`text-lg font-extrabold ${
+                    isPremium
+                      ? "bg-gradient-to-r from-amber-200 via-white to-pink-200 bg-clip-text text-transparent drop-shadow-sm"
+                      : "text-white"
+                  }`}
+                >
                   {displayName}
                 </p>
-                <p className="text-xs text-white/70">Dùng tài khoản này để kích hoạt gói.</p>
+                <p className="text-xs text-white/70">
+                  {currentPlanLabel
+                    ? `Đang dùng gói ${currentPlanLabel}${
+                        typeof planStatus.remainingPosts === "number"
+                          ? ` • Còn ${planStatus.remainingPosts} bài`
+                          : ""
+                      }.`
+                    : "Chưa có gói nâng cấp, hãy chọn gói để kích hoạt."}
+                </p>
               </div>
             </div>
           </div>
@@ -214,9 +516,7 @@ const EmployerUpgradePage: React.FC = () => {
             <p className="text-sm text-gray-600 mb-4">{plan.description}</p>
 
             <div className="flex items-baseline gap-2 mb-4">
-              <span className="text-3xl font-bold text-gray-900">
-                {formatCurrency(plan.price)}
-              </span>
+              <span className="text-3xl font-bold text-gray-900">{formatCurrency(plan.price)}</span>
               <span className="text-sm text-gray-500">/ gói</span>
             </div>
 
@@ -238,9 +538,7 @@ const EmployerUpgradePage: React.FC = () => {
               type={plan.highlight ? "primary" : "default"}
               size="large"
               className={`w-full ${
-                plan.highlight
-                  ? "bg-gradient-to-r from-amber-500 to-indigo-500 border-none shadow-lg hover:opacity-90"
-                  : ""
+                plan.highlight ? "bg-gradient-to-r from-amber-500 to-indigo-500 border-none shadow-lg hover:opacity-90" : ""
               } rounded-full`}
               icon={<ArrowRightOutlined />}
               onClick={() => handleChoosePlan(plan)}
@@ -252,24 +550,97 @@ const EmployerUpgradePage: React.FC = () => {
         ))}
       </div>
 
+      {paymentData && !isExpired && (
+        <Card className="border-blue-100 shadow-lg">
+          <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
+            <div>
+              <p className="text-xs text-gray-500">Thanh toán PayOS</p>
+              <p className="text-base font-semibold text-gray-900">QR thanh toán (quét hoặc bấm Thanh toán)</p>
+            </div>
+            <Tag color={!isExpired ? "green" : "red"} className="text-sm">
+              {!isExpired ? `Còn ${formatCountdown(countdownMs)}` : "QR hết hạn"}
+            </Tag>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="flex flex-col items-center justify-center gap-3 bg-gray-50 border border-gray-100 rounded-xl p-4">
+              <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                <QRCodeCanvas value={paymentData.qrCodeUrl} size={220} />
+              </div>
+              <p className="text-sm text-gray-600 text-center">
+                Quét QR bằng app ngân hàng hoặc bấm "Thanh toán" để mở PayOS.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-gray-500">Gói đã chọn</p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {plans.find((p) => p.planId === paymentData.planId)?.name || "Gói thanh toán"}
+                  </p>
+                  <p className="text-sm text-gray-700">
+                    {formatCurrency(plans.find((p) => p.planId === paymentData.planId)?.price || 0)}
+                  </p>
+                </div>
+                <Tag color="blue">{new Date(paymentData.expiredAt).toLocaleTimeString()}</Tag>
+              </div>
+
+              <div className="bg-gray-50 border border-gray-100 rounded-lg p-3">
+                <p className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                  <ClockCircleOutlined />
+                  {!isExpired
+                    ? `QR hết hạn sau ${formatCountdown(countdownMs)}`
+                    : "QR đã hết hạn, lấy QR mới để tiếp tục"}
+                </p>
+                <p className="text-xs text-gray-600 mt-1">Hết hạn vui lòng tạo QR mới để thanh toán.</p>
+              </div>
+
+              <Button
+                type="primary"
+                icon={<ArrowRightOutlined />}
+                onClick={() => window.location.assign(paymentData.checkoutUrl)}
+                disabled={isExpired}
+                className="w-full rounded-full"
+              >
+                Thanh toán
+              </Button>
+
+              <Button danger icon={<QrcodeOutlined />} onClick={handleCancelPayment} className="mt-2">
+                Hủy giao dịch
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {paymentData && isExpired && (
+        <Card className="border-red-100 shadow-lg bg-red-50">
+          <div className="flex items-center gap-2 mb-2">
+            <ClockCircleOutlined className="text-red-500" />
+            <h2 className="text-lg font-semibold text-red-600 mb-0">QR đã hết hạn</h2>
+          </div>
+          <p className="text-sm text-gray-700 mb-4">
+            QR thanh toán đã hết hạn. Vui lòng thực hiện lại giao dịch để tạo mã mới.
+          </p>
+          <Button danger onClick={handleCancelPayment}>Đóng và hủy giao dịch</Button>
+        </Card>
+      )}
+
       <Card className="border-gray-100">
         <div className="grid md:grid-cols-3 gap-4">
           <div className="space-y-2">
             <p className="text-sm font-semibold text-gray-800">B1: Chọn gói</p>
-            <p className="text-sm text-gray-600">
-              Chọn Medium hoặc Premium tùy nhu cầu đăng tin và nhận CV.
-            </p>
+            <p className="text-sm text-gray-600">Chọn Medium hoặc Premium tùy nhu cầu đăng tin và nhận CV.</p>
           </div>
           <div className="space-y-2">
             <p className="text-sm font-semibold text-gray-800">B2: Xác nhận</p>
-            <p className="text-sm text-gray-600">
-              Hệ thống hỏi lại một lần trước khi tạo liên kết PayOS.
-            </p>
+            <p className="text-sm text-gray-600">Hệ thống hỏi lại một lần trước khi tạo liên kết PayOS.</p>
           </div>
           <div className="space-y-2">
             <p className="text-sm font-semibold text-gray-800">B3: Thanh toán</p>
             <p className="text-sm text-gray-600">
-              Chuyển sang PayOS để thanh toán, gói sẽ kích hoạt ngay khi thanh toán thành công.
+              Chuyển sang PayOS để thanh toán, gói sẽ kích hoạt ngay sau khi thanh toán thành công.
             </p>
           </div>
         </div>
@@ -279,7 +650,7 @@ const EmployerUpgradePage: React.FC = () => {
         title="Xác nhận thanh toán"
         open={confirmOpen}
         onCancel={() => setConfirmOpen(false)}
-        okText="Thanh toán PayOS"
+        okText="Tạo/Lấy QR PayOS"
         cancelText="Hủy"
         confirmLoading={loadingPlanId === selectedPlan?.planId}
         onOk={handleConfirmPayment}
@@ -291,7 +662,7 @@ const EmployerUpgradePage: React.FC = () => {
               <span className="font-semibold">{formatCurrency(selectedPlan.price)}</span>.
             </p>
             <p className="text-sm text-gray-600">
-              Tiếp tục sẽ mở trang thanh toán PayOS. Vui lòng hoàn tất giao dịch để kích hoạt gói.
+              Tiếp tục sẽ tạo/lấy QR PayOS. Không tự động mở PayOS cho đến khi bạn bấm "Thanh toán".
             </p>
           </div>
         ) : (

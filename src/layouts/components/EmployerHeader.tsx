@@ -1,7 +1,7 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../features/auth/hooks";
-import { Button, Dropdown, Avatar, message } from "antd";
+import { Button, Dropdown, Avatar, message, Tag } from "antd";
 import {
   UserOutlined,
   DownOutlined,
@@ -12,6 +12,7 @@ import {
 import { ROLES } from "../../constants/roles";
 import { logout } from "../../features/auth/slice";
 import { removeAccessToken } from "../../services/baseService";
+import baseService from "../../services/baseService";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { fetchEmployerProfile, clearProfile as clearEmployerProfile } from "../../features/employer/slice/profileSlice";
 import SystemReportModal from "../../features/report/components/SystemReportModal";
@@ -37,6 +38,10 @@ export const EmployerHeader: React.FC<EmployerHeaderProps> = ({
   const shouldLoadEmployerProfile =
     !!user && user.roles.includes(ROLES.EMPLOYER) && !isAdminRoute;
   const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [planStatus, setPlanStatus] = useState<{ label?: string; remaining?: number | null; isPremium: boolean }>({
+    isPremium: false,
+    remaining: null,
+  });
 
   useEffect(() => {
     if (
@@ -54,6 +59,44 @@ export const EmployerHeader: React.FC<EmployerHeaderProps> = ({
     employerProfileLoading,
     shouldLoadEmployerProfile,
   ]);
+
+  useEffect(() => {
+    const fetchPlan = async () => {
+      if (!user?.id) return;
+      try {
+        const res = await baseService.get(`/EmployerPost/remaining-posts/${user.id}`);
+        const data = (res as any)?.data ?? res;
+        const remaining =
+          typeof data === "number"
+            ? data
+            : data?.remaining ?? data?.remainingPosts ?? data?.remainingPost ?? null;
+        const planRaw =
+          (typeof data === "object" && data
+            ? data.planName || data.plan || data.planLevel || data.tier || data.name
+            : undefined) || undefined;
+        const planIdRaw = typeof data === "object" && data ? data.planId ?? data.planID ?? undefined : undefined;
+        const planId = typeof planIdRaw === "string" ? Number(planIdRaw) : planIdRaw;
+        const planLower = typeof planRaw === "string" ? planRaw.toLowerCase() : "";
+        const isPremium =
+          planId === 3 ||
+          (typeof planIdRaw === "string" && planIdRaw === "3") ||
+          (planLower && (planLower.includes("premium") || planLower.startsWith("pre")));
+
+        setPlanStatus({
+          label: planRaw ? String(planRaw) : undefined,
+          remaining: typeof remaining === "number" ? remaining : null,
+          isPremium: Boolean(isPremium),
+        });
+      } catch (error) {
+        console.error("remaining-posts error", error);
+        setPlanStatus({ isPremium: false, remaining: null });
+      }
+    };
+
+    if (user?.roles.includes(ROLES.EMPLOYER)) {
+      void fetchPlan();
+    }
+  }, [user, setPlanStatus]);
 
   type UserWithOptionalFields = User & { avatarUrl?: string | null; fullName?: string | null };
   const typedUser: UserWithOptionalFields | undefined = user
@@ -78,7 +121,7 @@ export const EmployerHeader: React.FC<EmployerHeaderProps> = ({
     dispatch(clearEmployerProfile());
     removeAccessToken();
     navigate("/login");
-    message.success("Đăng xuất thành công!");
+    message.success("Dang xuat thanh cong!");
   };
 
   const dropdownItems = [
@@ -87,21 +130,21 @@ export const EmployerHeader: React.FC<EmployerHeaderProps> = ({
       : [
           {
             key: "profile",
-            label: <NavLink to="/nha-tuyen-dung/ho-so">Hồ sơ của tôi</NavLink>,
+            label: <NavLink to="/nha-tuyen-dung/ho-so">H? so c?a t�i</NavLink>,
           },
         ]),
     {
       key: "system-report",
-      label: <span onClick={() => setReportModalOpen(true)}>Dịch vụ hỗ trợ hệ thống</span>,
+      label: <span onClick={() => setReportModalOpen(true)}>D?ch v? h? tr? h? th?ng</span>,
       icon: <CustomerServiceOutlined />,
     },
     {
       key: "change-password",
-      label: <NavLink to="/nha-tuyen-dung/doi-mat-khau">Đổi mật khẩu</NavLink>,
+      label: <NavLink to="/nha-tuyen-dung/doi-mat-khau">�?i m?t kh?u</NavLink>,
     },
     {
       key: "logout",
-      label: "Đăng xuất",
+      label: "�ang xu?t",
       icon: <LogoutOutlined />,
       danger: true,
       onClick: handleLogout,
@@ -128,7 +171,7 @@ export const EmployerHeader: React.FC<EmployerHeaderProps> = ({
           to="/nha-tuyen-dung/dashboard"
           className="text-white hover:text-gray-200 text-sm font-medium"
         >
-          Trang chủ
+          Trang ch?
         </NavLink>
       </div>
 
@@ -151,7 +194,14 @@ export const EmployerHeader: React.FC<EmployerHeaderProps> = ({
               >
                 {!avatarSrc && displayName ? displayName.charAt(0).toUpperCase() : null}
               </Avatar>
-              <span className="font-medium">{displayName}</span>
+              <span className="font-medium flex items-center gap-1">
+                {displayName}
+                {planStatus.isPremium && (
+                  <Tag color="gold" className="m-0">
+                    {planStatus.label ? planStatus.label.toUpperCase() : "PREMIUM"}
+                  </Tag>
+                )}
+              </span>
               <DownOutlined style={{ fontSize: "10px" }} />
             </a>
           </Dropdown>
@@ -161,13 +211,13 @@ export const EmployerHeader: React.FC<EmployerHeaderProps> = ({
               to="/login"
               className="text-white hover:text-gray-200 text-sm font-medium"
             >
-           Đăng nhập
+           �ang nh?p
             </NavLink>
             <NavLink
               to="/nha-tuyen-dung/register"
               className="text-white hover:text-gray-200 text-sm font-medium"
             >
-              Đăng ký
+              �ang k�
             </NavLink>
           </div>
         )}
@@ -179,14 +229,14 @@ export const EmployerHeader: React.FC<EmployerHeaderProps> = ({
             to="/login"
             className="text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
           >
-            Cho ngu?i t�m vi?c
+            Cho ngu?i t?m vi?c
           </NavLink>
         ) : (
           <NavLink
             to="/nha-tuyen-dung"
             className="text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
           >
-            Nh� tuy?n d?ng
+            Nh? tuy?n d?ng
           </NavLink>
         )}
       </div>
@@ -197,5 +247,10 @@ export const EmployerHeader: React.FC<EmployerHeaderProps> = ({
 };
 
 export default EmployerHeader;
+
+
+
+
+
 
 
