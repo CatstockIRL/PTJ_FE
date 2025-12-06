@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+﻿import React, { useState, useEffect, useCallback } from "react";
 import {
   Form,
   Input,
@@ -51,6 +51,24 @@ type FormValues = (CreateJobSeekerPostPayload | UpdateJobSeekerPostPayload) & {
   locationDetail?: string;
   preferredWorkHourStart?: Dayjs | string;
   preferredWorkHourEnd?: Dayjs | string;
+};
+
+const genderValueMap: Record<string, "Male" | "Female" | "Other"> = {
+  nam: "Male",
+  male: "Male",
+  m: "Male",
+  nu: "Female",
+  female: "Female",
+  f: "Female",
+  khac: "Other",
+  other: "Other",
+};
+
+const normalizeGenderValue = (value?: string | null): "Male" | "Female" | "Other" | undefined => {
+  if (!value) return undefined;
+  const trimmed = value.trim().toLowerCase();
+  const asciiKey = trimmed.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  return genderValueMap[asciiKey] ?? genderValueMap[trimmed];
 };
 
 const parseTimeValue = (value?: string | null): Dayjs | null => {
@@ -107,7 +125,7 @@ const CreatePostingPage: React.FC = () => {
   const [isResettingSuggestions, setIsResettingSuggestions] = useState(false);
 
   const pageTitle = isCreateMode
-    ? "Tạo bài đăng tìm việc Part-time"
+    ? "Tạo bài đăng tìm việc part-time"
     : isEditMode
     ? "Chỉnh sửa bài đăng tìm việc"
     : "Chi tiết bài đăng tìm việc";
@@ -241,6 +259,7 @@ const CreatePostingPage: React.FC = () => {
         preferredWorkHourEnd: endTime || undefined,
         locationDetail: postDetail.preferredLocation,
         selectedCvId: postDetail.selectedCvId ?? postDetail.cvId ?? undefined,
+        gender: normalizeGenderValue(postDetail.gender),
       });
 
       (async () => {
@@ -400,7 +419,7 @@ const CreatePostingPage: React.FC = () => {
             ]}
           >
             <Input
-              placeholder="Ví dụ: Sinh viên nam năm 2 tìm việc làm phục vụ"
+              placeholder="Ví dụ: Sinh viên năm 2 tìm việc làm phục vụ"
               readOnly={isReadOnly}
             />
           </Form.Item>
@@ -621,7 +640,7 @@ const CreatePostingPage: React.FC = () => {
             />
           </Form.Item>
 
-          <Form.Item
+                    <Form.Item
             name="gender"
             label="Giới tính"
             rules={[
@@ -632,9 +651,9 @@ const CreatePostingPage: React.FC = () => {
             ]}
           >
             <Radio.Group disabled={isReadOnly}>
-              <Radio value="Nam">Nam</Radio>
-              <Radio value="Nữ">Nữ</Radio>
-              <Radio value="Khác">Khác</Radio>
+              <Radio value="Male">Nam</Radio>
+              <Radio value="Female">Nữ</Radio>
+              <Radio value="Other">Khác</Radio>
             </Radio.Group>
           </Form.Item>
 
@@ -707,7 +726,8 @@ const CreatePostingPage: React.FC = () => {
     postDetail?.preferredLocation || form.getFieldValue("locationDetail") || "Chưa cập nhật địa điểm";
   const summaryCategory = postDetail?.categoryName || "Chưa có ngành";
   const summaryPhone = postDetail?.phoneContact || "Chưa cập nhật";
-  const summaryAge = postDetail?.age ? `${postDetail.age}+ tuổi` : "Chưa cập nhật";
+  const summaryAge =
+    postDetail?.age ? `${postDetail.age}+ tuổi` : "Chưa cập nhật";
   const summaryWorkHour =
     postDetail?.preferredWorkHourStart && postDetail?.preferredWorkHourEnd
       ? `${postDetail.preferredWorkHourStart} - ${postDetail.preferredWorkHourEnd}`
@@ -851,3 +871,5 @@ const CreatePostingPage: React.FC = () => {
 };
 
 export default CreatePostingPage;
+
+

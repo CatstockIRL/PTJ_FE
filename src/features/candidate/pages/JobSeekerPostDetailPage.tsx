@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+﻿import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import {
   Card,
@@ -38,6 +38,19 @@ const formatDate = (date?: string | Date | null) => {
   return d.toLocaleDateString("vi-VN");
 };
 
+const genderLabelMap: Record<string, string> = {
+  male: "Nam",
+  female: "Nữ",
+  "n?": "Nữ",
+  other: "Khác",
+};
+
+const formatGenderLabel = (gender?: string | null): string => {
+  if (!gender) return "";
+  const key = gender.trim().toLowerCase();
+  return genderLabelMap[key] ?? gender;
+};
+
 const JobSeekerPostDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [post, setPost] = useState<JobSeekerPostDtoOut | null>(null);
@@ -64,7 +77,7 @@ const JobSeekerPostDetailPage: React.FC = () => {
 
   const fetchDetail = useCallback(async () => {
     if (!id) {
-      setError("Không xác định được bài đăng.");
+      setError("KhÃ´ng xÃ¡c Ä‘á»‹nh Ä‘Æ°á»£c bÃ i Ä‘Äƒng.");
       setLoading(false);
       return;
     }
@@ -73,7 +86,7 @@ const JobSeekerPostDetailPage: React.FC = () => {
     try {
       const res = await jobSeekerPostService.getJobSeekerPostById(Number(id));
       if (!res.success || !res.data) {
-        throw new Error("Không tìm thấy bài đăng.");
+        throw new Error("KhÃ´ng tÃ¬m tháº¥y bÃ i Ä‘Äƒng.");
       }
       setPost(res.data);
     } catch (err) {
@@ -111,7 +124,7 @@ const JobSeekerPostDetailPage: React.FC = () => {
   }, [post]);
 
   const avatarSrc = profile?.profilePicture || post?.profilePicture || undefined;
-  const seekerName = post?.seekerName || profile?.fullName || "Ứng viên";
+  const seekerName = post?.seekerName || profile?.fullName || "á»¨ng viÃªn";
   const contactPhone = post?.phoneContact || profile?.contactPhone;
   const preferredLocation = post?.preferredLocation || profile?.location;
 
@@ -147,11 +160,11 @@ const JobSeekerPostDetailPage: React.FC = () => {
   const submitReport = async () => {
     if (!post) return;
     if (!reportModal.reportType.trim()) {
-      message.warning("Vui lòng chọn loại báo cáo.");
+      message.warning("Vui lÃ²ng chá»n loáº¡i bÃ¡o cÃ¡o.");
       return;
     }
     if (!reportModal.reason.trim()) {
-      message.warning("Vui lòng nhập lý do báo cáo.");
+      message.warning("Vui lÃ²ng nháº­p lÃ½ do bÃ¡o cÃ¡o.");
       return;
     }
     setReportModal((prev) => ({ ...prev, submitting: true }));
@@ -162,7 +175,7 @@ const JobSeekerPostDetailPage: React.FC = () => {
         reportType: reportModal.reportType,
         reason: reportModal.reason.trim(),
       });
-      message.success("Đã gửi báo cáo.");
+      message.success("ÄÃ£ gá»­i bÃ¡o cÃ¡o.");
       setReportModal({ open: false, submitting: false, reportType: "", reason: "" });
     } catch (err) {
       const responseMessage = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
@@ -184,9 +197,9 @@ const JobSeekerPostDetailPage: React.FC = () => {
     return (
       <div className="p-6">
         <Card className="rounded-2xl shadow-sm border border-slate-200">
-          <p className="text-red-500">{error || "Không tìm thấy bài đăng."}</p>
+          <p className="text-red-500">{error || "KhÃ´ng tÃ¬m tháº¥y bÃ i Ä‘Äƒng."}</p>
           <Button className="mt-3" onClick={fetchDetail}>
-            Thử lại
+            Thá»­ láº¡i
           </Button>
         </Card>
       </div>
@@ -210,11 +223,11 @@ const JobSeekerPostDetailPage: React.FC = () => {
                   {post.title}
                 </Title>
                 <div className="text-white/90">
-                  {seekerName} • {post.categoryName || "Chưa chọn ngành"}
+                  {seekerName} â€¢ {post.categoryName || "ChÆ°a chá»n ngÃ nh"}
                 </div>
                 <div className="flex flex-wrap gap-2 mt-2 text-sm">
                   <Tag color="geekblue" icon={<CalendarOutlined />}>
-                    Đăng ngày {formatDate(post.createdAt)}
+                    ÄÄƒng ngÃ y {formatDate(post.createdAt)}
                   </Tag>
                   {post.categoryName && <Tag color="blue">{post.categoryName}</Tag>}
                 </div>
@@ -227,7 +240,7 @@ const JobSeekerPostDetailPage: React.FC = () => {
                 icon={<ExclamationCircleOutlined />}
                 onClick={handleReport}
               >
-                Báo cáo
+                BÃ¡o cÃ¡o
               </Button>
             </Space>
           </div>
@@ -238,10 +251,10 @@ const JobSeekerPostDetailPage: React.FC = () => {
               styles={{ body: { padding: 16 } }}
             >
               <div className="flex items-center gap-2 text-slate-600 mb-1">
-                <EnvironmentOutlined /> Địa điểm
+                <EnvironmentOutlined /> Äá»‹a Ä‘iá»ƒm
               </div>
               <div className="font-semibold text-slate-900">
-                {preferredLocation || "Địa điểm linh hoạt"}
+                {preferredLocation || "Äá»‹a Ä‘iá»ƒm linh hoáº¡t"}
               </div>
             </Card>
             <Card
@@ -249,19 +262,19 @@ const JobSeekerPostDetailPage: React.FC = () => {
               styles={{ body: { padding: 16 } }}
             >
               <div className="flex items-center gap-2 text-slate-600 mb-1">
-                <ClockCircleOutlined /> Giờ làm mong muốn
+                <ClockCircleOutlined /> Giá» lÃ m mong muá»‘n
               </div>
-              <div className="font-semibold text-slate-900">{workHours || "Chưa rõ"}</div>
+              <div className="font-semibold text-slate-900">{workHours || "ChÆ°a rÃµ"}</div>
             </Card>
             <Card
               className="rounded-2xl shadow-sm border-none bg-white/90 backdrop-blur-sm"
               styles={{ body: { padding: 16 } }}
             >
               <div className="flex items-center gap-2 text-slate-600 mb-1">
-                <PhoneOutlined /> Liên hệ
+                <PhoneOutlined /> LiÃªn há»‡
               </div>
               <div className="font-semibold text-slate-900">
-                {contactPhone || "Chưa có số liên hệ"}
+                {contactPhone || "ChÆ°a cÃ³ sá»‘ liÃªn há»‡"}
               </div>
             </Card>
           </div>
@@ -271,31 +284,31 @@ const JobSeekerPostDetailPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-4">
           <Card className="rounded-2xl shadow-sm border border-slate-100">
-            <Title level={4}>Thông tin thêm</Title>
+            <Title level={4}>ThÃ´ng tin thÃªm</Title>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-slate-700">
               <div>
-                <Text type="secondary">Ngành nghề</Text>
-                <div className="font-semibold">{post.categoryName || "Chưa chọn"}</div>
+                <Text type="secondary">NgÃ nh nghá»</Text>
+                <div className="font-semibold">{post.categoryName || "ChÆ°a chá»n"}</div>
               </div>
               <div>
-                <Text type="secondary">Giới tính</Text>
-                <div className="font-semibold">{post.gender || "Không yêu cầu"}</div>
+                                  <Text type="secondary">Giới tính</Text>
+                  <div className="font-semibold">{formatGenderLabel(post.gender) || "Không yêu cầu"}</div>
               </div>
               <div>
-                <Text type="secondary">Độ tuổi</Text>
-                <div className="font-semibold">{post.age ? `${post.age} tuổi` : "Không yêu cầu"}</div>
+                <Text type="secondary">Äá»™ tuá»•i</Text>
+                <div className="font-semibold">{post.age ? `${post.age} tuá»•i` : "KhÃ´ng yÃªu cáº§u"}</div>
               </div>
               <div>
-                <Text type="secondary">Trạng thái</Text>
+                <Text type="secondary">Tráº¡ng thÃ¡i</Text>
                 <div className="font-semibold">{post.status || "N/A"}</div>
               </div>
             </div>
           </Card>
 
           <Card className="rounded-2xl shadow-sm border border-slate-100">
-            <Title level={4}>Tổng quan bài đăng</Title>
+            <Title level={4}>Tá»•ng quan bÃ i Ä‘Äƒng</Title>
             <Paragraph className="text-slate-700 leading-relaxed whitespace-pre-wrap">
-              {post.description || "Chưa có mô tả chi tiết."}
+              {post.description || "ChÆ°a cÃ³ mÃ´ táº£ chi tiáº¿t."}
             </Paragraph>
           </Card>
         </div>
@@ -306,20 +319,20 @@ const JobSeekerPostDetailPage: React.FC = () => {
               <Avatar size={48} src={avatarSrc} icon={<UserOutlined />} />
               <div>
                 <div className="font-semibold text-slate-900">{seekerName}</div>
-                <div className="text-xs text-slate-500">Ứng viên đăng bài</div>
+                <div className="text-xs text-slate-500">á»¨ng viÃªn Ä‘Äƒng bÃ i</div>
               </div>
             </div>
             <Space direction="vertical" className="w-full text-sm text-slate-700">
               <span>
-                <EnvironmentOutlined /> {preferredLocation || "Địa điểm linh hoạt"}
+                <EnvironmentOutlined /> {preferredLocation || "Äá»‹a Ä‘iá»ƒm linh hoáº¡t"}
               </span>
               <span>
-                <PhoneOutlined /> {contactPhone || "Chưa có số liên hệ"}
+                <PhoneOutlined /> {contactPhone || "ChÆ°a cÃ³ sá»‘ liÃªn há»‡"}
               </span>
             </Space>
             {post.cvId ? (
               <Button block type="primary" ghost className="mt-3" onClick={handleViewCv}>
-                {cvModal.loading ? "Đang tải CV..." : cvModal.open ? "Ẩn CV" : "Xem CV đính kèm"}
+                {cvModal.loading ? "Äang táº£i CV..." : cvModal.open ? "áº¨n CV" : "Xem CV Ä‘Ã­nh kÃ¨m"}
               </Button>
             ) : null}
           </Card>
@@ -327,38 +340,38 @@ const JobSeekerPostDetailPage: React.FC = () => {
           {cvModal.open && (
             <Card className="rounded-2xl shadow-sm border border-slate-100">
               {cvModal.loading ? (
-                <p>Đang tải CV...</p>
+                <p>Äang táº£i CV...</p>
               ) : cvModal.error ? (
                 <p className="text-red-500">{cvModal.error}</p>
               ) : cvModal.cv ? (
                 <div className="space-y-4 text-sm">
                   <div className="p-3 rounded-lg border bg-gray-50">
-                    <h3 className="font-semibold text-gray-700 mb-1">Thông tin chung</h3>
+                    <h3 className="font-semibold text-gray-700 mb-1">ThÃ´ng tin chung</h3>
                     <p>
-                      <span className="font-semibold">Tiêu đề:</span> {cvModal.cv.cvTitle}
+                      <span className="font-semibold">TiÃªu Ä‘á»:</span> {cvModal.cv.cvTitle}
                     </p>
                     {cvModal.cv.preferredJobType && (
                       <p>
-                        <span className="font-semibold">Công việc mong muốn:</span>{" "}
+                        <span className="font-semibold">CÃ´ng viá»‡c mong muá»‘n:</span>{" "}
                         {cvModal.cv.preferredJobType}
                       </p>
                     )}
                     {cvModal.cv.preferredLocationName && (
                       <p>
-                        <span className="font-semibold">Khu vực mong muốn:</span>{" "}
+                        <span className="font-semibold">Khu vá»±c mong muá»‘n:</span>{" "}
                         {cvModal.cv.preferredLocationName}
                       </p>
                     )}
                     {cvModal.cv.contactPhone && (
                       <p>
-                        <span className="font-semibold">Liên hệ:</span> {cvModal.cv.contactPhone}
+                        <span className="font-semibold">LiÃªn há»‡:</span> {cvModal.cv.contactPhone}
                       </p>
                     )}
                   </div>
 
                   {(cvModal.cv.skillSummary || cvModal.cv.skills) && (
                     <div className="p-3 rounded-lg border bg-gray-50">
-                      <h3 className="font-semibold text-gray-700 mb-1">Kỹ năng</h3>
+                      <h3 className="font-semibold text-gray-700 mb-1">Ká»¹ nÄƒng</h3>
                       {cvModal.cv.skillSummary && (
                         <p className="text-gray-700">{cvModal.cv.skillSummary}</p>
                       )}
@@ -376,7 +389,7 @@ const JobSeekerPostDetailPage: React.FC = () => {
 
                   {cvModal.cv.experience && (
                     <div className="p-3 rounded-lg border bg-gray-50">
-                      <h3 className="font-semibold text-gray-700 mb-1">Kinh nghiệm</h3>
+                      <h3 className="font-semibold text-gray-700 mb-1">Kinh nghiá»‡m</h3>
                       <p className="whitespace-pre-wrap text-gray-700">
                         {cvModal.cv.experience}
                       </p>
@@ -385,7 +398,7 @@ const JobSeekerPostDetailPage: React.FC = () => {
 
                   {cvModal.cv.education && (
                     <div className="p-3 rounded-lg border bg-gray-50">
-                      <h3 className="font-semibold text-gray-700 mb-1">Học vấn</h3>
+                      <h3 className="font-semibold text-gray-700 mb-1">Há»c váº¥n</h3>
                       <p className="whitespace-pre-wrap text-gray-700">
                         {cvModal.cv.education}
                       </p>
@@ -393,11 +406,11 @@ const JobSeekerPostDetailPage: React.FC = () => {
                   )}
 
                   <div className="text-xs text-gray-500 text-right">
-                    Cập nhật: {new Date(cvModal.cv.updatedAt).toLocaleDateString("vi-VN")}
+                    Cáº­p nháº­t: {new Date(cvModal.cv.updatedAt).toLocaleDateString("vi-VN")}
                   </div>
                 </div>
               ) : (
-                <p>Không tìm thấy CV.</p>
+                <p>KhÃ´ng tÃ¬m tháº¥y CV.</p>
               )}
             </Card>
           )}
@@ -405,37 +418,37 @@ const JobSeekerPostDetailPage: React.FC = () => {
       </div>
 
       <Modal
-        title={`Báo cáo bài đăng${post.title ? `: ${post.title}` : ""}`}
+        title={`BÃ¡o cÃ¡o bÃ i Ä‘Äƒng${post.title ? `: ${post.title}` : ""}`}
         open={reportModal.open}
         onCancel={() =>
           setReportModal({ open: false, submitting: false, reportType: "", reason: "" })
         }
         onOk={submitReport}
         confirmLoading={reportModal.submitting}
-        okText="Gửi báo cáo"
-        cancelText="Hủy"
+        okText="Gá»­i bÃ¡o cÃ¡o"
+        cancelText="Há»§y"
       >
         <p className="text-sm text-gray-600 mb-3">
-          Vui lòng mô tả lý do bạn muốn báo cáo bài đăng tìm việc này. Thông tin sẽ được gửi tới quản
-          trị viên.
+          Vui lÃ²ng mÃ´ táº£ lÃ½ do báº¡n muá»‘n bÃ¡o cÃ¡o bÃ i Ä‘Äƒng tÃ¬m viá»‡c nÃ y. ThÃ´ng tin sáº½ Ä‘Æ°á»£c gá»­i tá»›i quáº£n
+          trá»‹ viÃªn.
         </p>
         <div className="mb-3">
           <Select
-            placeholder="Chọn loại báo cáo"
+            placeholder="Chá»n loáº¡i bÃ¡o cÃ¡o"
             className="w-full"
             value={reportModal.reportType || undefined}
             onChange={(value) => setReportModal((prev) => ({ ...prev, reportType: value }))}
             options={[
-              { label: "Tin giả / lừa đảo", value: "Fraud" },
-              { label: "Nội dung không phù hợp", value: "Inappropriate" },
+              { label: "Tin giáº£ / lá»«a Ä‘áº£o", value: "Fraud" },
+              { label: "Ná»™i dung khÃ´ng phÃ¹ há»£p", value: "Inappropriate" },
               { label: "Spam", value: "Spam" },
-              { label: "Khác", value: "Other" },
+              { label: "KhÃ¡c", value: "Other" },
             ]}
           />
         </div>
         <Input.TextArea
           rows={4}
-          placeholder="Ví dụ: Bài đăng có nội dung không phù hợp..."
+          placeholder="VÃ­ dá»¥: BÃ i Ä‘Äƒng cÃ³ ná»™i dung khÃ´ng phÃ¹ há»£p..."
           value={reportModal.reason}
           onChange={(e) => setReportModal((prev) => ({ ...prev, reason: e.target.value }))}
         />
@@ -445,3 +458,5 @@ const JobSeekerPostDetailPage: React.FC = () => {
 };
 
 export default JobSeekerPostDetailPage;
+
+

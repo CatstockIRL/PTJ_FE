@@ -71,6 +71,19 @@ const hasWorkHourData = (post: JobSeekerPostDtoOut): boolean => {
   );
 };
 
+const genderLabelMap: Record<string, string> = {
+  male: "Nam",
+  female: "Nữ",
+  "n?": "Nữ",
+  other: "Khác",
+};
+
+const formatGenderLabel = (gender?: string | null): string => {
+  if (!gender) return "";
+  const key = gender.trim().toLowerCase();
+  return genderLabelMap[key] ?? gender;
+};
+
 const shouldFetchDetail = (post: JobSeekerPostDtoOut): boolean => {
   const hasContact = Boolean(getContactPhone(post));
   const hasGender = hasValue(post.gender);
@@ -523,8 +536,10 @@ const JobSeekerPostsPage: React.FC = () => {
                           <Space>
                             <PhoneOutlined /> {phone || "Chưa có số liên hệ"}
                           </Space>
-                          {post.age ? <Tag color="geekblue">{post.age} tuổi</Tag> : null}
-                          {post.gender ? <Tag color="purple">{post.gender}</Tag> : null}
+                        {post.age ? <Tag color="geekblue">{post.age} tuổi</Tag> : null}
+                          {formatGenderLabel(post.gender) ? (
+                            <Tag color="purple">{formatGenderLabel(post.gender)}</Tag>
+                          ) : null}
                         </div>
 
                         <div className="flex items-center gap-2 flex-wrap md:justify-end">

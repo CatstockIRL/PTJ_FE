@@ -42,22 +42,22 @@ const STATUS_LABELS: Record<
   { label: string; className: string; successMessage: string; modalTitle: string }
 > = {
   Accepted: {
-    label: "Đã duyệt",
+    label: "Đồng ý tuyển dụng",
     className: "text-green-600 ml-1",
-    successMessage: "Đã duyệt hồ sơ.",
-    modalTitle: "Duyệt hồ sơ",
+    successMessage: "Đã chuyển trạng thái sang Đồng ý tuyển dụng.",
+    modalTitle: "Đồng ý tuyển dụng",
   },
   Rejected: {
-    label: "Đã từ chối",
+    label: "Từ chối tuyển dụng",
     className: "text-red-600 ml-1",
-    successMessage: "Đã từ chối hồ sơ.",
-    modalTitle: "Từ chối hồ sơ",
+    successMessage: "Đã chuyển trạng thái sang Từ chối tuyển dụng.",
+    modalTitle: "Từ chối tuyển dụng",
   },
   Interviewing: {
-    label: "Chờ phỏng vấn",
+    label: "Mời phỏng vấn",
     className: "text-blue-600 ml-1",
-    successMessage: "Đã chuyển sang trạng thái chờ phỏng vấn.",
-    modalTitle: "Chuyển sang chờ phỏng vấn",
+    successMessage: "Đã chuyển trạng thái sang Mời phỏng vấn.",
+    modalTitle: "Mời phỏng vấn",
   },
 };
 
@@ -65,17 +65,17 @@ const APPROVAL_OPTIONS: { key: StatusAction; label: string; icon: React.ReactNod
   [
     {
       key: "Accepted",
-      label: "Duyệt hồ sơ",
+      label: "Đồng ý tuyển dụng",
       icon: <CheckCircleOutlined style={{ color: "#16a34a" }} />,
     },
     {
       key: "Rejected",
-      label: "Từ chối hồ sơ",
+      label: "Từ chối tuyển dụng",
       icon: <CloseCircleOutlined style={{ color: "#dc2626" }} />,
     },
     {
       key: "Interviewing",
-      label: "Chờ phỏng vấn",
+      label: "Mời phỏng vấn",
       icon: <StarOutlined style={{ color: "#2563eb" }} />,
     },
   ];
@@ -271,9 +271,9 @@ const CandidateListPage: React.FC = () => {
 
   const renderStatusTag = (status?: string) => {
     const s = status?.toLowerCase();
-    if (s === "accepted") return <Tag color="success">Đã duyệt</Tag>;
-    if (s === "rejected") return <Tag color="error">Đã từ chối</Tag>;
-    if (s === "interviewing") return <Tag color="blue">Chờ phỏng vấn</Tag>;
+    if (s === "accepted") return <Tag color="success">Đồng ý tuyển dụng</Tag>;
+    if (s === "rejected") return <Tag color="error">Từ chối tuyển dụng</Tag>;
+    if (s === "interviewing") return <Tag color="blue">Mời phỏng vấn</Tag>;
     if (s === "pending") return <Tag color="processing">Chờ duyệt</Tag>;
     return <Tag>Chưa xem</Tag>;
   };
