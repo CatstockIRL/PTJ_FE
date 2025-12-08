@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../../features/auth/hooks";
 import { Button, Dropdown, Avatar, message, Tag } from "antd";
 import {
   UserOutlined,
@@ -9,11 +8,12 @@ import {
   MenuFoldOutlined,
   CustomerServiceOutlined,
 } from "@ant-design/icons";
+import { useAuth } from "../../features/auth/hooks";
+import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { ROLES } from "../../constants/roles";
 import { logout } from "../../features/auth/slice";
 import { removeAccessToken } from "../../services/baseService";
 import baseService from "../../services/baseService";
-import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import {
   fetchEmployerProfile,
   clearProfile as clearEmployerProfile,
@@ -27,25 +27,46 @@ interface EmployerHeaderProps {
   onToggleSidebar?: () => void;
 }
 
-export const EmployerHeader: React.FC<EmployerHeaderProps> = ({
-  onToggleSidebar,
-}) => {
+type RemainingResponse = {
+  remaining?: number;
+  remainingPosts?: number;
+  remainingPost?: number;
+  planName?: string;
+  plan?: string;
+  planLevel?: string;
+  tier?: string;
+  name?: string;
+  planId?: number | string;
+  planID?: number | string;
+};
+
+const extractRemainingPayload = (res: unknown): number | RemainingResponse | null => {
+  if (res && typeof res === "object" && "data" in res) {
+    const val = (res as { data?: unknown }).data;
+    if (typeof val === "number") return val;
+    if (val && typeof val === "object") return val as RemainingResponse;
+    return null;
+  }
+  if (typeof res === "number") return res;
+  if (res && typeof res === "object") return res as RemainingResponse;
+  return null;
+};
+
+export const EmployerHeader: React.FC<EmployerHeaderProps> = ({ onToggleSidebar }) => {
   const { user } = useAuth();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+
   const employerProfile = useAppSelector((state) => state.profile.profile);
   const employerProfileLoading = useAppSelector((state) => state.profile.loading);
   const employerProfileError = useAppSelector((state) => state.profile.error);
+
   const isAdminRoute = location.pathname.startsWith("/admin");
-  const shouldLoadEmployerProfile =
-    !!user && user.roles.includes(ROLES.EMPLOYER) && !isAdminRoute;
+  const shouldLoadEmployerProfile = !!user && user.roles.includes(ROLES.EMPLOYER) && !isAdminRoute;
+
   const [reportModalOpen, setReportModalOpen] = useState(false);
-  const [planStatus, setPlanStatus] = useState<{
-    label?: string;
-    remaining?: number | null;
-    isPremium: boolean;
-  }>({
+  const [planStatus, setPlanStatus] = useState<{ label?: string; remaining?: number | null; isPremium: boolean }>({
     isPremium: false,
     remaining: null,
   });
@@ -59,39 +80,28 @@ export const EmployerHeader: React.FC<EmployerHeaderProps> = ({
     ) {
       dispatch(fetchEmployerProfile());
     }
-  }, [
-    dispatch,
-    employerProfile,
-    employerProfileError,
-    employerProfileLoading,
-    shouldLoadEmployerProfile,
-  ]);
+  }, [dispatch, employerProfile, employerProfileError, employerProfileLoading, shouldLoadEmployerProfile]);
 
   useEffect(() => {
     const fetchPlan = async () => {
       if (!user?.id) return;
       try {
         const res = await baseService.get(`/EmployerPost/remaining-posts/${user.id}`);
-        const data =
-          res && typeof res === "object" && "data" in res
-            ? (res as { data?: unknown }).data
-            : (res as unknown);
+        const payload = extractRemainingPayload(res);
+        const payloadObj = payload && typeof payload === "object" ? (payload as RemainingResponse) : undefined;
+
         const remaining =
-          typeof data === "number"
-            ? data
-            : data?.remaining ?? data?.remainingPosts ?? data?.remainingPost ?? null;
+          typeof payload === "number"
+            ? payload
+            : payloadObj?.remaining ?? payloadObj?.remainingPosts ?? payloadObj?.remainingPost ?? null;
+
         const planRaw =
-          (typeof data === "object" && data
-            ? data.planName || data.plan || data.planLevel || data.tier || data.name
-            : undefined) || undefined;
-        const planIdRaw =
-          typeof data === "object" && data ? data.planId ?? data.planID ?? undefined : undefined;
-        const planId = typeof planIdRaw === "string" ? Number(planIdRaw) : planIdRaw;
+          payloadObj?.planName ?? payloadObj?.plan ?? payloadObj?.planLevel ?? payloadObj?.tier ?? payloadObj?.name;
+        const planIdRaw = payloadObj?.planId ?? payloadObj?.planID;
+        const planIdNum = typeof planIdRaw === "string" ? Number(planIdRaw) : planIdRaw;
         const planLower = typeof planRaw === "string" ? planRaw.toLowerCase() : "";
         const isPremium =
-          planId === 3 ||
-          (typeof planIdRaw === "string" && planIdRaw === "3") ||
-          (planLower && (planLower.includes("premium") || planLower.startsWith("pre")));
+          planIdNum === 3 || (planLower !== "" && (planLower.includes("premium") || planLower.startsWith("pre")));
 
         setPlanStatus({
           label: planRaw ? String(planRaw) : undefined,
@@ -107,7 +117,7 @@ export const EmployerHeader: React.FC<EmployerHeaderProps> = ({
     if (user?.roles.includes(ROLES.EMPLOYER)) {
       void fetchPlan();
     }
-  }, [user, setPlanStatus]);
+  }, [user]);
 
   type UserWithOptionalFields = User & { avatarUrl?: string | null; fullName?: string | null };
   const typedUser: UserWithOptionalFields | undefined = user
@@ -182,22 +192,15 @@ export const EmployerHeader: React.FC<EmployerHeaderProps> = ({
           )}
 
           <img src={LogoWhite} alt="Logo" className="h-8 mr-2" />
-          <NavLink
-            to="/nha-tuyen-dung/dashboard"
-            className="text-white hover:text-gray-200 text-sm font-medium"
-          >
+          <NavLink to="/nha-tuyen-dung/dashboard" className="text-white hover:text-gray-200 text-sm font-medium">
             Trang chủ
           </NavLink>
         </div>
 
         <div className="flex items-center space-x-5">
-          {/* USER DROPDOWN */}
           {user && (user.roles.includes(ROLES.EMPLOYER) || user.roles.includes(ROLES.ADMIN)) ? (
             <Dropdown menu={{ items: dropdownItems }} placement="bottomRight" arrow>
-              <a
-                onClick={(e) => e.preventDefault()}
-                className="flex items-center space-x-2 text-white hover:text-gray-200"
-              >
+              <a onClick={(e) => e.preventDefault()} className="flex items-center space-x-2 text-white hover:text-gray-200">
                 <Avatar
                   size="small"
                   src={avatarSrc}
@@ -213,41 +216,34 @@ export const EmployerHeader: React.FC<EmployerHeaderProps> = ({
                       {planStatus.label ? planStatus.label.toUpperCase() : "PREMIUM"}
                     </Tag>
                   )}
+                  {typeof planStatus.remaining === "number" && (
+                    <Tag color="blue" className="m-0">
+                      Còn: {planStatus.remaining}
+                    </Tag>
+                  )}
                 </span>
                 <DownOutlined style={{ fontSize: "10px" }} />
               </a>
             </Dropdown>
           ) : (
             <div className="flex items-center space-x-4">
-              <NavLink
-                to="/login"
-                className="text-white hover:text-gray-200 text-sm font-medium"
-              >
+              <NavLink to="/login" className="text-white hover:text-gray-200 text-sm font-medium">
                 Đăng nhập
               </NavLink>
-              <NavLink
-                to="/nha-tuyen-dung/register"
-                className="text-white hover:text-gray-200 text-sm font-medium"
-              >
+              <NavLink to="/nha-tuyen-dung/register" className="text-white hover:text-gray-200 text-sm font-medium">
                 Đăng ký
               </NavLink>
             </div>
           )}
 
-          <div className="border-l border-blue-700 h-6"></div>
+          <div className="border-l border-blue-700 h-6" />
 
           {location.pathname.startsWith("/nha-tuyen-dung") ? (
-            <NavLink
-              to="/login"
-              className="text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
-            >
+            <NavLink to="/login" className="text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
               Cho người tìm việc
             </NavLink>
           ) : (
-            <NavLink
-              to="/nha-tuyen-dung"
-              className="text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
-            >
+            <NavLink to="/nha-tuyen-dung" className="text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
               Nhà tuyển dụng
             </NavLink>
           )}

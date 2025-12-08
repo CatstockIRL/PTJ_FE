@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+﻿import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, Tooltip, XAxis, YAxis } from "recharts";
 import {
   BarChartOutlined,
@@ -130,7 +130,7 @@ const AdminDashboard: React.FC = () => {
         setSubscriptionStats(subs);
         loadedOverviewRef.current = true;
       } catch {
-        if (mounted.current) message.error("Khong tai duoc du lieu tong quan.");
+        if (mounted.current) message.error("Không tải được dữ liệu tổng quan.");
       } finally {
         fetchingOverviewRef.current = false;
       }
@@ -150,17 +150,16 @@ const AdminDashboard: React.FC = () => {
           adminDashboardService.getRevenueStats(timeMode),
         ]);
         if (!mounted.current) return;
-        const nextUsers = users;
-        const nextPosts = posts;
-        const nextRevenues = revenues;
-        lastUsersRef.current = nextUsers;
-        lastPostsRef.current = nextPosts;
-        lastRevenueRef.current = nextRevenues;
-        setUserStats(nextUsers);
-        setPostStats(nextPosts);
-        setRevenueStats(nextRevenues);
+        lastUsersRef.current = users;
+        lastPostsRef.current = posts;
+        lastRevenueRef.current = revenues;
+        setUserStats(users);
+        setPostStats(posts);
+        setRevenueStats(revenues);
       } catch (err: unknown) {
-        const msg = err?.response?.status ? `${err.response.status} khi tải biểu đồ` : "Không tải được dữ liệu biểu đồ.";
+        const axiosErr = err as { response?: { status?: number } };
+        const status = axiosErr?.response?.status;
+        const msg = status ? `${status} khi tải biểu đồ.` : "Không tải được dữ liệu biểu đồ.";
         if (mounted.current) message.error(msg);
       } finally {
         if (mounted.current) setLoadingTrends(false);
@@ -187,7 +186,7 @@ const AdminDashboard: React.FC = () => {
         setRevenueByPlan(plan);
         loadedStaticRef.current = true;
       } catch {
-        if (mounted.current) message.error("Khong tai duoc du lieu bo sung.");
+        if (mounted.current) message.error("Không tải được dữ liệu bổ sung.");
       } finally {
         if (mounted.current) setLoadingStatic(false);
         fetchingStaticRef.current = false;
@@ -330,22 +329,35 @@ const AdminDashboard: React.FC = () => {
             type="monotone"
             dataKey="seriesA"
             stroke="#1677ff"
-            name={trendGroup === "revenue" ? "Doanh thu" : trendGroup === "users" ? "Nhà tuyển dụng" : "Bài đăng nhà tuyển dụng"}
+            name={
+              trendGroup === "revenue"
+                ? "Doanh thu"
+                : trendGroup === "users"
+                ? "Nhà tuyển dụng"
+                : "Bài đăng nhà tuyển dụng"
+            }
             dot
           />
           {trendGroup !== "revenue" && (
-            <Line type="monotone" dataKey="seriesB" stroke="#eb2f96" name={trendGroup === "users" ? "Ứng viên" : "Bài đăng ứng viên"} dot />
+            <Line
+              type="monotone"
+              dataKey="seriesB"
+              stroke="#eb2f96"
+              name={trendGroup === "users" ? "Ứng viên" : "Bài đăng ứng viên"}
+              dot
+            />
           )}
         </LineChart>
       </div>
     );
   };
 
-  const renderBarChart = (
-    data: Array<Record<string, unknown>>,
+  const renderBarChart = <T extends object>(
+    data: T[],
     bars: { key: string; name: string; color: string }[],
     minHeight = 320,
   ) => {
+    const labelKey = bars.length > 1 ? "planName" : "categoryName";
     return (
       <div
         ref={barContainerRef}
@@ -354,7 +366,7 @@ const AdminDashboard: React.FC = () => {
       >
         <BarChart width={barSize.width} height={barSize.height} data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
-          <XAxis dataKey={bars.length > 1 ? "planName" : "categoryName"} />
+          <XAxis dataKey={labelKey} />
           <YAxis tickFormatter={(v: number) => formatNumber(v)} />
           <Tooltip
             formatter={(value: number, name: string) => {
@@ -467,9 +479,6 @@ const AdminDashboard: React.FC = () => {
                 />
               </Space>
             </Space>
-            <Text type="secondary" className="block mt-2">
-              Users: {userStats.length} | Posts: {postStats.length} | Revenue: {revenueStats.length} (mode: {timeMode})
-            </Text>
           </>
         }
       >
