@@ -188,7 +188,7 @@ const adminDashboardService = {
       const employersRaw = toNumber(pick(obj, ["employers", "Employers", "employer", "Employer", "countEmployer", "countEmployers"]), 0);
       const jobSeekersRaw = toNumber(pick(obj, ["jobSeekers", "JobSeekers", "jobSeeker", "JobSeeker", "countJobSeekers", "countJobSeeker"]), 0);
       let employers = employersRaw;
-      let jobSeekers = jobSeekersRaw;
+      const jobSeekers = jobSeekersRaw;
       if (employers === 0 && jobSeekers === 0 && total > 0) {
         employers = total;
       }

@@ -38,8 +38,11 @@ const EmployerBillingHistoryPage: React.FC = () => {
     setLoadingTxn(true);
     try {
       const res = await baseService.get("/payment/transaction-history");
-      const data = (res as any)?.data ?? res;
-      setTransactions(Array.isArray(data) ? data : data?.data ?? []);
+      const data =
+        res && typeof res === "object" && "data" in res
+          ? (res as { data?: unknown }).data
+          : (res as unknown);
+      setTransactions(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("load transaction history error", error);
       message.error("Không thể tải lịch sử giao dịch");
@@ -52,8 +55,11 @@ const EmployerBillingHistoryPage: React.FC = () => {
     setLoadingSub(true);
     try {
       const res = await baseService.get("/payment/subscription-history");
-      const data = (res as any)?.data ?? res;
-      setSubscriptions(Array.isArray(data) ? data : data?.data ?? []);
+      const data =
+        res && typeof res === "object" && "data" in res
+          ? (res as { data?: unknown }).data
+          : (res as unknown);
+      setSubscriptions(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("load subscription history error", error);
       message.error("Không thể tải lịch sử gói");

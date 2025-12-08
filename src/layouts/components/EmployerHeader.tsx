@@ -72,7 +72,10 @@ export const EmployerHeader: React.FC<EmployerHeaderProps> = ({
       if (!user?.id) return;
       try {
         const res = await baseService.get(`/EmployerPost/remaining-posts/${user.id}`);
-        const data = (res as any)?.data ?? res;
+        const data =
+          res && typeof res === "object" && "data" in res
+            ? (res as { data?: unknown }).data
+            : (res as unknown);
         const remaining =
           typeof data === "number"
             ? data

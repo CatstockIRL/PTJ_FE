@@ -159,7 +159,7 @@ const AdminDashboard: React.FC = () => {
         setUserStats(nextUsers);
         setPostStats(nextPosts);
         setRevenueStats(nextRevenues);
-      } catch (err: any) {
+      } catch (err: unknown) {
         const msg = err?.response?.status ? `${err.response.status} khi tải biểu đồ` : "Không tải được dữ liệu biểu đồ.";
         if (mounted.current) message.error(msg);
       } finally {
@@ -316,8 +316,15 @@ const AdminDashboard: React.FC = () => {
         >
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="label" />
-          <YAxis domain={[0, trendYAxisDomain[1]]} tickFormatter={(v) => (trendGroup === "revenue" ? formatCurrency(v as number) : formatNumber(v as number))} />
-          <Tooltip formatter={(value) => (trendGroup === "revenue" ? formatCurrency(value as number) : formatNumber(value as number))} />
+          <YAxis
+            domain={[0, trendYAxisDomain[1]]}
+            tickFormatter={(v: number) => (trendGroup === "revenue" ? formatCurrency(v) : formatNumber(v))}
+          />
+          <Tooltip
+            formatter={(value: number) =>
+              trendGroup === "revenue" ? formatCurrency(value) : formatNumber(value)
+            }
+          />
           <Legend />
           <Line
             type="monotone"
@@ -334,7 +341,11 @@ const AdminDashboard: React.FC = () => {
     );
   };
 
-  const renderBarChart = (data: any[], bars: { key: string; name: string; color: string }[], minHeight = 320) => {
+  const renderBarChart = (
+    data: Array<Record<string, unknown>>,
+    bars: { key: string; name: string; color: string }[],
+    minHeight = 320,
+  ) => {
     return (
       <div
         ref={barContainerRef}
@@ -344,9 +355,9 @@ const AdminDashboard: React.FC = () => {
         <BarChart width={barSize.width} height={barSize.height} data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey={bars.length > 1 ? "planName" : "categoryName"} />
-          <YAxis tickFormatter={(v) => formatNumber(v as number)} />
+          <YAxis tickFormatter={(v: number) => formatNumber(v)} />
           <Tooltip
-            formatter={(value, name) => {
+            formatter={(value: number, name: string) => {
               if (name === "count") return formatNumber(value as number);
               if (name === "revenue") return formatCurrency(value as number);
               return formatNumber(value as number);
@@ -516,7 +527,7 @@ const AdminDashboard: React.FC = () => {
                     <Cell key={entry.name} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value) => formatNumber(value as number)} />
+                <Tooltip formatter={(value: number) => formatNumber(value)} />
               </PieChart>
             </div>
             <Divider />
