@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../features/auth/hooks";
 import { Button, Dropdown, Avatar, message, Tag } from "antd";
@@ -14,7 +14,10 @@ import { logout } from "../../features/auth/slice";
 import { removeAccessToken } from "../../services/baseService";
 import baseService from "../../services/baseService";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
-import { fetchEmployerProfile, clearProfile as clearEmployerProfile } from "../../features/employer/slice/profileSlice";
+import {
+  fetchEmployerProfile,
+  clearProfile as clearEmployerProfile,
+} from "../../features/employer/slice/profileSlice";
 import SystemReportModal from "../../features/report/components/SystemReportModal";
 import type { User } from "../../features/auth/types";
 
@@ -38,7 +41,11 @@ export const EmployerHeader: React.FC<EmployerHeaderProps> = ({
   const shouldLoadEmployerProfile =
     !!user && user.roles.includes(ROLES.EMPLOYER) && !isAdminRoute;
   const [reportModalOpen, setReportModalOpen] = useState(false);
-  const [planStatus, setPlanStatus] = useState<{ label?: string; remaining?: number | null; isPremium: boolean }>({
+  const [planStatus, setPlanStatus] = useState<{
+    label?: string;
+    remaining?: number | null;
+    isPremium: boolean;
+  }>({
     isPremium: false,
     remaining: null,
   });
@@ -74,7 +81,8 @@ export const EmployerHeader: React.FC<EmployerHeaderProps> = ({
           (typeof data === "object" && data
             ? data.planName || data.plan || data.planLevel || data.tier || data.name
             : undefined) || undefined;
-        const planIdRaw = typeof data === "object" && data ? data.planId ?? data.planID ?? undefined : undefined;
+        const planIdRaw =
+          typeof data === "object" && data ? data.planId ?? data.planID ?? undefined : undefined;
         const planId = typeof planIdRaw === "string" ? Number(planIdRaw) : planIdRaw;
         const planLower = typeof planRaw === "string" ? planRaw.toLowerCase() : "";
         const isPremium =
@@ -121,7 +129,7 @@ export const EmployerHeader: React.FC<EmployerHeaderProps> = ({
     dispatch(clearEmployerProfile());
     removeAccessToken();
     navigate("/login");
-    message.success("Dang xuat thanh cong!");
+    message.success("Đăng xuất thành công!");
   };
 
   const dropdownItems = [
@@ -131,6 +139,10 @@ export const EmployerHeader: React.FC<EmployerHeaderProps> = ({
           {
             key: "profile",
             label: <NavLink to="/nha-tuyen-dung/ho-so">Hồ sơ của tôi</NavLink>,
+          },
+          {
+            key: "billing-history",
+            label: <NavLink to="/nha-tuyen-dung/lich-su-giao-dich">Lịch sử gói & giao dịch</NavLink>,
           },
         ]),
     {
@@ -153,104 +165,94 @@ export const EmployerHeader: React.FC<EmployerHeaderProps> = ({
 
   return (
     <>
-    <header
-      className="bg-blue-900 text-white shadow-md py-4 px-6 flex items-center justify-between sticky top-0 z-10"
-      style={{ height: "68px" }}
-    >
-      <div className="flex items-center gap-3">
-        {onToggleSidebar && (
-          <Button
-            type="text"
-            icon={<MenuFoldOutlined style={{ color: "white", fontSize: 18 }} />}
-            onClick={onToggleSidebar}
-          />
-        )}
+      <header
+        className="bg-blue-900 text-white shadow-md py-4 px-6 flex items-center justify-between sticky top-0 z-10"
+        style={{ height: "68px" }}
+      >
+        <div className="flex items-center gap-3">
+          {onToggleSidebar && (
+            <Button
+              type="text"
+              icon={<MenuFoldOutlined style={{ color: "white", fontSize: 18 }} />}
+              onClick={onToggleSidebar}
+            />
+          )}
 
-        <img src={LogoWhite} alt="Logo" className="h-8 mr-2" />
-        <NavLink
-          to="/nha-tuyen-dung/dashboard"
-          className="text-white hover:text-gray-200 text-sm font-medium"
-        >
-          Trang ch?
-        </NavLink>
-      </div>
+          <img src={LogoWhite} alt="Logo" className="h-8 mr-2" />
+          <NavLink
+            to="/nha-tuyen-dung/dashboard"
+            className="text-white hover:text-gray-200 text-sm font-medium"
+          >
+            Trang chủ
+          </NavLink>
+        </div>
 
-      <div className="flex items-center space-x-5">
-
-        {/* USER DROPDOWN */}
-        {user &&
-        (user.roles.includes(ROLES.EMPLOYER) ||
-          user.roles.includes(ROLES.ADMIN)) ? (
-          <Dropdown menu={{ items: dropdownItems }} placement="bottomRight" arrow>
-            <a
-              onClick={(e) => e.preventDefault()}
-              className="flex items-center space-x-2 text-white hover:text-gray-200"
-            >
-              <Avatar
-                size="small"
-                src={avatarSrc}
-                icon={!avatarSrc ? <UserOutlined /> : undefined}
-                className="bg-blue-600"
+        <div className="flex items-center space-x-5">
+          {/* USER DROPDOWN */}
+          {user && (user.roles.includes(ROLES.EMPLOYER) || user.roles.includes(ROLES.ADMIN)) ? (
+            <Dropdown menu={{ items: dropdownItems }} placement="bottomRight" arrow>
+              <a
+                onClick={(e) => e.preventDefault()}
+                className="flex items-center space-x-2 text-white hover:text-gray-200"
               >
-                {!avatarSrc && displayName ? displayName.charAt(0).toUpperCase() : null}
-              </Avatar>
-              <span className="font-medium flex items-center gap-1">
-                {displayName}
-                {planStatus.isPremium && (
-                  <Tag color="gold" className="m-0">
-                    {planStatus.label ? planStatus.label.toUpperCase() : "PREMIUM"}
-                  </Tag>
-                )}
-              </span>
-              <DownOutlined style={{ fontSize: "10px" }} />
-            </a>
-          </Dropdown>
-        ) : (
-          <div className="flex items-center space-x-4">
+                <Avatar
+                  size="small"
+                  src={avatarSrc}
+                  icon={!avatarSrc ? <UserOutlined /> : undefined}
+                  className="bg-blue-600"
+                >
+                  {!avatarSrc && displayName ? displayName.charAt(0).toUpperCase() : null}
+                </Avatar>
+                <span className="font-medium flex items-center gap-1">
+                  {displayName}
+                  {planStatus.isPremium && (
+                    <Tag color="gold" className="m-0">
+                      {planStatus.label ? planStatus.label.toUpperCase() : "PREMIUM"}
+                    </Tag>
+                  )}
+                </span>
+                <DownOutlined style={{ fontSize: "10px" }} />
+              </a>
+            </Dropdown>
+          ) : (
+            <div className="flex items-center space-x-4">
+              <NavLink
+                to="/login"
+                className="text-white hover:text-gray-200 text-sm font-medium"
+              >
+                Đăng nhập
+              </NavLink>
+              <NavLink
+                to="/nha-tuyen-dung/register"
+                className="text-white hover:text-gray-200 text-sm font-medium"
+              >
+                Đăng ký
+              </NavLink>
+            </div>
+          )}
+
+          <div className="border-l border-blue-700 h-6"></div>
+
+          {location.pathname.startsWith("/nha-tuyen-dung") ? (
             <NavLink
               to="/login"
-              className="text-white hover:text-gray-200 text-sm font-medium"
+              className="text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
             >
-           �ang nh?p
+              Cho người tìm việc
             </NavLink>
+          ) : (
             <NavLink
-              to="/nha-tuyen-dung/register"
-              className="text-white hover:text-gray-200 text-sm font-medium"
+              to="/nha-tuyen-dung"
+              className="text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
             >
-              �ang k�
+              Nhà tuyển dụng
             </NavLink>
-          </div>
-        )}
-
-        <div className="border-l border-blue-700 h-6"></div>
-
-        {location.pathname.startsWith("/nha-tuyen-dung") ? (
-          <NavLink
-            to="/login"
-            className="text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
-          >
-            Cho người tìm việc
-          </NavLink>
-        ) : (
-          <NavLink
-            to="/nha-tuyen-dung"
-            className="text-gray-200 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
-          >
-            Nhà tuyển dụng
-          </NavLink>
-        )}
-      </div>
-    </header>
-    <SystemReportModal open={reportModalOpen} onClose={() => setReportModalOpen(false)} />
+          )}
+        </div>
+      </header>
+      <SystemReportModal open={reportModalOpen} onClose={() => setReportModalOpen(false)} />
     </>
   );
 };
 
 export default EmployerHeader;
-
-
-
-
-
-
-

@@ -1,0 +1,636 @@
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Pie,
+  PieChart,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import {
+  BarChartOutlined,
+  DollarOutlined,
+  FileTextOutlined,
+  FlagOutlined,
+  LineChartOutlined,
+  RiseOutlined,
+  TeamOutlined,
+  TrophyOutlined,
+  UserAddOutlined,
+} from "@ant-design/icons";
+import {
+  Card,
+  Typography,
+  Segmented,
+  Statistic,
+  Space,
+  message,
+  List,
+  Tag,
+  Divider,
+  Progress,
+} from "antd";
+import adminDashboardService, {
+  type AdminDashboardSummary,
+  type JobCategoryStat,
+  type NewsTimeStat,
+  type PostTimeStat,
+  type RevenueByPlanStat,
+  type RevenueSummary,
+  type RevenueTimeStat,
+  type SubscriptionStats,
+  type TimeMode,
+  type TopEmployerStat,
+  type UserTimeStat,
+} from "../../features/admin/services/dashboard.service";
+
+const { Title, Text } = Typography;
+
+type TrendPoint = { date: string | null; year: number; month: number | null };
+
+const defaultSummary: AdminDashboardSummary = {
+  totalUsers: 0,
+  newUsers30Days: 0,
+  totalEmployers: 0,
+  totalJobSeekers: 0,
+  totalPosts: 0,
+  activePosts: 0,
+  pendingPosts: 0,
+  pendingReports: 0,
+  solvedReports: 0,
+  totalApplications: 0,
+  newApplications30Days: 0,
+};
+
+const defaultRevenueSummary: RevenueSummary = {
+  totalRevenue: 0,
+  thisMonthRevenue: 0,
+  lastMonthRevenue: 0,
+  growthPercent: 0,
+};
+
+const defaultSubscriptionStats: SubscriptionStats = {
+  free: 0,
+  medium: 0,
+  premium: 0,
+  active: 0,
+  expired: 0,
+};
+
+const formatNumber = (value: number, fallback = "0") => {
+  if (typeof value !== "number" || Number.isNaN(value)) return fallback;
+  return value.toLocaleString("vi-VN");
+};
+
+const formatCurrency = (value: number) => {
+  const safe = typeof value === "number" && !Number.isNaN(value) ? value : 0;
+  return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(safe);
+};
+
+const formatPeriodLabel = (point: TrendPoint, mode: TimeMode) => {
+  if (mode === "day" && point.date) {
+    const dt = new Date(point.date);
+    if (!Number.isNaN(dt.getTime())) {
+      return dt.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
+    }
+  }
+
+  if (mode === "month") {
+    if (point.month && point.year) {
+      return `${String(point.month).padStart(2, "0")}/${point.year}`;
+    }
+    if (point.date) {
+      const dt = new Date(point.date);
+      if (!Number.isNaN(dt.getTime())) {
+        return `${String(dt.getMonth() + 1).padStart(2, "0")}/${dt.getFullYear()}`;
+      }
+    }
+  }
+
+  return point.year ? String(point.year) : "—";
+};
+
+const gradientDefs = (
+  <defs>
+    <linearGradient id="colorA" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stopColor="#1677ff" stopOpacity={0.35} />
+      <stop offset="100%" stopColor="#1677ff" stopOpacity={0} />
+    </linearGradient>
+    <linearGradient id="colorB" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stopColor="#eb2f96" stopOpacity={0.3} />
+      <stop offset="100%" stopColor="#eb2f96" stopOpacity={0} />
+    </linearGradient>
+    <linearGradient id="colorC" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stopColor="#52c41a" stopOpacity={0.35} />
+      <stop offset="100%" stopColor="#52c41a" stopOpacity={0} />
+    </linearGradient>
+  </defs>
+);
+
+const AdminDashboard: React.FC = () => {
+  const [summary, setSummary] = useState<AdminDashboardSummary>(defaultSummary);
+  const [revenueSummary, setRevenueSummary] = useState<RevenueSummary>(defaultRevenueSummary);
+  const [subscriptionStats, setSubscriptionStats] = useState<SubscriptionStats>(defaultSubscriptionStats);
+
+  const [userStats, setUserStats] = useState<UserTimeStat[]>([]);
+  const [postStats, setPostStats] = useState<PostTimeStat[]>([]);
+  const [revenueStats, setRevenueStats] = useState<RevenueTimeStat[]>([]);
+  const [newsStats, setNewsStats] = useState<NewsTimeStat[]>([]);
+
+  const [categoryStats, setCategoryStats] = useState<JobCategoryStat[]>([]);
+  const [topEmployers, setTopEmployers] = useState<TopEmployerStat[]>([]);
+  const [revenueByPlan, setRevenueByPlan] = useState<RevenueByPlanStat[]>([]);
+
+  const [timeMode, setTimeMode] = useState<TimeMode>("month");
+  const [loadingOverview, setLoadingOverview] = useState(false);
+  const [loadingTrends, setLoadingTrends] = useState(false);
+  const [loadingStatic, setLoadingStatic] = useState(false);
+
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const fetchOverview = async () => {
+      setLoadingOverview(true);
+      try {
+        const [summaryRes, revenueRes, subscriptionRes] = await Promise.all([
+          adminDashboardService.getSummary(),
+          adminDashboardService.getRevenueSummary(),
+          adminDashboardService.getSubscriptionStats(),
+        ]);
+
+        if (!mountedRef.current) return;
+        setSummary(summaryRes);
+        setRevenueSummary(revenueRes);
+        setSubscriptionStats(subscriptionRes);
+      } catch (error) {
+        console.error("overview error", error);
+        if (mountedRef.current) {
+          message.error("Không tải được dữ liệu tổng quan dashboard.");
+        }
+      } finally {
+        if (mountedRef.current) {
+          setLoadingOverview(false);
+        }
+      }
+    };
+
+    void fetchOverview();
+  }, []);
+
+  useEffect(() => {
+    const fetchTrends = async () => {
+      setLoadingTrends(true);
+      try {
+        const [users, posts, revenue, news] = await Promise.all([
+          adminDashboardService.getUserStats(timeMode),
+          adminDashboardService.getPostStats(timeMode),
+          adminDashboardService.getRevenueStats(timeMode),
+          adminDashboardService.getNewsStats(timeMode),
+        ]);
+
+        if (!mountedRef.current) return;
+        setUserStats(users);
+        setPostStats(posts);
+        setRevenueStats(revenue);
+        setNewsStats(news);
+      } catch (error) {
+        console.error("trend error", error);
+        if (mountedRef.current) {
+          message.error("Không tải được dữ liệu biểu đồ theo thời gian.");
+        }
+      } finally {
+        if (mountedRef.current) {
+          setLoadingTrends(false);
+        }
+      }
+    };
+
+    void fetchTrends();
+  }, [timeMode]);
+
+  useEffect(() => {
+    const fetchStatic = async () => {
+      setLoadingStatic(true);
+      try {
+        const [categories, topEmp, revenuePlan] = await Promise.all([
+          adminDashboardService.getCategoryStats(),
+          adminDashboardService.getTopEmployers(),
+          adminDashboardService.getRevenueByPlan(),
+        ]);
+
+        if (!mountedRef.current) return;
+        setCategoryStats(categories);
+        setTopEmployers(topEmp);
+        setRevenueByPlan(revenuePlan);
+      } catch (error) {
+        console.error("static error", error);
+        if (mountedRef.current) {
+          message.error("Không tải được dữ liệu thống kê phụ trợ.");
+        }
+      } finally {
+        if (mountedRef.current) {
+          setLoadingStatic(false);
+        }
+      }
+    };
+
+    void fetchStatic();
+  }, []);
+
+  const userChartData = useMemo(
+    () =>
+      userStats.map((item) => ({
+        label: formatPeriodLabel(item, timeMode),
+        employers: item.employers,
+        jobSeekers: item.jobSeekers,
+        total: item.employers + item.jobSeekers,
+      })),
+    [userStats, timeMode],
+  );
+
+  const postChartData = useMemo(
+    () =>
+      postStats.map((item) => ({
+        label: formatPeriodLabel(item, timeMode),
+        employerPosts: item.employerPosts,
+        jobSeekerPosts: item.jobSeekerPosts,
+        total: item.employerPosts + item.jobSeekerPosts,
+      })),
+    [postStats, timeMode],
+  );
+
+  const revenueChartData = useMemo(
+    () =>
+      revenueStats.map((item) => ({
+        label: formatPeriodLabel(item, timeMode),
+        revenue: item.revenue,
+      })),
+    [revenueStats, timeMode],
+  );
+
+  const newsChartData = useMemo(
+    () =>
+      newsStats.map((item) => ({
+        label: formatPeriodLabel(item, timeMode),
+        count: item.count,
+      })),
+    [newsStats, timeMode],
+  );
+
+  const subscriptionPieData = useMemo(
+    () => [
+      { name: "Free", value: subscriptionStats.free, color: "#91d5ff" },
+      { name: "Medium", value: subscriptionStats.medium, color: "#40a9ff" },
+      { name: "Premium", value: subscriptionStats.premium, color: "#722ed1" },
+      { name: "Expired", value: subscriptionStats.expired, color: "#f5222d" },
+    ],
+    [subscriptionStats],
+  );
+
+  const periodOptions: { label: string; value: TimeMode }[] = [
+    { label: "Ngày", value: "day" },
+    { label: "Tháng", value: "month" },
+    { label: "Năm", value: "year" },
+  ];
+
+  const growthTagColor = revenueSummary.growthPercent >= 0 ? "green" : "red";
+
+  const heroTitle = "Bảng điều khiển quản trị";
+  const heroDesc =
+    "Theo dõi sức khỏe nền tảng: người dùng, bài đăng, doanh thu, báo cáo và lượt đăng ký gói. Số liệu cập nhật theo thời gian thực.";
+
+  return (
+    <div className="space-y-6">
+      <Card
+        variant="borderless"
+        className="bg-gradient-to-r from-sky-500 via-indigo-600 to-purple-600 rounded-2xl text-white shadow-lg"
+        styles={{ body: { padding: 24 } }}
+      >
+        <Space direction="vertical" size={8} className="w-full">
+          <Space size={8} className="text-white/90 text-sm">
+            <BarChartOutlined />
+            Admin Dashboard
+          </Space>
+          <Title level={3} className="!text-white !mb-1">
+            {heroTitle}
+          </Title>
+          <Text className="!text-white/85">{heroDesc}</Text>
+          <Space className="flex flex-wrap gap-2 pt-2" size={10}>
+            <Tag color="blue-inverse" className="rounded-full">
+              Real-time overview
+            </Tag>
+            <Tag color="gold" className="rounded-full">
+              Data-driven decisions
+            </Tag>
+          </Space>
+        </Space>
+      </Card>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        <Card loading={loadingOverview} className="shadow-sm border border-slate-100">
+          <Statistic
+            title="Tổng người dùng"
+            value={summary.totalUsers}
+            formatter={(val) => formatNumber(Number(val))}
+            valueStyle={{ fontSize: 20, fontWeight: 600, color: "#0f172a" }}
+            prefix={<TeamOutlined className="text-blue-500" />}
+          />
+          <Text type="secondary">Mới 30 ngày: {formatNumber(summary.newUsers30Days)}</Text>
+        </Card>
+        <Card loading={loadingOverview} className="shadow-sm border border-slate-100">
+          <Statistic
+            title="Bài đăng"
+            value={summary.totalPosts}
+            formatter={(val) => formatNumber(Number(val))}
+            valueStyle={{ fontSize: 20, fontWeight: 600, color: "#0f172a" }}
+            prefix={<FileTextOutlined className="text-purple-500" />}
+          />
+          <Text type="secondary">
+            Active {formatNumber(summary.activePosts)} | Pending {formatNumber(summary.pendingPosts)}
+          </Text>
+        </Card>
+        <Card loading={loadingOverview} className="shadow-sm border border-slate-100">
+          <Statistic
+            title="Báo cáo chờ xử lý"
+            value={summary.pendingReports}
+            formatter={(val) => formatNumber(Number(val))}
+            valueStyle={{ fontSize: 20, fontWeight: 600, color: "#0f172a" }}
+            prefix={<FlagOutlined className="text-red-500" />}
+          />
+          <Text type="secondary">Đã xử lý: {formatNumber(summary.solvedReports)}</Text>
+        </Card>
+        <Card loading={loadingOverview} className="shadow-sm border border-slate-100">
+          <Statistic
+            title="Ứng tuyển"
+            value={summary.totalApplications}
+            formatter={(val) => formatNumber(Number(val))}
+            valueStyle={{ fontSize: 20, fontWeight: 600, color: "#0f172a" }}
+            prefix={<UserAddOutlined className="text-emerald-500" />}
+          />
+          <Text type="secondary">Mới 30 ngày: {formatNumber(summary.newApplications30Days)}</Text>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card
+          loading={loadingTrends}
+          className="shadow-sm border border-slate-100 min-w-0"
+          title={
+            <Space className="flex items-center justify-between w-full">
+              <Space>
+                <LineChartOutlined className="text-blue-500" />
+                <span>Tăng trưởng người dùng</span>
+              </Space>
+              <Segmented
+                size="small"
+                options={periodOptions}
+                value={timeMode}
+                onChange={(v) => setTimeMode(v as TimeMode)}
+              />
+            </Space>
+          }
+        >
+          <div className="w-full min-w-[320px]" style={{ height: 320, minHeight: 220 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={userChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                {gradientDefs}
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="label" />
+                <YAxis tickFormatter={(v) => formatNumber(v as number)} />
+                <Tooltip formatter={(value) => formatNumber(value as number)} />
+                <Legend />
+                <Area type="monotone" dataKey="employers" stroke="#1677ff" fill="url(#colorA)" name="Employer" />
+                <Area type="monotone" dataKey="jobSeekers" stroke="#eb2f96" fill="url(#colorB)" name="Job Seeker" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+
+        <Card
+          loading={loadingTrends}
+          className="shadow-sm border border-slate-100 min-w-0"
+          title={
+            <Space className="flex items-center justify-between w-full">
+              <Space>
+                <BarChartOutlined className="text-purple-500" />
+                <span>Lưu lượng bài đăng</span>
+              </Space>
+              <Segmented
+                size="small"
+                options={periodOptions}
+                value={timeMode}
+                onChange={(v) => setTimeMode(v as TimeMode)}
+              />
+            </Space>
+          }
+        >
+          <div className="w-full min-w-[320px]" style={{ height: 320, minHeight: 220 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={postChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                {gradientDefs}
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="label" />
+                <YAxis tickFormatter={(v) => formatNumber(v as number)} />
+                <Tooltip formatter={(value) => formatNumber(value as number)} />
+                <Legend />
+                <Area type="monotone" dataKey="employerPosts" stroke="#52c41a" fill="url(#colorC)" name="Bài đăng NTĐ" />
+                <Area type="monotone" dataKey="jobSeekerPosts" stroke="#eb2f96" fill="url(#colorB)" name="Bài đăng UV" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <Card
+          loading={loadingTrends}
+          className="shadow-sm border border-slate-100 lg:col-span-2 min-w-0"
+          title={
+            <Space className="flex items-center justify-between w-full">
+              <Space>
+                <RiseOutlined className="text-emerald-500" />
+                <span>Doanh thu theo thời gian</span>
+              </Space>
+              <Segmented
+                size="small"
+                options={periodOptions}
+                value={timeMode}
+                onChange={(v) => setTimeMode(v as TimeMode)}
+              />
+            </Space>
+          }
+        >
+          <div className="w-full min-w-[320px]" style={{ height: 320, minHeight: 220 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={revenueChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                {gradientDefs}
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="label" />
+                <YAxis tickFormatter={(v) => formatNumber(v as number)} />
+                <Tooltip formatter={(value) => formatCurrency(value as number)} />
+                <Legend />
+                <Area type="monotone" dataKey="revenue" stroke="#1677ff" fill="url(#colorA)" name="Doanh thu" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+          <Divider />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <Statistic
+              title="Tổng doanh thu"
+              value={revenueSummary.totalRevenue}
+              formatter={(val) => formatCurrency(Number(val))}
+              valueStyle={{ fontWeight: 600 }}
+              prefix={<DollarOutlined className="text-blue-500" />}
+            />
+            <Statistic
+              title="Tháng này"
+              value={revenueSummary.thisMonthRevenue}
+              formatter={(val) => formatCurrency(Number(val))}
+              valueStyle={{ fontWeight: 600 }}
+              prefix={<LineChartOutlined className="text-emerald-500" />}
+            />
+            <Statistic
+              title="Tăng trưởng"
+              value={revenueSummary.growthPercent}
+              suffix="%"
+              valueStyle={{ color: growthTagColor === "green" ? "#389e0d" : "#cf1322" }}
+              prefix={<RiseOutlined className={growthTagColor === "green" ? "text-emerald-500" : "text-red-500"} />}
+            />
+          </div>
+        </Card>
+
+        <Card loading={loadingStatic} className="shadow-sm border border-slate-100 min-w-0" title="Doanh thu theo gói">
+          <div className="w-full min-w-[320px]" style={{ height: 320, minHeight: 220 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={revenueByPlan} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="planName" />
+                <YAxis tickFormatter={(v) => formatNumber(v as number)} />
+                <Tooltip formatter={(value, name) => (name === "count" ? formatNumber(value as number) : formatCurrency(value as number))} />
+                <Legend />
+                <Bar dataKey="revenue" name="Doanh thu" fill="#1677ff" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="count" name="Số giao dịch" fill="#52c41a" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <Card loading={loadingStatic} className="shadow-sm border border-slate-100 lg:col-span-2 min-w-0" title="Phân bổ danh mục bài đăng">
+          <div className="w-full min-w-[320px]" style={{ height: 320, minHeight: 220 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={categoryStats} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="categoryName" />
+                <YAxis tickFormatter={(v) => formatNumber(v as number)} />
+                <Tooltip formatter={(value) => formatNumber(value as number)} />
+                <Bar dataKey="count" name="Bài đăng" fill="#722ed1" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+
+        <Card loading={loadingStatic} className="shadow-sm border border-slate-100 min-w-0" title="Tình trạng gói đăng ký">
+          <div className="w-full min-w-[240px]" style={{ height: 260, minHeight: 200 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={subscriptionPieData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={50}
+                  outerRadius={90}
+                  label
+                >
+                  {subscriptionPieData.map((entry) => (
+                    <Cell key={entry.name} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value) => formatNumber(value as number)} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <Divider />
+          <Space direction="vertical" size={6} className="w-full">
+            <Text type="secondary">Đang hoạt động: {formatNumber(subscriptionStats.active)}</Text>
+            <Progress
+              percent={
+                subscriptionStats.active + subscriptionStats.expired > 0
+                  ? Math.round((subscriptionStats.active / (subscriptionStats.active + subscriptionStats.expired)) * 100)
+                  : 0
+              }
+              status="active"
+              showInfo={false}
+            />
+            <Text type="secondary">Hết hạn: {formatNumber(subscriptionStats.expired)}</Text>
+          </Space>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <Card loading={loadingStatic} className="shadow-sm border border-slate-100 lg:col-span-2 min-w-0" title="Lượt tin tức theo thời gian">
+          <div className="w-full min-w-[320px]" style={{ height: 280, minHeight: 220 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={newsChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                {gradientDefs}
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="label" />
+                <YAxis tickFormatter={(v) => formatNumber(v as number)} />
+                <Tooltip formatter={(value) => formatNumber(value as number)} />
+                <Legend />
+                <Area type="monotone" dataKey="count" stroke="#1677ff" fill="url(#colorA)" name="Tin tức" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+
+        <Card loading={loadingStatic} className="shadow-sm border border-slate-100 min-w-0" title="Top nhà tuyển dụng">
+          <List
+            itemLayout="horizontal"
+            dataSource={topEmployers}
+            renderItem={(item, index) => (
+              <List.Item>
+                <List.Item.Meta
+                  avatar={
+                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-sm font-semibold text-slate-700 border border-slate-200">
+                      {index + 1}
+                    </div>
+                  }
+                  title={
+                    <Space>
+                      <TrophyOutlined className="text-amber-500" />
+                      <span>{item.employerName}</span>
+                    </Space>
+                  }
+                  description={
+                    <Space size={12}>
+                      <Tag color="blue">Bài đăng: {formatNumber(item.totalPosts)}</Tag>
+                      <Tag color="green">Ứng tuyển: {formatNumber(item.totalApplications)}</Tag>
+                    </Space>
+                  }
+                />
+              </List.Item>
+            )}
+          />
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default AdminDashboard;

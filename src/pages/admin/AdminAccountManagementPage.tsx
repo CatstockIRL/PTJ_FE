@@ -13,7 +13,10 @@ import {
   Avatar,
   Divider,
   Modal,
-  Tabs
+  Tabs,
+  Form,
+  InputNumber,
+  Popconfirm,
 } from 'antd';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import type { TabsProps } from 'antd';
@@ -21,13 +24,16 @@ import {
   ReloadOutlined,
   SearchOutlined,
   EyeOutlined,
-  UserSwitchOutlined
+  UserSwitchOutlined,
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons';
 import adminUserService from '../../features/admin/services/adminUser.service';
 import adminEmployerRegistrationService from '../../features/admin/services/adminEmployerRegistration.service';
 import type { AdminUser, AdminUserDetail } from '../../features/admin/types/user';
 import adminPlanService from '../../features/admin/services/adminPlan.service';
-import type { AdminSubscriptionHistory, AdminTransactionHistory } from '../../features/admin/types/adminPlan';
+import type { AdminSubscriptionHistory, AdminTransactionHistory, AdminPlan, AdminPlanPayload } from '../../features/admin/types/adminPlan';
 import type {
   AdminEmployerRegListItem,
   AdminEmployerRegStatus,
@@ -93,7 +99,7 @@ const roleOptions = [
 ];
 
 const AdminAccountManagementPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'accounts' | 'registrations' | 'google'>('accounts');
+  const [activeTab, setActiveTab] = useState<'accounts' | 'registrations' | 'google' | 'plans'>('accounts');
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
@@ -131,6 +137,41 @@ const AdminAccountManagementPage: React.FC = () => {
   const [subHistory, setSubHistory] = useState<AdminSubscriptionHistory[]>([]);
   const [transactionHistory, setTransactionHistory] = useState<AdminTransactionHistory[]>([]);
   const [planLoading, setPlanLoading] = useState(false);
+  const [plans, setPlans] = useState<AdminPlan[]>([]);
+  const [planListLoading, setPlanListLoading] = useState(false);
+  const [planModalOpen, setPlanModalOpen] = useState(false);
+  const [editingPlan, setEditingPlan] = useState<AdminPlan | null>(null);
+  const [planForm] = Form.useForm<AdminPlanPayload>();
+
+  const fetchPlans = useCallback(async () => {
+    setPlanListLoading(true);
+    try {
+      const data = await adminPlanService.getPlans();
+      setPlans(data);
+    } catch (error) {
+      console.error('Failed to load plans', error);
+      message.error('Khong the tai danh sach goi');
+    } finally {
+      setPlanListLoading(false);
+    }
+  }, []);
+
+  const handleDeletePlan = useCallback(
+    async (plan: AdminPlan) => {
+      try {
+        setPlanListLoading(true);
+        await adminPlanService.deletePlan(plan.planId);
+        message.success('Xoa goi thanh cong');
+        await fetchPlans();
+      } catch (error) {
+        console.error('Delete plan error', error);
+        message.error('Khong the xoa goi');
+      } finally {
+        setPlanListLoading(false);
+      }
+    },
+    [fetchPlans]
+  );
 
   const normalizedFilters = useMemo(() => {
     const statusMap: Record<FilterState['status'], boolean | undefined> = {
@@ -154,14 +195,56 @@ const AdminAccountManagementPage: React.FC = () => {
     };
   }, [filters, pagination]);
 
-  const normalizedRegFilters = useMemo(() => {
-    return {
+  const normalizedRegFilters = useMemo(
+    () => ({
       status: regFilters.status === 'All' ? undefined : regFilters.status,
       keyword: regFilters.keyword.trim() || undefined,
       page: regPagination.current,
       pageSize: regPagination.pageSize
-    };
-  }, [regFilters, regPagination]);
+    }),
+    [regFilters, regPagination]
+  );
+
+  const openCreatePlanModal = useCallback(() => {
+    setEditingPlan(null);
+    planForm.resetFields();
+    setPlanModalOpen(true);
+  }, [planForm]);
+
+  const openEditPlanModal = useCallback(
+    (plan: AdminPlan) => {
+      setEditingPlan(plan);
+      planForm.setFieldsValue({
+        planName: plan.planName,
+        price: plan.price,
+        maxPosts: plan.maxPosts,
+        durationDays: plan.durationDays ?? null
+      });
+      setPlanModalOpen(true);
+    },
+    [planForm]
+  );
+
+  const handleSubmitPlan = useCallback(async () => {
+    const values = await planForm.validateFields();
+    try {
+      setPlanListLoading(true);
+      if (editingPlan) {
+        await adminPlanService.updatePlan(editingPlan.planId, values);
+        message.success('Cap nhat goi thanh cong');
+      } else {
+        await adminPlanService.createPlan(values);
+        message.success('Tao goi thanh cong');
+      }
+      setPlanModalOpen(false);
+      await fetchPlans();
+    } catch (error) {
+      console.error('Plan submit error', error);
+      message.error('Khong the luu goi');
+    } finally {
+      setPlanListLoading(false);
+    }
+  }, [editingPlan, planForm, fetchPlans]);
 
   const subscriptionColumns: ColumnsType<AdminSubscriptionHistory> = useMemo(
     () => [
@@ -193,7 +276,7 @@ const AdminAccountManagementPage: React.FC = () => {
         }
       },
       { title: 'Bat dau', dataIndex: 'startDate', key: 'startDate', render: (value?: string) => formatDate(value) },
-      { title: 'Ket thuc', dataIndex: 'endDate', key: 'endDate', render: (value?: string) => formatDate(value) },
+      { title: 'Ket thuc', dataIndex: 'endDate', key: 'endDate', render: (value?: string) => formatDate(value) }
     ],
     []
   );
@@ -223,134 +306,47 @@ const AdminAccountManagementPage: React.FC = () => {
       },
       { title: 'Ma order', dataIndex: 'payOsorderCode', key: 'payOsorderCode', render: (v?: string) => v || '-' },
       { title: 'Tao luc', dataIndex: 'createdAt', key: 'createdAt', render: (v?: string) => formatDate(v) },
-      { title: 'Thanh toan', dataIndex: 'paidAt', key: 'paidAt', render: (v?: string) => formatDate(v) },
+      { title: 'Thanh toan', dataIndex: 'paidAt', key: 'paidAt', render: (v?: string) => formatDate(v) }
     ],
     []
   );
 
-  const fetchUsers = useCallback(
-    async (page: number, pageSize: number) => {
-      setLoading(true);
-      try {
-        const response = await adminUserService.getUsers({
-          ...normalizedFilters,
-          page,
-          pageSize
-        });
-        setUsers(response.items);
-        setPagination((prev) => {
-          const next = { ...prev, current: page, pageSize, total: response.total };
-          const unchanged =
-            prev.current === next.current && prev.pageSize === next.pageSize && prev.total === next.total;
-          return unchanged ? prev : next;
-        });
-      } catch (error) {
-        console.error('Failed to load admin users', error);
-        message.error('Không thể tải danh sách tài khoản');
-      } finally {
-        setLoading(false);
+  const planColumns: ColumnsType<AdminPlan> = useMemo(
+    () => [
+      { title: 'ID', dataIndex: 'planId', key: 'planId', width: 80 },
+      { title: 'Tên gói', dataIndex: 'planName', key: 'planName' },
+      {
+        title: 'Giá',
+        dataIndex: 'price',
+        key: 'price',
+        render: (value: number) => `${(value ?? 0).toLocaleString('vi-VN')} VND`
+      },
+      { title: 'Số bài', dataIndex: 'maxPosts', key: 'maxPosts', render: (v?: number) => (v ?? '-') },
+      { title: 'Số ngày', dataIndex: 'durationDays', key: 'durationDays', render: (v?: number | null) => (v ?? '-') },
+      {
+        title: 'Thao tác',
+        key: 'actions',
+        render: (_, record) => (
+          <Space>
+            <Button size="small" icon={<EditOutlined />} onClick={() => openEditPlanModal(record)}>
+              Sửa
+            </Button>
+            <Popconfirm
+              title="Xóa gói?"
+              okText="Xóa"
+              cancelText="Hủy"
+              onConfirm={() => handleDeletePlan(record)}
+            >
+              <Button size="small" danger icon={<DeleteOutlined />}>
+                Xóa
+              </Button>
+            </Popconfirm>
+          </Space>
+        )
       }
-    },
-    [normalizedFilters]
+    ],
+    [openEditPlanModal, handleDeletePlan]
   );
-
-  const currentPage = pagination.current ?? 1;
-  const currentPageSize = pagination.pageSize ?? 10;
-
-  useEffect(() => {
-    void fetchUsers(currentPage, currentPageSize);
-  }, [fetchUsers, currentPage, currentPageSize]);
-
-  const handleFilterChange = (key: keyof FilterState, value: string) => {
-    setFilters((prev) => ({ ...prev, [key]: value }));
-    setPagination((prev) => ({ ...prev, current: 1 }));
-    void fetchUsers(1, currentPageSize);
-  };
-
-  const handleRegFilterChange = (key: keyof RegFilterState, value: string) => {
-    setRegFilters((prev) => ({ ...prev, [key]: value }));
-    setRegPagination((prev) => ({ ...prev, current: 1 }));
-  };
-
-  const fetchRegistrations = useCallback(
-    async (page: number, pageSize: number) => {
-      setRegLoading(true);
-      try {
-        const response = await adminEmployerRegistrationService.getRequests({
-          ...normalizedRegFilters,
-          page,
-          pageSize
-        });
-        setRegRequests(response.items);
-        setRegPagination((prev) => {
-          const next = { ...prev, current: page, pageSize, total: response.total };
-          const unchanged =
-            prev.current === next.current && prev.pageSize === next.pageSize && prev.total === next.total;
-          return unchanged ? prev : next;
-        });
-      } catch (error) {
-        console.error('Failed to load employer registrations', error);
-        message.error('Không thể tải danh sách hồ sơ nhà tuyển dụng chờ duyệt');
-      } finally {
-        setRegLoading(false);
-      }
-    },
-    [normalizedRegFilters]
-  );
-
-
-  const handleTableChange = (newPagination: TablePaginationConfig) => {
-    setPagination((prev) => ({
-      ...prev,
-      current: newPagination.current,
-      pageSize: newPagination.pageSize
-    }));
-    if (newPagination.current && newPagination.pageSize) {
-      void fetchUsers(newPagination.current, newPagination.pageSize);
-    }
-  };
-
-  const handleRegTableChange = (newPagination: TablePaginationConfig) => {
-    setRegPagination((prev) => ({
-      ...prev,
-      current: newPagination.current,
-      pageSize: newPagination.pageSize
-    }));
-    if (newPagination.current && newPagination.pageSize) {
-      void fetchRegistrations(newPagination.current, newPagination.pageSize);
-    }
-  };
-
-  useEffect(() => {
-    if (activeTab === 'registrations' && regRequests.length === 0) {
-      void fetchRegistrations(regPagination.current ?? 1, regPagination.pageSize ?? 10);
-    }
-  }, [activeTab, fetchRegistrations, regRequests.length, regPagination]);
-
-  useEffect(() => {
-    if (activeTab === 'accounts') {
-      void fetchUsers(currentPage, currentPageSize);
-    }
-  }, [activeTab, fetchUsers, currentPage, currentPageSize]);
-
-  const fetchGoogleRegistrations = useCallback(async () => {
-    setGoogleLoading(true);
-    try {
-      const data = await adminEmployerRegistrationService.getGoogleRequests();
-      setGoogleRegs(data);
-    } catch (error) {
-      console.error('Failed to load google employer registrations', error);
-      message.error('Không thể tải danh sách hồ sơ Google NTD');
-    } finally {
-      setGoogleLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (activeTab === 'google' && googleRegs.length === 0) {
-      void fetchGoogleRegistrations();
-    }
-  }, [activeTab, fetchGoogleRegistrations, googleRegs.length]);
 
   const fetchPlanAndTransactions = useCallback(
     async (userId: number) => {
@@ -710,6 +706,135 @@ const AdminAccountManagementPage: React.FC = () => {
     }
   ];
 
+  const fetchUsers = useCallback(
+    async (page: number, pageSize: number) => {
+      setLoading(true);
+      try {
+        const response = await adminUserService.getUsers({
+          ...normalizedFilters,
+          page,
+          pageSize
+        });
+        setUsers(response.items);
+        setPagination((prev) => {
+          const next = { ...prev, current: page, pageSize, total: response.total };
+          const unchanged =
+            prev.current === next.current && prev.pageSize === next.pageSize && prev.total === next.total;
+          return unchanged ? prev : next;
+        });
+      } catch (error) {
+        console.error('Failed to load admin users', error);
+        message.error('Khong the tai danh sach tai khoan');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [normalizedFilters]
+  );
+
+  const currentPage = pagination.current ?? 1;
+  const currentPageSize = pagination.pageSize ?? 10;
+
+  useEffect(() => {
+    void fetchUsers(currentPage, currentPageSize);
+  }, [fetchUsers, currentPage, currentPageSize]);
+
+  const handleFilterChange = (key: keyof FilterState, value: string) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+    setPagination((prev) => ({ ...prev, current: 1 }));
+    void fetchUsers(1, currentPageSize);
+  };
+
+  const handleRegFilterChange = (key: keyof RegFilterState, value: string) => {
+    setRegFilters((prev) => ({ ...prev, [key]: value }));
+    setRegPagination((prev) => ({ ...prev, current: 1 }));
+  };
+
+  const fetchRegistrations = useCallback(
+    async (page: number, pageSize: number) => {
+      setRegLoading(true);
+      try {
+        const response = await adminEmployerRegistrationService.getRequests({
+          ...normalizedRegFilters,
+          page,
+          pageSize
+        });
+        setRegRequests(response.items);
+        setRegPagination((prev) => {
+          const next = { ...prev, current: page, pageSize, total: response.total };
+          const unchanged =
+            prev.current === next.current && prev.pageSize === next.pageSize && prev.total === next.total;
+          return unchanged ? prev : next;
+        });
+      } catch (error) {
+        console.error('Failed to load employer registrations', error);
+        message.error('Khong the tai danh sach ho so cho duyet');
+      } finally {
+        setRegLoading(false);
+      }
+    },
+    [normalizedRegFilters]
+  );
+
+  const handleTableChange = (newPagination: TablePaginationConfig) => {
+    setPagination((prev) => ({
+      ...prev,
+      current: newPagination.current,
+      pageSize: newPagination.pageSize
+    }));
+    if (newPagination.current && newPagination.pageSize) {
+      void fetchUsers(newPagination.current, newPagination.pageSize);
+    }
+  };
+
+  const handleRegTableChange = (newPagination: TablePaginationConfig) => {
+    setRegPagination((prev) => ({
+      ...prev,
+      current: newPagination.current,
+      pageSize: newPagination.pageSize
+    }));
+    if (newPagination.current && newPagination.pageSize) {
+      void fetchRegistrations(newPagination.current, newPagination.pageSize);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'registrations' && regRequests.length === 0) {
+      void fetchRegistrations(regPagination.current ?? 1, regPagination.pageSize ?? 10);
+    }
+  }, [activeTab, fetchRegistrations, regRequests.length, regPagination]);
+
+  useEffect(() => {
+    if (activeTab === 'accounts') {
+      void fetchUsers(currentPage, currentPageSize);
+    }
+  }, [activeTab, fetchUsers, currentPage, currentPageSize]);
+
+  const fetchGoogleRegistrations = useCallback(async () => {
+    setGoogleLoading(true);
+    try {
+      const data = await adminEmployerRegistrationService.getGoogleRequests();
+      setGoogleRegs(data);
+    } catch (error) {
+      console.error('Failed to load google employer registrations', error);
+      message.error('Khong the tai danh sach ho so Google NTD');
+    } finally {
+      setGoogleLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'google' && googleRegs.length === 0) {
+      void fetchGoogleRegistrations();
+    }
+  }, [activeTab, fetchGoogleRegistrations, googleRegs.length]);
+
+  useEffect(() => {
+    if (activeTab === 'plans' && plans.length === 0) {
+      void fetchPlans();
+    }
+  }, [activeTab, fetchPlans, plans.length]);
+
   const accountTabContent = (
     <>
       <Card
@@ -924,6 +1049,76 @@ const AdminAccountManagementPage: React.FC = () => {
       label: 'Duyệt NTD Google',
       children: googleTabContent,
     },
+    {
+      key: 'plans',
+      label: 'Quản lý gói nâng cấp',
+      children: (
+        <>
+          <Card
+            title="Danh sách gói"
+            extra={
+              <Space>
+                <Button icon={<ReloadOutlined />} onClick={() => void fetchPlans()} loading={planListLoading}>
+                  Làm mới
+                </Button>
+                <Button type="primary" icon={<PlusOutlined />} onClick={openCreatePlanModal}>
+                  Thêm gói
+                </Button>
+              </Space>
+            }
+          >
+            <Table
+              rowKey="planId"
+              dataSource={plans}
+              columns={planColumns}
+              loading={planListLoading}
+              pagination={false}
+              scroll={{ x: 800 }}
+            />
+          </Card>
+
+          <Modal
+            title={editingPlan ? 'Cập nhật gói' : 'Thêm gói'}
+            open={planModalOpen}
+            onOk={handleSubmitPlan}
+            onCancel={() => {
+              setPlanModalOpen(false);
+              setEditingPlan(null);
+            }}
+            confirmLoading={planListLoading}
+            destroyOnClose
+          >
+            <Form layout="vertical" form={planForm} initialValues={{ price: 0, maxPosts: 0, durationDays: null }}>
+              <Form.Item
+                label="Tên gói"
+                name="planName"
+                rules={[{ required: true, message: 'Nhập tên gói' }]}
+              >
+                <Input placeholder="Nhập tên gói" />
+              </Form.Item>
+              <Form.Item
+                label="Giá (VND)"
+                name="price"
+                rules={[{ required: true, message: 'Nhập giá gói' }]}
+              >
+                <InputNumber
+                  min={0}
+                  className="w-full"
+                  controls={false}
+                  precision={0}
+                />
+              </Form.Item>
+              <Form.Item label="Số bài" name="maxPosts">
+                <InputNumber min={0} className="w-full" controls={false} />
+              </Form.Item>
+              <Form.Item label="Số ngày" name="durationDays">
+                <InputNumber min={0} className="w-full" controls={false} />
+              </Form.Item>
+            </Form>
+          </Modal>
+        </>
+      ),
+    },
   ];
   return (
     <>
@@ -939,6 +1134,8 @@ const AdminAccountManagementPage: React.FC = () => {
                 void fetchUsers(currentPage, currentPageSize);
               } else if (activeTab === 'registrations') {
                 void fetchRegistrations(regPagination.current ?? 1, regPagination.pageSize ?? 10);
+              } else if (activeTab === 'plans') {
+                void fetchPlans();
               } else {
                 void fetchGoogleRegistrations();
               }
@@ -948,6 +1145,8 @@ const AdminAccountManagementPage: React.FC = () => {
                 ? loading
                 : activeTab === 'registrations'
                 ? regLoading
+                : activeTab === 'plans'
+                ? planListLoading
                 : googleLoading
             }
           >
@@ -958,7 +1157,7 @@ const AdminAccountManagementPage: React.FC = () => {
 
       <Tabs
         activeKey={activeTab}
-        onChange={(key) => setActiveTab(key as 'accounts' | 'registrations' | 'google')}
+        onChange={(key) => setActiveTab(key as 'accounts' | 'registrations' | 'google' | 'plans')}
         items={tabItems}
       />
 

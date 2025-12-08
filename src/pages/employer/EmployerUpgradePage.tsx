@@ -602,7 +602,7 @@ const EmployerUpgradePage: React.FC = () => {
                 icon={<ArrowRightOutlined />}
                 onClick={() => window.location.assign(paymentData.checkoutUrl)}
                 disabled={isExpired}
-                className="w-full rounded-full"
+                className="w-full rounded-full hidden"
               >
                 Thanh toán
               </Button>

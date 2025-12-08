@@ -52,6 +52,7 @@ import FollowedEmployersPage from "../features/follow/pages/FollowedEmployersPag
 import EmployerUpgradePage from "../pages/employer/EmployerUpgradePage";
 import PaymentSuccessPage from "../pages/payment/PaymentSuccessPage";
 import PaymentCancelledPage from "../pages/payment/PaymentCancelledPage";
+import EmployerBillingHistoryPage from "../pages/employer/EmployerBillingHistoryPage";
 
 export const AppRoutes: React.FC = () => {
   return (
@@ -143,6 +144,10 @@ export const AppRoutes: React.FC = () => {
           <Route
             path="/nha-tuyen-dung/nang-cap"
             element={<EmployerUpgradePage />}
+          />
+          <Route
+            path="/nha-tuyen-dung/lich-su-giao-dich"
+            element={<EmployerBillingHistoryPage />}
           />
           <Route
             path="/nha-tuyen-dung/ung-vien/:employerPostId"
