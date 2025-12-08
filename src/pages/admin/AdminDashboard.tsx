@@ -60,6 +60,7 @@ const formatCurrency = (value: number) =>
   );
 
 const AdminDashboard: React.FC = () => {
+  const panelClass = "shadow-lg border-0 bg-white/90 backdrop-blur";
   const [summary, setSummary] = useState<AdminDashboardSummary | null>(null);
   const [revenueSummary, setRevenueSummary] = useState<RevenueSummary | null>(null);
   const [subscriptionStats, setSubscriptionStats] = useState<SubscriptionStats | null>(null);
@@ -387,33 +388,47 @@ const renderBarChart = <T extends Record<string, unknown>>(data: T[], bars: { ke
 };
 
   return (
-    <div className="space-y-6">
-      <Card
-        variant="borderless"
-        className="bg-gradient-to-r from-sky-500 via-indigo-600 to-purple-600 rounded-2xl text-white shadow-lg"
-        styles={{ body: { padding: 24 } }}
-      >
-        <Space direction="vertical" size={8} className="w-full">
-          <Space size={8} className="text-white/90 text-sm items-center justify-between w-full">
-            <Space size={8}>
-              <BarChartOutlined />
-              Admin Dashboard
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-white to-blue-50">
+      <div className="pointer-events-none absolute -top-24 -left-16 h-72 w-72 rounded-full bg-sky-200/50 blur-3xl" />
+      <div className="pointer-events-none absolute top-10 right-0 h-96 w-96 rounded-full bg-indigo-200/60 blur-3xl" />
+      <div className="relative z-10 space-y-6 p-3 sm:p-4 md:p-6 lg:p-8">
+        <Card
+          variant="borderless"
+          className="bg-gradient-to-r from-sky-500 via-indigo-600 to-purple-600 rounded-2xl text-white shadow-xl"
+          styles={{ body: { padding: 24 } }}
+        >
+          <Space direction="vertical" size={12} className="w-full">
+            <Space size={8} className="text-white/90 text-sm items-center justify-between w-full">
+              <Space size={8}>
+                <BarChartOutlined />
+                Admin Dashboard
+              </Space>
+              <Button type="default" icon={<ReloadOutlined />} onClick={handleRefresh}>
+                Làm mới
+              </Button>
             </Space>
-            <Button type="default" icon={<ReloadOutlined />} onClick={handleRefresh}>
-              Làm mới
-            </Button>
+            <Title level={3} className="!text-white !mb-1">
+              Bảng điều khiển quản trị
+            </Title>
+            <Text className="!text-white/85">
+              Theo dõi người dùng, bài đăng, doanh thu, báo cáo và gói đăng ký. Số liệu hiển thị qua biểu đồ trực quan.
+            </Text>
+            <Space wrap size={[8, 8]}>
+              <Tag color="blue-inverse" className="rounded-full border border-white/30 text-white">
+                Real-time insights
+              </Tag>
+              <Tag color="purple" className="rounded-full border border-white/30 text-white">
+                Revenue & growth
+              </Tag>
+              <Tag color="magenta" className="rounded-full border border-white/30 text-white">
+                User & post trends
+              </Tag>
+            </Space>
           </Space>
-          <Title level={3} className="!text-white !mb-1">
-            Bảng điều khiển quản trị
-          </Title>
-          <Text className="!text-white/85">
-            Theo dõi người dùng, bài đăng, doanh thu, báo cáo và gói đăng ký. Số liệu hiển thị qua biểu đồ trực quan.
-          </Text>
-        </Space>
-      </Card>
+        </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        <Card className="shadow-sm border border-slate-100 min-w-0">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        <Card className={`${panelClass} min-w-0`}>
           <Statistic
             title="Tổng người dùng"
             value={summary?.totalUsers ?? 0}
@@ -423,7 +438,7 @@ const renderBarChart = <T extends Record<string, unknown>>(data: T[], bars: { ke
           />
           <Text type="secondary">Mới 30 ngày: {formatNumber(summary?.newUsers30Days ?? 0)}</Text>
         </Card>
-        <Card className="shadow-sm border border-slate-100 min-w-0">
+        <Card className={`${panelClass} min-w-0`}>
           <Statistic
             title="Bài đăng"
             value={summary?.totalPosts ?? 0}
@@ -435,7 +450,7 @@ const renderBarChart = <T extends Record<string, unknown>>(data: T[], bars: { ke
             Active {formatNumber(summary?.activePosts ?? 0)} | Pending {formatNumber(summary?.pendingPosts ?? 0)}
           </Text>
         </Card>
-        <Card className="shadow-sm border border-slate-100 min-w-0">
+        <Card className={`${panelClass} min-w-0`}>
           <Statistic
             title="Báo cáo chờ xử lý"
             value={summary?.pendingReports ?? 0}
@@ -445,7 +460,7 @@ const renderBarChart = <T extends Record<string, unknown>>(data: T[], bars: { ke
           />
           <Text type="secondary">Đã xử lý: {formatNumber(summary?.solvedReports ?? 0)}</Text>
         </Card>
-        <Card className="shadow-sm border border-slate-100 min-w-0">
+        <Card className={`${panelClass} min-w-0`}>
           <Statistic
             title="Ứng tuyển"
             value={summary?.totalApplications ?? 0}
@@ -458,7 +473,7 @@ const renderBarChart = <T extends Record<string, unknown>>(data: T[], bars: { ke
       </div>
 
       <Card
-        className="shadow-sm border border-slate-100 min-w-0"
+        className={`${panelClass} min-w-0`}
         styles={{ body: { minHeight: 380 } }}
         title={
           <>
@@ -516,20 +531,20 @@ const renderBarChart = <T extends Record<string, unknown>>(data: T[], bars: { ke
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="shadow-sm border border-slate-100 min-w-0" title="Doanh thu theo gói">
+        <Card className={`${panelClass} min-w-0`} title="Doanh thu theo gói">
           {renderBarChart(revenueByPlan, [
             { key: "revenue", name: "Doanh thu", color: "#1677ff" },
             { key: "transactions", name: "Số giao dịch", color: "#52c41a" },
           ])}
         </Card>
 
-        <Card className="shadow-sm border border-slate-100 min-w-0" title="Phân bổ danh mục bài đăng">
+        <Card className={`${panelClass} min-w-0`} title="Phân bổ danh mục bài đăng">
           {renderBarChart(categoryStats, [{ key: "count", name: "Bài đăng", color: "#722ed1" }])}
         </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="shadow-sm border border-slate-100 min-w-0" title="Tình trạng gói đăng ký">
+        <Card className={`${panelClass} min-w-0`} title="Tình trạng gói đăng ký">
           <>
             <div style={{ width: "100%", minWidth: 260, height: 260, minHeight: 240 }} className="flex items-center justify-center">
               <PieChart width={260} height={260}>
@@ -560,7 +575,7 @@ const renderBarChart = <T extends Record<string, unknown>>(data: T[], bars: { ke
           </>
         </Card>
 
-        <Card className="shadow-sm border border-slate-100 min-w-0" title="Top nhà tuyển dụng">
+        <Card className={`${panelClass} min-w-0`} title="Top nhà tuyển dụng">
           <List
             itemLayout="horizontal"
             dataSource={topEmployers}
@@ -590,6 +605,7 @@ const renderBarChart = <T extends Record<string, unknown>>(data: T[], bars: { ke
           />
         </Card>
       </div>
+    </div>
     </div>
   );
 };
