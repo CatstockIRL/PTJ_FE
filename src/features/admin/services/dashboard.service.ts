@@ -65,6 +65,7 @@ export interface JobCategoryStat {
   categoryId: number;
   categoryName: string;
   count: number;
+  [key: string]: string | number;
 }
 
 export interface TopEmployerStat {
@@ -77,7 +78,10 @@ export interface TopEmployerStat {
 export interface RevenueByPlanStat {
   planName: string;
   revenue: number;
-  count: number;
+  transactions: number;
+  users: number;
+  successRate: number;
+  [key: string]: string | number;
 }
 
 const unwrapData = <T>(payload: unknown): T | undefined => {
@@ -160,7 +164,7 @@ const adminDashboardService = {
       totalRevenue: toNumber(pick(data, ["totalRevenue", "TotalRevenue"])),
       thisMonthRevenue: toNumber(pick(data, ["thisMonthRevenue", "ThisMonthRevenue"])),
       lastMonthRevenue: toNumber(pick(data, ["lastMonthRevenue", "LastMonthRevenue"])),
-      growthPercent: toNumber(pick(data, ["growthPercent", "GrowthPercent"])),
+      growthPercent: toNumber(pick(data, ["growthPercent", "GrowthPercent", "monthGrowthPercent", "MonthGrowthPercent"])),
     };
   },
 
@@ -299,7 +303,9 @@ const adminDashboardService = {
       return {
         planName: String(pick(obj, ["planName", "PlanName"]) ?? "Plan"),
         revenue: toNumber(pick(obj, ["revenue", "Revenue"])),
-        count: toNumber(pick(obj, ["count", "Count"])),
+        transactions: toNumber(pick(obj, ["transactions", "Transactions", "count", "Count"])),
+        users: toNumber(pick(obj, ["users", "Users", "employers", "Employers"])),
+        successRate: toNumber(pick(obj, ["successRate", "SuccessRate"])),
       };
     });
   },

@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, Tooltip, XAxis, YAxis } from "recharts";
 import {
   BarChartOutlined,
@@ -352,37 +352,39 @@ const AdminDashboard: React.FC = () => {
     );
   };
 
-  const renderBarChart = <T extends object>(
-    data: T[],
-    bars: { key: string; name: string; color: string }[],
-    minHeight = 320,
-  ) => {
-    const labelKey = bars.length > 1 ? "planName" : "categoryName";
-    return (
-      <div
-        ref={barContainerRef}
-        style={{ width: "100%", minWidth: 320, height: minHeight, minHeight }}
-        className="flex justify-center"
-      >
-        <BarChart width={barSize.width} height={barSize.height} data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} />
-          <XAxis dataKey={labelKey} />
-          <YAxis tickFormatter={(v: number) => formatNumber(v)} />
-          <Tooltip
-            formatter={(value: number, name: string) => {
-              if (name === "count") return formatNumber(value as number);
-              if (name === "revenue") return formatCurrency(value as number);
-              return formatNumber(value as number);
-            }}
+const renderBarChart = <T extends Record<string, unknown>>(data: T[], bars: { key: string; name: string; color: string }[], minHeight = 320) => {
+  const labelKey = bars.length > 1 ? "planName" : "categoryName";
+  const hasRevenue = bars.some((b) => b.key === "revenue");
+  const hasTransactions = bars.some((b) => b.key === "transactions");
+  return (
+    <div ref={barContainerRef} style={{ width: "100%", minWidth: 320, height: minHeight, minHeight }} className="flex justify-center">
+      <BarChart width={barSize.width} height={barSize.height} data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+        <XAxis dataKey={labelKey} />
+        <YAxis tickFormatter={(v: number) => formatNumber(v)} yAxisId="left" />
+        {hasRevenue && hasTransactions && <YAxis yAxisId="right" orientation="right" tickFormatter={(v: number) => formatNumber(v)} />}
+        <Tooltip
+          formatter={(value: number, name: string) => {
+            if (name === "count" || name === "transactions") return formatNumber(value);
+            if (name === "revenue") return formatCurrency(value);
+            return formatNumber(value);
+          }}
+        />
+        <Legend />
+        {bars.map((b) => (
+          <Bar
+            key={b.key}
+            dataKey={b.key}
+            name={b.name}
+            fill={b.color}
+            radius={[4, 4, 0, 0]}
+            yAxisId={hasRevenue && hasTransactions ? (b.key === "transactions" ? "right" : "left") : "left"}
           />
-          <Legend />
-          {bars.map((b) => (
-            <Bar key={b.key} dataKey={b.key} name={b.name} fill={b.color} radius={[4, 4, 0, 0]} />
-          ))}
-        </BarChart>
-      </div>
-    );
-  };
+        ))}
+      </BarChart>
+    </div>
+  );
+};
 
   return (
     <div className="space-y-6">
@@ -517,7 +519,7 @@ const AdminDashboard: React.FC = () => {
         <Card className="shadow-sm border border-slate-100 min-w-0" title="Doanh thu theo gói">
           {renderBarChart(revenueByPlan, [
             { key: "revenue", name: "Doanh thu", color: "#1677ff" },
-            { key: "count", name: "Số giao dịch", color: "#52c41a" },
+            { key: "transactions", name: "Số giao dịch", color: "#52c41a" },
           ])}
         </Card>
 
