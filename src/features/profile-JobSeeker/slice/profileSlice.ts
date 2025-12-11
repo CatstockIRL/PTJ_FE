@@ -44,7 +44,12 @@ export const deleteJobSeekerProfilePicture = createAsyncThunk<void>(
 const jobSeekerProfileSlice = createSlice({
   name: 'jobSeekerProfile',
   initialState,
-  reducers: {},
+  reducers: {
+    clearJobSeekerProfile: (state) => {
+      state.profile = null;
+      state.error = null;
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchJobSeekerProfile.pending, (state) => {
@@ -85,4 +90,5 @@ const jobSeekerProfileSlice = createSlice({
   },
 });
 
+export const { clearJobSeekerProfile } = jobSeekerProfileSlice.actions;
 export default jobSeekerProfileSlice.reducer;

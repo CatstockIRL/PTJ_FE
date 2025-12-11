@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   Alert,
@@ -7,13 +7,12 @@ import {
   Card,
   Tabs,
   Descriptions,
-  List,
-  Rate,
   Typography,
-  Space,
   Empty,
   Tag,
-  Button
+  Rate,
+  List,
+  Avatar
 } from 'antd';
 import type { TabsProps } from 'antd';
 import type { AppDispatch, RootState } from '../../app/store';
@@ -24,16 +23,15 @@ import {
 } from '../../features/employer/slice/profileSlice';
 import ProfileHeader from '../../features/employer/components/profile/ProfileHeader';
 import ProfileForm from '../../features/employer/components/profile/ProfileForm';
-import type { ProfileUpdateRequest, Rating } from '../../types/profile';
+import type { ProfileUpdateRequest } from '../../types/profile';
 import locationService from '../../features/location/locationService';
 
-const { Title, Paragraph, Text } = Typography;
+const { Title } = Typography;
 
 const EmployerProfilePage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { profile, loading, error } = useSelector((state: RootState) => state.profile);
   const authUser = useSelector((state: RootState) => state.auth.user);
-  const [showAllRatings, setShowAllRatings] = useState(false);
   const [resolvedLocation, setResolvedLocation] = useState('');
 
   useEffect(() => {
@@ -47,21 +45,6 @@ const EmployerProfilePage: React.FC = () => {
   const handleDeleteAvatar = async () => {
     await dispatch(deleteEmployerAvatar()).unwrap();
   };
-
-  const ratings: Rating[] = profile?.ratings ?? [];
-  const displayedRatings = useMemo(
-    () => (showAllRatings ? ratings : ratings.slice(0, 3)),
-    [ratings, showAllRatings]
-  );
-  useEffect(() => {
-    setShowAllRatings(false);
-  }, [ratings.length]);
-  const computeAverage = (items: Rating[]) =>
-    items.length > 0
-      ? items.reduce((total, current) => total + Number(current.ratingValue ?? 0), 0) / items.length
-      : undefined;
-  const ratingAverage = profile?.averageRating ?? computeAverage(ratings);
-  const ratingCount = ratings.length;
 
   useEffect(() => {
     let cancelled = false;
@@ -126,15 +109,6 @@ const EmployerProfilePage: React.FC = () => {
     };
   }, [profile]);
 
-  const formatDate = (isoString: string) => {
-    const date = new Date(isoString);
-    return date.toLocaleDateString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-  };
-
   const overviewTab = profile ? (
     <div className="space-y-4">
       <Card title="Thông tin nhà tuyển dụng" bordered={false} className="shadow-sm">
@@ -174,6 +148,7 @@ const EmployerProfilePage: React.FC = () => {
           </Descriptions.Item>
         </Descriptions>
       </Card>
+
     </div>
   ) : (
     <Empty description="Chưa có thông tin hồ sơ" image={Empty.PRESENTED_IMAGE_SIMPLE} />
@@ -208,53 +183,58 @@ const EmployerProfilePage: React.FC = () => {
           <ProfileHeader
             profile={profile}
             loading={loading}
-            ratingCount={ratingCount}
             isVerified={authUser?.verified}
             locationLabel={resolvedLocation}
           />
+          {profile && (
+            <Card
+              bordered={false}
+              className="shadow-md mt-4"
+              title={
+                <div className="flex items-center justify-between gap-2">
+                  <span>Đánh giá từ ứng viên</span>
+                  <Tag color="gold">{profile.ratings?.length ?? 0} đánh giá</Tag>
+                </div>
+              }
+            >
+              <div className="mb-4 flex items-center gap-4 rounded-lg bg-slate-50 p-4">
+                <div>
+                  <div className="text-3xl font-bold text-slate-900">{(profile.averageRating ?? 0).toFixed(1)}</div>
+                  <Rate allowHalf disabled value={profile.averageRating ?? 0} className="text-yellow-500" />
+                  <div className="text-xs text-slate-500">Trung bình</div>
+                </div>
+              </div>
 
-          <Card
-            title="Đánh giá nhà tuyển dụng"
-            bordered={false}
-            className="shadow-md"
-            bodyStyle={{ paddingTop: 16 }}
-          >
-            {ratings.length > 0 ? (
-              <>
-                <List
-                  itemLayout="vertical"
-                  dataSource={displayedRatings}
-                  split={false}
-                  renderItem={(item) => (
-                    <List.Item key={item.ratingId} className="bg-gray-50 rounded-lg px-4 py-3 mb-3">
-                      <Space direction="vertical" size={4} className="w-full">
-                        <Space align="center" className="justify-between">
-                          <Text strong>{item.raterName ?? `Người dùng ${item.raterId}`}</Text>
-                          <Text type="secondary">{formatDate(item.createdAt)}</Text>
-                        </Space>
-                        <Space align="center">
-                          <Rate allowHalf disabled value={Number(item.ratingValue)} />
-                          <Text strong>{Number(item.ratingValue).toFixed(1)}</Text>
-                        </Space>
-                        <Paragraph className="mb-0">
-                          {item.comment ?? 'Không có nhận xét.'}
-                        </Paragraph>
-                      </Space>
-                    </List.Item>
-                  )}
-                />
-                {ratings.length > 3 && (
-                  <div className="text-center mt-2">
-                    <Button type="link" onClick={() => setShowAllRatings((prev) => !prev)}>
-                      {showAllRatings ? 'Thu gọn' : 'Xem tất cả đánh giá'}
-                    </Button>
-                  </div>
+              <List
+                itemLayout="horizontal"
+                dataSource={profile.ratings ?? []}
+                locale={{ emptyText: 'Chưa có đánh giá nào' }}
+                renderItem={(item) => (
+                  <List.Item>
+                    <List.Item.Meta
+                      avatar={
+                        <Avatar style={{ backgroundColor: '#fde3cf', color: '#f56a00' }}>
+                          {item.raterName?.[0]?.toUpperCase() || 'U'}
+                        </Avatar>
+                      }
+                      title={
+                        <div className="flex flex-col">
+                          <span className="font-medium">{item.raterName || 'Người dùng ẩn danh'}</span>
+                          <Rate allowHalf disabled value={item.ratingValue} className="text-xs text-yellow-500" />
+                        </div>
+                      }
+                      description={
+                        <div className="mt-1">
+                          <div className="text-sm text-slate-700">{item.comment || 'Không có nhận xét'}</div>
+                          <div className="mt-1 text-xs text-slate-400">{new Date(item.createdAt).toLocaleDateString('vi-VN')}</div>
+                        </div>
+                      }
+                    />
+                  </List.Item>
                 )}
-              </>
-            ) : (
-              <Empty description="Chưa có đánh giá" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-            )}
-          </Card>
+              />
+            </Card>
+          )}
         </Col>
 
         <Col xs={24} lg={16}>
@@ -266,12 +246,6 @@ const EmployerProfilePage: React.FC = () => {
                 <Title level={4} className="mb-0">
                   Thông tin hồ sơ
                 </Title>
-                {ratingAverage !== undefined && (
-                  <Space size="small" align="center">
-                    <Rate allowHalf disabled value={Math.round(ratingAverage * 2) / 2} />
-                    <Text strong>{ratingAverage.toFixed(1)} / 5</Text>
-                  </Space>
-                )}
               </div>
             }
           >

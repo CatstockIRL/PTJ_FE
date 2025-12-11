@@ -1,7 +1,6 @@
 import baseService from '../../../services/baseService';
 import { adaptPagedResult, type PagedResult, type RawPagedResponse } from './pagedResultHelper';
 import type {
-  AdminResolveSystemReportPayload,
   AdminSystemReport,
   AdminSystemReportDetail,
   AdminSystemReportFilters
@@ -39,8 +38,10 @@ const adminSystemReportService = {
     return await baseService.get<AdminSystemReportDetail>(`/admin/system-reports/${id}`);
   },
 
-  async resolveSystemReport(reportId: number, payload: AdminResolveSystemReportPayload) {
-    return await baseService.post(`/admin/system-reports/${reportId}/resolve`, payload);
+  async resolveSystemReport(reportId: number) {
+    // Đã chọn MarkSolved hay Ignore, back-end hiện chỉ nhận trạng thái; đều coi như đã xử lý.
+    const status = 'Solved';
+    return await baseService.put(`/admin/system-reports/${reportId}`, { status });
   }
 };
 

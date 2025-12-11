@@ -1,15 +1,28 @@
 import * as signalR from "@microsoft/signalr";
+import { API_BASE_URL } from "../../services/baseService";
 import type { Notification } from "./types";
+
+const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, "");
 
 class SignalRService {
   private connection: signalR.HubConnection | null = null;
   private callbacks: ((notification: Notification) => void)[] = [];
+  private startPromise: Promise<void> | null = null;
+  private shouldStop = false;
 
   public async startConnection(userId: string) {
-    if (this.connection?.state === signalR.HubConnectionState.Connected) return;
+    if (this.connection?.state === signalR.HubConnectionState.Connected) {
+      this.shouldStop = false;
+      return;
+    }
+
+    if (this.connection?.state === signalR.HubConnectionState.Connecting && this.startPromise) {
+      this.shouldStop = false;
+      return this.startPromise;
+    }
 
     this.connection = new signalR.HubConnectionBuilder()
-      .withUrl(`https://localhost:7100/hubs/notification?userId=${userId}`, {
+      .withUrl(`${API_ORIGIN}/hubs/notification?userId=${userId}`, {
         skipNegotiation: true,
         transport: signalR.HttpTransportType.WebSockets,
       })
@@ -23,19 +36,40 @@ class SignalRService {
       }
     });
 
+    this.shouldStop = false;
     try {
-      await this.connection.start();
+      this.startPromise = this.connection.start();
+      await this.startPromise;
+      if (this.shouldStop) {
+        await this.stopConnection();
+        return;
+      }
       console.log("SignalR Connected");
     } catch (err) {
       console.error("SignalR Connection Error: ", err);
+      this.startPromise = null;
       setTimeout(() => this.startConnection(userId), 5000);
     }
   }
 
-  public stopConnection() {
+  public async stopConnection() {
+    this.shouldStop = true;
+    if (this.startPromise) {
+      try {
+        await this.startPromise;
+      } catch {
+        // ignore start errors during stop
+      }
+    }
     if (this.connection) {
-      this.connection.stop();
-      this.connection = null;
+      try {
+        await this.connection.stop();
+      } finally {
+        this.connection = null;
+        this.startPromise = null;
+      }
+    } else {
+      this.startPromise = null;
     }
   }
 

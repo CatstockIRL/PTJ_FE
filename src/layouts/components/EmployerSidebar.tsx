@@ -1,6 +1,6 @@
 import React from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { Avatar, Menu, type MenuProps } from "antd";
+import { Menu, type MenuProps } from "antd";
 import {
   HomeOutlined,
   FileTextOutlined,
@@ -12,6 +12,7 @@ import {
   WarningOutlined,
   AppstoreOutlined,
   PieChartOutlined,
+  CrownOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "../../features/auth/hooks";
 import { ROLES } from "../../constants/roles";
@@ -44,20 +45,20 @@ const EmployerSidebar: React.FC<SidebarProps> = ({ isOpen }) => {
     getItem("Công việc", "sub-cong-viec", <FileTextOutlined />, [
       getItem(
         <NavLink to="/nha-tuyen-dung/cong-viec" className="text-sm font-semibold text-gray-800">
-          Quản lí bài đăng tuyển dụng
+          Quản lý bài đăng
         </NavLink>,
         "/nha-tuyen-dung/cong-viec"
       ),
       getItem(
         <NavLink to="/nha-tuyen-dung/dang-tin" className="text-sm font-semibold text-gray-800">
-          Đăng bài tuyển dụng công việc
+          Đăng bài tuyển dụng
         </NavLink>,
         "/nha-tuyen-dung/dang-tin"
       ),
     ]),
     getItem(
       <NavLink to="/nha-tuyen-dung/tim-kiem" className="text-sm font-semibold text-gray-800">
-        Danh sách bài đăng tìm việc
+        Tìm kiếm ứng viên
       </NavLink>,
       "/nha-tuyen-dung/tim-kiem",
       <SearchOutlined />
@@ -68,6 +69,13 @@ const EmployerSidebar: React.FC<SidebarProps> = ({ isOpen }) => {
       </NavLink>,
       "/nha-tuyen-dung/bang-tin",
       <ReadOutlined />
+    ),
+    getItem(
+      <NavLink to="/nha-tuyen-dung/nang-cap" className="text-sm font-semibold text-gray-800">
+        Nâng cấp tài khoản
+      </NavLink>,
+      "/nha-tuyen-dung/nang-cap",
+      <CrownOutlined />
     ),
   ];
 
@@ -124,23 +132,6 @@ const EmployerSidebar: React.FC<SidebarProps> = ({ isOpen }) => {
           className="h-full border-r-0 employer-menu"
         />
       </div>
-
-      {user && (
-        <div className="p-4 flex-shrink-0 border-top border-gray-200">
-          <div className={`flex items-center space-x-3 ${!isOpen ? "justify-center" : ""}`}>
-            <Avatar size={40} icon={<UserOutlined />} className="bg-blue-600">
-              {user.username.charAt(0).toUpperCase()}
-            </Avatar>
-
-            {isOpen && (
-              <div>
-                <div className="font-semibold text-sm text-gray-800">{user.username}</div>
-                <div className="text-xs text-gray-500">{user.email}</div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </aside>
   );
 };

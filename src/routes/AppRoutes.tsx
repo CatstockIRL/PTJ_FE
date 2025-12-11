@@ -28,11 +28,13 @@ import ManagePostingsPage from "../features/jobSeekerPosting/pages/ManagePosting
 import CreatePostingPage from "../features/jobSeekerPosting/pages/CreatePostingPage";
 import EditJobPage from "../features/job/pages/EditJobPage";
 import JobSeekerPostPage from "../features/candidate/pages/JobSeekerPostPage";
+import JobSeekerPostDetailPage from "../features/candidate/pages/JobSeekerPostDetailPage";
 // import SavedTalentPage from "../features/candidate/pages/SavedTalentPage";
 import SavedJobsPage from "../features/savedJob-jobSeeker/pages/SavedJobsPage";
 import AppliedJobsPage from "../features/applyJob-jobSeeker/pages/AppliedJobsPage";
 import AdminDashboard from "../pages/admin/AdminDashboard";
 import AdminAccountManagementPage from "../pages/admin/AdminAccountManagementPage";
+import AdminPlanManagementPage from "../pages/admin/AdminPlanManagementPage";
 import AdminNewsManagementPage from "../pages/admin/AdminNewsManagementPage";
 import AdminJobPostManagementPage from "../pages/admin/AdminJobPostManagementPage";
 import AdminCategoryManagementPage from "../pages/admin/AdminCategoryManagementPage";
@@ -47,6 +49,10 @@ import EmployerDetailPage from "../features/employerDetail-jobseeker/pages/Emplo
 import NewsListPage from "../features/listNew-JobSeeker/pages/NewsListPage";
 import NewsDetailPage from "../features/newsDetail-JobSeeker/pages/NewsDetailPage";
 import FollowedEmployersPage from "../features/follow/pages/FollowedEmployersPage";
+import EmployerUpgradePage from "../pages/employer/EmployerUpgradePage";
+import PaymentSuccessPage from "../pages/payment/PaymentSuccessPage";
+import PaymentCancelledPage from "../pages/payment/PaymentCancelledPage";
+import EmployerBillingHistoryPage from "../pages/employer/EmployerBillingHistoryPage";
 
 export const AppRoutes: React.FC = () => {
   return (
@@ -72,6 +78,8 @@ export const AppRoutes: React.FC = () => {
         <Route path="verify-success" element={<VerifySuccessPage />} />
         <Route path="verify-failed" element={<VerifyFailedPage />} />
         <Route path="/nha-tuyen-dung/chi-tiet/:id" element={<EmployerDetailPage />} />
+        <Route path="payment/success" element={<PaymentSuccessPage />} />
+        <Route path="payment/cancel" element={<PaymentCancelledPage />} />
 
 
         {/* Job Seeker Protected Routes */}
@@ -114,6 +122,10 @@ export const AppRoutes: React.FC = () => {
             element={<JobSeekerPostPage />}
           />
           <Route
+            path="/nha-tuyen-dung/tim-kiem/ung-vien/:id"
+            element={<JobSeekerPostDetailPage />}
+          />
+          <Route
             path="/nha-tuyen-dung/bang-tin"
             element={<NewsListPage />}
           />
@@ -128,6 +140,14 @@ export const AppRoutes: React.FC = () => {
           <Route
             path="nha-tuyen-dung/doi-mat-khau"
             element={<ChangePasswordPage />}
+          />
+          <Route
+            path="/nha-tuyen-dung/nang-cap"
+            element={<EmployerUpgradePage />}
+          />
+          <Route
+            path="/nha-tuyen-dung/lich-su-giao-dich"
+            element={<EmployerBillingHistoryPage />}
           />
           <Route
             path="/nha-tuyen-dung/ung-vien/:employerPostId"
@@ -149,6 +169,7 @@ export const AppRoutes: React.FC = () => {
             path="admin/accounts"
             element={<AdminAccountManagementPage />}
           />
+          <Route path="admin/plans" element={<AdminPlanManagementPage />} />
           <Route path="admin/news" element={<AdminNewsManagementPage />} />
           <Route
             path="admin/job-posts"

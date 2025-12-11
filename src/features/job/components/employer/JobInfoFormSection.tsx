@@ -32,6 +32,9 @@ import {
   salaryTypeOptions,
   type SalaryTypeCode,
 } from "../../../../utils/salary";
+import type { Category } from "../../../category/type";
+
+type OnDataChange = <K extends keyof JobPostData>(field: K, value: JobPostData[K]) => void;
 
 const FormField: React.FC<{
   label: string;
@@ -53,7 +56,7 @@ const MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * 1024 * 1024;
 
 export const JobInfoFormSection: React.FC<{
   data: JobPostData;
-  onDataChange: (field: keyof JobPostData, value: any) => void;
+  onDataChange: OnDataChange;
 }> = ({ data, onDataChange }) => {
   const editor = useRef(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -305,7 +308,7 @@ export const JobInfoFormSection: React.FC<{
     } else {
       setTimeRange([null, null]);
     }
-  }, [data.workHourStart, data.workHourEnd, data.workHours]);
+  }, [data]);
 
   const config = useMemo(
     () => ({
@@ -342,14 +345,27 @@ export const JobInfoFormSection: React.FC<{
       .replace(/\s+/g, " ")
       .trim();
 
-  const handleEditorChange = useCallback(
-    debounce((content: string) => {
-      onDataChange("jobDescription", content);
-    }, 400),
+  const handleEditorChange = useMemo(
+    () =>
+      debounce((content: string) => {
+        onDataChange("jobDescription", content);
+      }, 400),
     [onDataChange]
   );
 
-  const handleBlur = (field: keyof JobPostData, value: any) => {
+  useEffect(
+    () => () => {
+      if (typeof handleEditorChange.cancel === "function") {
+        handleEditorChange.cancel();
+      }
+    },
+    [handleEditorChange]
+  );
+
+  const handleBlur = <K extends keyof JobPostData>(field: K, value: JobPostData[K]) => {
+    if (field === "expiredAt") {
+      return;
+    }
     setTouched((prev) => ({ ...prev, [field]: true }));
     let isInvalid = false;
 
@@ -396,7 +412,7 @@ export const JobInfoFormSection: React.FC<{
     setValidation((prev) => ({ ...prev, [field]: isInvalid }));
   };
 
-  const handleChange = (field: keyof JobPostData, value: any) => {
+  const handleChange = <K extends keyof JobPostData>(field: K, value: JobPostData[K]) => {
     onDataChange(field, value);
     if (validation[field]) {
       setValidation((prev) => ({ ...prev, [field]: false }));
@@ -463,9 +479,6 @@ export const JobInfoFormSection: React.FC<{
     if (start && end) {
       if (!end.isAfter(start)) {
         setValidation((prev) => ({ ...prev, workHours: true }));
-        handleChange("workHourStart", null);
-        handleChange("workHourEnd", null);
-        handleChange("workHours", "");
         return;
       }
       const formatted = `${start.format("HH:mm")} - ${end.format("HH:mm")}`;
@@ -476,13 +489,11 @@ export const JobInfoFormSection: React.FC<{
       return;
     }
 
-    handleChange("workHourStart", null);
-    handleChange("workHourEnd", null);
-    handleChange("workHours", "");
+    // Chưa đủ 2 mốc giờ: cho phép người dùng chọn tiếp, không xóa giá trị cũ.
     setValidation((prev) => ({ ...prev, workHours: true }));
   };
 
-  const updateLocationValidation = (field: keyof JobPostData, value: any) => {
+  const updateLocationValidation = <K extends keyof JobPostData>(field: K, value: JobPostData[K]) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
     setValidation((prev) => ({ ...prev, [field]: !value }));
   };
@@ -692,10 +703,6 @@ export const JobInfoFormSection: React.FC<{
             onChange={(value) =>
               handleSalaryNumberChange("salaryMin", value ?? null)
             }
-            formatter={(value) =>
-              `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-            }
-            parser={(value) => Number(value!.replace(/\$\s?|(,*)/g, ""))}
           />
           <InputNumber
             size="large"
@@ -707,10 +714,6 @@ export const JobInfoFormSection: React.FC<{
             onChange={(value) =>
               handleSalaryNumberChange("salaryMax", value ?? null)
             }
-            formatter={(value) =>
-              `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-            }
-            parser={(value) => Number(value!.replace(/\$\s?|(,*)/g, ""))}
           />
           <Select
             size="large"
@@ -918,7 +921,7 @@ export const JobInfoFormSection: React.FC<{
           onChange={(value) => handleChange("categoryID", value)}
           onBlur={() => handleBlur("categoryID", data.categoryID)}
           className={validation.categoryID ? "select-invalid" : ""}
-          options={categories.map((cat: any) => ({
+          options={categories.map((cat: Category) => ({
             value: cat.categoryId,
             label: cat.name,
           }))}

@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useAppSelector } from "../../../app/hooks";
 import followService, { type EmployerFollowDto } from "../followService";
 import defaultLogo from "../../../assets/no-logo.png";
+import { getEmployerPublicProfile } from "../../listEmployer-jobSeeker/services/service";
 
 const FollowedEmployersPage: React.FC = () => {
   const navigate = useNavigate();
@@ -12,26 +13,74 @@ const FollowedEmployersPage: React.FC = () => {
   const [items, setItems] = useState<EmployerFollowDto[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const toNumber = (value: unknown): number | undefined => {
+    const num = Number(value);
+    return Number.isFinite(num) ? num : undefined;
+  };
+
+  const toStringSafe = (value: unknown, fallback = ""): string => {
+    if (typeof value === "string") return value;
+    if (value === null || value === undefined) return fallback;
+    return String(value);
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       if (!userId) return;
       setLoading(true);
       try {
         const data = await followService.getFollowedEmployers(userId);
-        const mappedItems: EmployerFollowDto[] = (data || []).map((item: any) => ({
-          employerId: item.employerId ?? item.EmployerID ?? item.employerID ?? item.id,
-          employerName: item.employerName ?? item.EmployerName ?? "Nhà tuyển dụng",
-          followDate: item.followDate ?? item.FollowDate ?? item.followedAt ?? item.followedDate,
-          logoUrl:
-            item.logoUrl ??
-            item.logo ??
-            item.employerLogoUrl ??
-            item.avatarUrl ??
-            item.logoUrlSmall ??
-            item.logo_path,
-        }));
-        setItems(mappedItems);
-      } catch (err: any) {
+        const rawList: Record<string, unknown>[] = Array.isArray(data)
+          ? (data as unknown as Record<string, unknown>[])
+          : [];
+        const mappedItems: EmployerFollowDto[] = rawList.map((item) => {
+          const employerId =
+            toNumber(item.employerId) ??
+            toNumber((item as Record<string, unknown>).EmployerID) ??
+            toNumber((item as Record<string, unknown>).employerID) ??
+            toNumber(item.id) ??
+            0;
+
+          return {
+            employerId,
+            employerName:
+              toStringSafe(item.employerName) ||
+              toStringSafe((item as Record<string, unknown>).EmployerName, "Nhà tuyển dụng"),
+            followDate:
+              toStringSafe(item.followDate) ||
+              toStringSafe((item as Record<string, unknown>).FollowDate) ||
+              toStringSafe((item as Record<string, unknown>).followedAt) ||
+              toStringSafe((item as Record<string, unknown>).followedDate),
+            logoUrl:
+              toStringSafe(item.logoUrl) ||
+              toStringSafe((item as Record<string, unknown>).logo) ||
+              toStringSafe((item as Record<string, unknown>).employerLogoUrl) ||
+              toStringSafe((item as Record<string, unknown>).avatarUrl) ||
+              toStringSafe((item as Record<string, unknown>).logoUrlSmall) ||
+              toStringSafe((item as Record<string, unknown>).logo_path, ""),
+          };
+        });
+
+        const enrichedItems = await Promise.all(
+          mappedItems.map(async (item) => {
+            if (item.logoUrl || !item.employerId) {
+              return item;
+            }
+            try {
+              const profile = await getEmployerPublicProfile(item.employerId);
+              return {
+                ...item,
+                employerName: profile.displayName || item.employerName,
+                logoUrl: profile.avatarUrl || item.logoUrl || "",
+              };
+            } catch (error) {
+              console.warn("Không thể tải profile nhà tuyển dụng", item.employerId, error);
+              return item;
+            }
+          })
+        );
+        setItems(enrichedItems);
+      } catch {
         message.error("Không thể tải danh sách theo dõi.");
       } finally {
         setLoading(false);
@@ -107,7 +156,7 @@ const FollowedEmployersPage: React.FC = () => {
                     }
                   />
                   <span className="rounded-full border border-slate-200 px-3 py-1 text-sm text-slate-600">
-                    Nhân sự
+                    Nhà tuyển dụng
                   </span>
                 </List.Item>
               )}

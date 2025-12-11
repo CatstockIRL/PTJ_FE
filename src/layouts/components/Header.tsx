@@ -1,5 +1,5 @@
-import React, { useEffect } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { Button, Dropdown, Avatar, message } from "antd";
 import {
   UserOutlined,
@@ -14,6 +14,7 @@ import {
   SendOutlined,
   FileDoneOutlined,
   LockOutlined,
+  CustomerServiceOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "../../features/auth/hooks";
 import { ROLES } from "../../constants/roles";
@@ -24,6 +25,13 @@ import LogoImage from "../../assets/logo.png";
 import NotificationDropdown from "../../features/notification/components/NotificationDropdown";
 import { useAppSelector, useAppDispatch } from "../../app/hooks";
 import { fetchJobSeekerProfile } from "../../features/profile-JobSeeker/slice/profileSlice";
+import { clearJobSeekerProfile } from "../../features/profile-JobSeeker/slice/profileSlice";
+import { clearProfile as clearEmployerProfile } from "../../features/employer/slice/profileSlice";
+import SystemReportModal from "../../features/report/components/SystemReportModal";
+
+type MainNavChild = { icon: React.ReactNode; text: string; path: string };
+type MainNavLink = { icon: React.ReactNode; text: string; path?: string; children?: MainNavChild[] };
+
 
 const LogoWhite = LogoImage;
 const LogoColor = LogoImage;
@@ -48,7 +56,7 @@ const jobSeekerNavLinks = [
 ];
 
 
-const mainNavLinks = [
+const mainNavLinks: MainNavLink[] = [
   { icon: <SearchOutlined />, text: "Danh sách việc làm", path: "/viec-lam" },
   { icon: <BankOutlined />, text: "Danh sách nhà tuyển dụng", path: "/employer" },
   { icon: <BookOutlined />, text: "Tin tức", path: "/news" },
@@ -75,9 +83,10 @@ const GuestDropdown = () => (
 interface UserDropdownProps {
   user: User;
   onLogout: () => void;
+  onReport: () => void;
 }
 
-const UserDropdown: React.FC<UserDropdownProps> = ({ user, onLogout }) => {
+const UserDropdown: React.FC<UserDropdownProps> = ({ user, onLogout, onReport }) => {
   const overviewLinks = [
     { icon: <UserOutlined />, text: "Hồ sơ của tôi", path: "/tai-khoan" },
     { icon: <LockOutlined />, text: "Đổi mật khẩu", path: "/doi-mat-khau" },
@@ -95,11 +104,11 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ user, onLogout }) => {
       <div className="px-5 py-5 bg-gradient-to-r from-blue-500 via-sky-500 to-indigo-500 text-white flex items-center gap-4">
         <Avatar
           size={48}
-          src={(user as any)?.avatarUrl || user.avatar || undefined}
+          src={user.avatarUrl ?? user.avatar ?? undefined}
           icon={<UserOutlined />}
           className="border border-white/60"
         >
-          {(!((user as any)?.avatarUrl || user.avatar) && user.username)
+          {(!(user.avatarUrl || user.avatar) && user.username)
             ? user.username.charAt(0).toUpperCase()
             : null}
         </Avatar>
@@ -107,7 +116,9 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ user, onLogout }) => {
           <p className="font-semibold text-lg leading-tight truncate">
             {user.username}
           </p>
-          <p className="text-xs text-white/80 truncate">Tài khoản đã xác thực</p>
+          <p className={`text-xs truncate ${user.verified ? "text-white/80" : "text-yellow-100"}`}>
+            {user.verified ? "Tài khoản đã xác thực" : "Tài khoản chưa xác thực"}
+          </p>
         </div>
       </div>
 
@@ -176,9 +187,14 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ user, onLogout }) => {
           </div>
         </div>
 
-        <Button danger onClick={onLogout} icon={<LogoutOutlined />} className="w-full">
-          Đăng xuất
-        </Button>
+        <div className="flex flex-col gap-2">
+          <Button onClick={onReport} icon={<CustomerServiceOutlined />} className="w-full">
+            Dịch vụ hỗ trợ hệ thống
+          </Button>
+          <Button danger onClick={onLogout} icon={<LogoutOutlined />} className="w-full">
+            Đăng xuất
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -188,9 +204,13 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const { user } = useAuth();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const jobSeekerProfile = useAppSelector((state) => state.jobSeekerProfile.profile);
   const jobSeekerProfileLoading = useAppSelector((state) => state.jobSeekerProfile.loading);
   const isJobSeeker = !!user && user.roles.includes(ROLES.JOB_SEEKER);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+
+  const isLoginPage = location.pathname === "/login";
 
   useEffect(() => {
     if (isJobSeeker && !jobSeekerProfile && !jobSeekerProfileLoading) {
@@ -200,22 +220,46 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
 
   const displayName =
     user && isJobSeeker ? jobSeekerProfile?.fullName || user.username : user?.username;
-  const baseAvatar = (user as any)?.avatarUrl || user?.avatar || undefined;
+  const baseAvatar = user?.avatarUrl ?? user?.avatar ?? undefined;
   const avatarSrc = user && isJobSeeker ? jobSeekerProfile?.profilePicture || baseAvatar : baseAvatar;
-  const employerDisplayName = (user as any)?.fullName || displayName;
+  const employerDisplayName = user?.fullName || displayName;
 
   const handleLogout = () => {
     dispatch(logout());
+    dispatch(clearJobSeekerProfile());
+    dispatch(clearEmployerProfile());
     removeAccessToken();
     navigate("/");
     message.success("Đăng xuất thành công!");
   };
+
+  if (isLoginPage) {
+    return (
+      <header
+        className="bg-white shadow-md py-4 px-6 flex items-center justify-between sticky top-0 z-30"
+        style={{ height: "68px" }}
+      >
+        <div className="flex items-center flex-1 min-w-0">
+          <div className="flex items-center space-x-3">
+            <NavLink to="/">
+              <img src={LogoColor} alt="Logo" className="h-10" />
+            </NavLink>
+          </div>
+        </div>
+      </header>
+    );
+  }
 
   if (user && (user.roles.includes(ROLES.EMPLOYER) || user.roles.includes(ROLES.ADMIN))) {
     const userDropdownItems = [
       {
         key: "1",
         label: <NavLink to="/nha-tuyen-dung/ho-so">Hồ sơ của tôi</NavLink>,
+      },
+      {
+        key: "system-report",
+        label: <span onClick={() => setReportModalOpen(true)}>Dịch vụ hỗ trợ hệ thống</span>,
+        icon: <CustomerServiceOutlined />,
       },
       {
         key: "2",
@@ -227,6 +271,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
     ];
 
     return (
+      <>
       <header
         className="bg-blue-900 text-white shadow-md py-4 px-6 flex items-center justify-between sticky top-0 z-30"
         style={{ height: "68px" }}
@@ -262,15 +307,16 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
 
           <div className="border-l border-blue-700 h-6" />
 
-          <NavLink to="/" className="text-white hover:text-gray-200 text-sm font-medium">
-            Cho người tìm việc
-          </NavLink>
+          
         </div>
       </header>
+      <SystemReportModal open={reportModalOpen} onClose={() => setReportModalOpen(false)} />
+      </>
     );
   }
 
   return (
+    <>
     <header
       className="bg-white shadow-md py-4 px-6 flex items-center justify-between sticky top-0 z-30"
       style={{ height: "68px" }}
@@ -285,7 +331,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
 
         <nav className="hidden md:flex items-center space-x-5 ml-4">
           {mainNavLinks.map((link) =>
-            (link as any).children ? (
+            link.children ? (
               isJobSeeker ? (
                 <div key={link.text} className="relative group">
                   <button className="flex items-center text-gray-600 hover:text-blue-600 text-sm font-medium">
@@ -294,7 +340,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                     <DownOutlined className="ml-1 text-[10px]" />
                   </button>
                   <div className="absolute left-0 mt-3 w-64 rounded-lg bg-white shadow-lg border border-gray-200 py-2 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition">
-                    {(link as any).children.map((child: any) => (
+                    {link.children.map((child: MainNavChild) => (
                       <NavLink
                         key={child.path}
                         to={child.path}
@@ -310,7 +356,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             ) : (
               <NavLink
                 key={link.path}
-                to={link.path}
+                to={link.path || "#"}
                 className="flex items-center text-gray-600 hover:text-blue-600 text-sm font-medium"
               >
                 {link.icon}
@@ -324,7 +370,17 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
       <div className="flex items-center space-x-3">
         <NotificationDropdown />
         <Dropdown
-          popupRender={() => (user ? <UserDropdown user={user} onLogout={handleLogout} /> : <GuestDropdown />)}
+          popupRender={() =>
+            user ? (
+              <UserDropdown
+                user={user}
+                onLogout={handleLogout}
+                onReport={() => setReportModalOpen(true)}
+              />
+            ) : (
+              <GuestDropdown />
+            )
+          }
           placement="bottomRight"
           trigger={["hover"]}
         >
@@ -351,7 +407,10 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
         )}
       </div>
     </header>
+    <SystemReportModal open={reportModalOpen} onClose={() => setReportModalOpen(false)} />
+    </>
   );
 };
 
 export default Header;
+

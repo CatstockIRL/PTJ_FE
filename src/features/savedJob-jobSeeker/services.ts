@@ -50,7 +50,7 @@ export const saveJob = async (jobSeekerId: string, jobId: string): Promise<{ suc
       employerPostId: parseInt(jobId),
       note: null,
     };
-    await baseService.post('https://localhost:7100/api/JobSeekerPost/save-job', payload);
+    await baseService.post('/JobSeekerPost/save-job', payload);
     console.log(`Job ${jobId} saved successfully.`);
     return { success: true };
   } catch (error) {
@@ -67,7 +67,7 @@ export const unsaveJob = async (jobSeekerId: string, jobId: string): Promise<{ s
       employerPostId: parseInt(jobId),
       note: null,
     };
-    await baseService.post('https://localhost:7100/api/JobSeekerPost/unsave-job', payload);
+    await baseService.post('/JobSeekerPost/unsave-job', payload);
     console.log(`Job ${jobId} unsaved successfully.`);
     return { success: true };
   } catch (error) {

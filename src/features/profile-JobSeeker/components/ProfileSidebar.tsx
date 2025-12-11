@@ -7,7 +7,7 @@ const ProfileSidebar: React.FC = () => {
   const location = useLocation();
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow-md">
+    <div className="bg-white/90 p-4 rounded-2xl shadow-lg border border-slate-100 backdrop-blur">
       <Menu
         mode="vertical"
         selectedKeys={[location.pathname]}

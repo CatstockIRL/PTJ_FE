@@ -5,6 +5,7 @@ import HeroSection from '../components/HeroSection';
 import FeaturedJobs from '../features/homepage-jobSeeker/components/FeaturedJobs';
 import HotNewsSection from '../features/homepage-jobSeeker/components/HotNewsSection';
 import TopEmployersSlider from '../features/homepage-jobSeeker/components/TopEmployersSlider';
+import PremiumEmployersCarousel from '../features/homepage-jobSeeker/components/PremiumEmployersCarousel';
 import { fetchFeaturedJobs } from '../features/homepage-jobSeeker/homepageSlice';
 
 const JobSeekerHomePage: React.FC = () => {
@@ -17,6 +18,7 @@ const JobSeekerHomePage: React.FC = () => {
 
   const sections = [
     { key: 'featured', node: <FeaturedJobs /> },
+    { key: 'premium', node: <PremiumEmployersCarousel /> },
     { key: 'news', node: <HotNewsSection /> },
     { key: 'employers', node: <TopEmployersSlider /> }
   ];

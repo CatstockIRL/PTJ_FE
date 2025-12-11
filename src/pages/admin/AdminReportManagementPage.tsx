@@ -31,6 +31,7 @@ import { useNavigate } from 'react-router-dom';
 import type {
   AdminReport,
   AdminReportDetail,
+  AdminResolveReportPayload,
   AdminResolveSystemReportPayload,
   AdminSolvedReport,
   AdminSystemReport,
@@ -42,6 +43,9 @@ import { formatSalaryText } from '../../utils/jobPostHelpers';
 
 const { Text } = Typography;
 const { Option } = Select;
+
+const getApiMessage = (error: unknown) =>
+  (error as { response?: { data?: { message?: string } } }).response?.data?.message;
 
 interface PendingFilters {
   reportType: string;
@@ -71,11 +75,13 @@ type DetailRecord =
   | { type: 'system'; data: AdminSystemReportDetail };
 
 interface ResolveFormValues {
-  actionTaken: 'BanUser' | 'UnbanUser' | 'DeletePost' | 'Warn' | 'Ignore';
+  actionTaken: 'BlockPost' | 'HidePost' | 'Warn' | 'Ignore';
   reason?: string;
 }
 
-interface ResolveSystemFormValues extends AdminResolveSystemReportPayload {}
+type ResolveSystemFormValues = AdminResolveSystemReportPayload;
+
+type ResolveAction = ResolveFormValues['actionTaken'];
 
 const AdminReportManagementPage: React.FC = () => {
   const [activeSection, setActiveSection] = useState<SectionKey>('posts');
@@ -129,6 +135,7 @@ const AdminReportManagementPage: React.FC = () => {
   const [resolveModalOpen, setResolveModalOpen] = useState(false);
   const [resolveSubmitting, setResolveSubmitting] = useState(false);
   const [resolvingReportId, setResolvingReportId] = useState<number | null>(null);
+  const [resolvingReport, setResolvingReport] = useState<AdminReport | null>(null);
   const [resolveForm] = Form.useForm<ResolveFormValues>();
 
   const [systemResolveModalOpen, setSystemResolveModalOpen] = useState(false);
@@ -146,6 +153,27 @@ const AdminReportManagementPage: React.FC = () => {
     });
   }, []);
 
+  const normalizeText = useCallback(
+    (value: string) =>
+      value
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/đ/g, 'd')
+        .replace(/Đ/g, 'd')
+        .toLowerCase(),
+    []
+  );
+
+  const pendingKeywordNorm = useMemo(
+    () => normalizeText(pendingFilters.keyword.trim() || ''),
+    [pendingFilters.keyword, normalizeText]
+  );
+
+  const systemKeywordNorm = useMemo(
+    () => normalizeText(systemFilters.keyword.trim() || ''),
+    [systemFilters.keyword, normalizeText]
+  );
+
   const pendingFilterParams = useMemo(
     () => ({
       reportType: pendingFilters.reportType !== 'all' ? pendingFilters.reportType : undefined,
@@ -162,7 +190,14 @@ const AdminReportManagementPage: React.FC = () => {
     [solvedFilters]
   );
 
-  const systemFilterParams = useMemo(
+const pendingPage = pendingPagination.current ?? 1;
+const pendingPageSize = pendingPagination.pageSize ?? 10;
+const solvedPage = solvedPagination.current ?? 1;
+const solvedPageSize = solvedPagination.pageSize ?? 10;
+const systemPage = systemPagination.current ?? 1;
+const systemPageSize = systemPagination.pageSize ?? 10;
+
+const systemFilterParams = useMemo(
     () => ({
       status: systemFilters.status !== 'all' ? systemFilters.status : undefined,
       keyword: systemFilters.keyword.trim() || undefined
@@ -171,8 +206,26 @@ const AdminReportManagementPage: React.FC = () => {
   );
   const sortedReportTypes = useMemo(() => [...reportTypes].sort(), [reportTypes]);
 
+  const pendingDisplayed = useMemo(() => {
+    if (!pendingKeywordNorm) return pendingReports;
+    return pendingReports.filter((item) => {
+      const haystack = normalizeText(
+        `${item.reportType || ''} ${item.reporterEmail || ''} ${item.targetUserEmail || ''} ${item.reason || ''}`
+      );
+      return haystack.includes(pendingKeywordNorm);
+    });
+  }, [pendingKeywordNorm, pendingReports, normalizeText]);
+
+  const systemDisplayed = useMemo(() => {
+    if (!systemKeywordNorm) return systemReports;
+    return systemReports.filter((item) => {
+      const haystack = normalizeText(`${item.title || ''} ${item.userEmail || ''} ${item.description || ''}`);
+      return haystack.includes(systemKeywordNorm);
+    });
+  }, [systemKeywordNorm, systemReports, normalizeText]);
+
   const fetchPendingReports = useCallback(
-    async (page = pendingPagination.current ?? 1, pageSize = pendingPagination.pageSize ?? 10) => {
+    async (page: number, pageSize: number) => {
       setPendingLoading(true);
       try {
         const response = await adminReportService.getPendingReports({
@@ -182,12 +235,12 @@ const AdminReportManagementPage: React.FC = () => {
         });
         setPendingReports(response.items);
         addReportTypes(response.items.map((item) => item.reportType));
-        setPendingPagination((prev) => ({
-          ...prev,
-          current: page,
-          pageSize,
-          total: response.total
-        }));
+        setPendingPagination((prev) => {
+          const next = { ...prev, current: page, pageSize, total: response.total };
+          const unchanged =
+            prev.current === next.current && prev.pageSize === next.pageSize && prev.total === next.total;
+          return unchanged ? prev : next;
+        });
       } catch (error) {
         console.error('Failed to fetch pending reports', error);
         message.error('Không thể tải danh sách report chờ xử lý');
@@ -195,11 +248,11 @@ const AdminReportManagementPage: React.FC = () => {
         setPendingLoading(false);
       }
     },
-    [addReportTypes, pendingFilterParams, pendingPagination.current, pendingPagination.pageSize]
+    [addReportTypes, pendingFilterParams]
   );
 
   const fetchSolvedReports = useCallback(
-    async (page = solvedPagination.current ?? 1, pageSize = solvedPagination.pageSize ?? 10) => {
+    async (page: number, pageSize: number) => {
       setSolvedLoading(true);
       try {
         const response = await adminReportService.getSolvedReports({
@@ -208,13 +261,13 @@ const AdminReportManagementPage: React.FC = () => {
           pageSize
         });
         setSolvedReports(response.items);
-        addReportTypes(response.items.map((item) => item.reportType));
-        setSolvedPagination((prev) => ({
-          ...prev,
-          current: page,
-          pageSize,
-          total: response.total
-        }));
+        addReportTypes(response.items.map((item) => item.reportType).filter((v): v is string => Boolean(v)));
+        setSolvedPagination((prev) => {
+          const next = { ...prev, current: page, pageSize, total: response.total };
+          const unchanged =
+            prev.current === next.current && prev.pageSize === next.pageSize && prev.total === next.total;
+          return unchanged ? prev : next;
+        });
       } catch (error) {
         console.error('Failed to fetch solved reports', error);
         message.error('Không thể tải danh sách report đã xử lý');
@@ -222,11 +275,11 @@ const AdminReportManagementPage: React.FC = () => {
         setSolvedLoading(false);
       }
     },
-    [addReportTypes, solvedFilterParams, solvedPagination.current, solvedPagination.pageSize]
+    [addReportTypes, solvedFilterParams]
   );
 
   const fetchSystemReports = useCallback(
-    async (page = systemPagination.current ?? 1, pageSize = systemPagination.pageSize ?? 10) => {
+    async (page: number, pageSize: number) => {
       setSystemLoading(true);
       try {
         const response = await adminSystemReportService.getSystemReports({
@@ -235,12 +288,12 @@ const AdminReportManagementPage: React.FC = () => {
           pageSize
         });
         setSystemReports(response.items);
-        setSystemPagination((prev) => ({
-          ...prev,
-          current: page,
-          pageSize,
-          total: response.total
-        }));
+        setSystemPagination((prev) => {
+          const next = { ...prev, current: page, pageSize, total: response.total };
+          const unchanged =
+            prev.current === next.current && prev.pageSize === next.pageSize && prev.total === next.total;
+          return unchanged ? prev : next;
+        });
       } catch (error) {
         console.error('Failed to fetch system reports', error);
         message.error('Không thể tải danh sách báo cáo hệ thống');
@@ -248,34 +301,31 @@ const AdminReportManagementPage: React.FC = () => {
         setSystemLoading(false);
       }
     },
-    [systemFilterParams, systemPagination.current, systemPagination.pageSize]
+    [systemFilterParams]
   );
 
   useEffect(() => {
-    void fetchPendingReports();
-  }, [fetchPendingReports]);
+    void fetchPendingReports(pendingPage, pendingPageSize);
+  }, [fetchPendingReports, pendingPage, pendingPageSize]);
 
   useEffect(() => {
-    void fetchSolvedReports();
-  }, [fetchSolvedReports]);
+    void fetchSolvedReports(solvedPage, solvedPageSize);
+  }, [fetchSolvedReports, solvedPage, solvedPageSize]);
 
   useEffect(() => {
-    void fetchSystemReports();
-  }, [fetchSystemReports]);
+    void fetchSystemReports(systemPage, systemPageSize);
+  }, [fetchSystemReports, systemPage, systemPageSize]);
 
   const handlePendingTableChange = (pagination: TablePaginationConfig) => {
     setPendingPagination(pagination);
-    void fetchPendingReports(pagination.current, pagination.pageSize);
   };
 
   const handleSolvedTableChange = (pagination: TablePaginationConfig) => {
     setSolvedPagination(pagination);
-    void fetchSolvedReports(pagination.current, pagination.pageSize);
   };
 
   const handleSystemTableChange = (pagination: TablePaginationConfig) => {
     setSystemPagination(pagination);
-    void fetchSystemReports(pagination.current, pagination.pageSize);
   };
 
   const handlePendingFilterChange = (key: keyof PendingFilters, value: string) => {
@@ -302,18 +352,23 @@ const AdminReportManagementPage: React.FC = () => {
     detail: AdminReportDetail
   ): Promise<ReportedPostDetail | undefined> => {
     try {
-      const postType = detail.postType || (detail.employerPostId ? 'EmployerPost' : detail.jobSeekerPostId ? 'JobSeekerPost' : undefined);
-      const postId =
-        detail.employerPostId ??
-        detail.jobSeekerPostId ??
-        (detail.postId ?? undefined);
+      const normalizedType = (detail.postType || '').toLowerCase();
+      const isEmployerPost =
+        normalizedType.includes('employer') || (!!detail.employerPostId && normalizedType === '');
+      const isJobSeekerPost =
+        normalizedType.includes('jobseeker') || (!!detail.jobSeekerPostId && normalizedType === '');
 
-      if (postType === 'EmployerPost' && postId) {
-        const data = await adminJobPostService.getEmployerPostDetail(postId);
+      const employerPostId =
+        detail.employerPostId ?? (isEmployerPost ? detail.postId ?? undefined : undefined);
+      const jobSeekerPostId =
+        detail.jobSeekerPostId ?? (isJobSeekerPost ? detail.postId ?? undefined : undefined);
+
+      if (employerPostId) {
+        const data = await adminJobPostService.getEmployerPostDetail(employerPostId);
         return { kind: 'employer', data };
       }
-      if (postType === 'JobSeekerPost' && postId) {
-        const data = await adminJobPostService.getJobSeekerPostDetail(postId);
+      if (jobSeekerPostId) {
+        const data = await adminJobPostService.getJobSeekerPostDetail(jobSeekerPostId);
         return { kind: 'jobseeker', data };
       }
     } catch (error) {
@@ -345,9 +400,12 @@ const AdminReportManagementPage: React.FC = () => {
   };
 
   const openResolveModal = (reportId: number) => {
+    const reportContext = pendingReports.find((report) => report.reportId === reportId) ?? null;
     setResolvingReportId(reportId);
+    setResolvingReport(reportContext);
     resolveForm.resetFields();
-    resolveForm.setFieldsValue({ actionTaken: 'Warn' });
+    const actions = resolveActionOptionsForType(reportContext?.reportType, reportContext?.postType);
+    resolveForm.setFieldsValue({ actionTaken: actions[0] ?? 'Warn' });
     setResolveModalOpen(true);
   };
 
@@ -355,13 +413,23 @@ const AdminReportManagementPage: React.FC = () => {
     if (resolvingReportId === null) return;
     setResolveSubmitting(true);
     try {
-      await adminReportService.resolveReport(resolvingReportId, values);
+      const payload: AdminResolveReportPayload = {
+        actionTaken: values.actionTaken,
+        reason: values.reason?.trim() || undefined,
+      };
+
+      await adminReportService.resolveReport(resolvingReportId, payload);
       message.success('Đã xử lý report thành công');
       setResolveModalOpen(false);
-      await Promise.all([fetchPendingReports(), fetchSolvedReports()]);
+      setResolvingReport(null);
+      await Promise.all([
+        fetchPendingReports(pendingPage, pendingPageSize),
+        fetchSolvedReports(solvedPage, solvedPageSize)
+      ]);
     } catch (error) {
       console.error('Failed to resolve report', error);
-      message.error('Không thể xử lý report');
+      const apiMessage: string | undefined = getApiMessage(error);
+      message.error(apiMessage ?? 'Không thể xử lý report');
     } finally {
       setResolveSubmitting(false);
     }
@@ -393,14 +461,14 @@ const AdminReportManagementPage: React.FC = () => {
     }
   };
 
-  const handleResolveSystemReport = async (values: ResolveSystemFormValues) => {
+  const handleResolveSystemReport = async () => {
     if (resolvingSystemId === null) return;
     setSystemResolveSubmitting(true);
     try {
-      await adminSystemReportService.resolveSystemReport(resolvingSystemId, values);
+      await adminSystemReportService.resolveSystemReport(resolvingSystemId);
       message.success('Đã cập nhật báo cáo hệ thống');
       setSystemResolveModalOpen(false);
-      await fetchSystemReports();
+      await fetchSystemReports(systemPage, systemPageSize);
     } catch (error) {
       console.error('Failed to resolve system report', error);
       message.error('Không thể cập nhật báo cáo hệ thống');
@@ -440,13 +508,13 @@ const AdminReportManagementPage: React.FC = () => {
       case 'Pending':
         return (
           <Tag icon={<ExclamationCircleOutlined />} color="orange">
-            Cho xu ly
+            Cho xử lý
           </Tag>
         );
       case 'Solved':
         return (
           <Tag icon={<CheckCircleOutlined />} color="green">
-            Da xu ly
+            Đã xử lý
           </Tag>
         );
       default:
@@ -490,6 +558,47 @@ const AdminReportManagementPage: React.FC = () => {
           minute: '2-digit'
         })
       : '---';
+
+  const resolveActionLabel = (action: string) => {
+    switch (action) {
+      case 'BlockPost':
+        return 'Chặn bài đăng';
+      case 'HidePost':
+        return 'Ẩn bài đăng';
+      case 'Warn':
+        return 'Cảnh báo';
+      case 'Ignore':
+        return 'Bỏ qua';
+      default:
+        return action;
+    }
+  };
+
+  const resolveActionOptionsForType = (
+    reportType?: string | null,
+    postType?: string | null
+  ): ResolveAction[] => {
+    const normalizedType = (reportType ?? '').toLowerCase();
+    const normalizedPostType = (postType ?? '').toLowerCase();
+    const isPostReport =
+      normalizedType === 'employerpost' ||
+      normalizedType === 'jobseekerpost' ||
+      normalizedPostType === 'employerpost' ||
+      normalizedPostType === 'jobseekerpost' ||
+      normalizedType.includes('post') ||
+      normalizedPostType.includes('post');
+    return isPostReport ? ['BlockPost', 'Warn', 'Ignore'] : ['Warn', 'Ignore'];
+  };
+
+  const resolveActionOptions = useMemo(
+    () => resolveActionOptionsForType(resolvingReport?.reportType, resolvingReport?.postType),
+    [resolvingReport?.postType, resolvingReport?.reportType]
+  );
+
+  const resolveActionTag = (action: string) => {
+    const color = action === 'BlockPost' ? 'red' : action === 'HidePost' ? 'volcano' : action === 'Warn' ? 'orange' : 'green';
+    return <Tag color={color}>{resolveActionLabel(action)}</Tag>;
+  };
 
   const pendingColumns: ColumnsType<AdminReport> = [
     {
@@ -540,10 +649,10 @@ const AdminReportManagementPage: React.FC = () => {
             Xem
           </Button>
           <Button icon={<ToolOutlined />} type="primary" size="small" onClick={() => openResolveModal(record.reportId)}>
-            Xu ly
+            Xử lý
           </Button>
           <Button size="small" shape="round" onClick={() => openReportedPostFromList(record.reportId)}>
-            Bai dang
+            Bài đăng
           </Button>
         </Space>
       )
@@ -556,13 +665,14 @@ const AdminReportManagementPage: React.FC = () => {
       dataIndex: 'reportType',
       key: 'reportType',
       width: 180,
-      render: (value?: string | null) => (value ? reportTypeTag(value) : '---')
+      render: (_: string | undefined, record) =>
+        record.reportType ? reportTypeTag(record.reportType) : '---'
     },
     {
       title: 'Hành động',
       dataIndex: 'actionTaken',
       key: 'actionTaken',
-      render: (value: string) => <Tag color="green">{value}</Tag>
+      render: (value: string) => resolveActionTag(value)
     },
     {
       title: 'Admin xử lý',
@@ -595,7 +705,7 @@ const AdminReportManagementPage: React.FC = () => {
             Xem
           </Button>
           <Button size="small" shape="round" onClick={() => openReportedPostFromList(record.reportId)}>
-            Bai dang
+            Bài đăng
           </Button>
         </Space>
       )
@@ -793,7 +903,7 @@ const AdminReportManagementPage: React.FC = () => {
           rowKey="reportId"
           loading={pendingLoading}
           columns={pendingColumns}
-          dataSource={pendingReports}
+          dataSource={pendingDisplayed}
           pagination={pendingPagination}
           scroll={{ x: 1100 }}
           onChange={handlePendingTableChange}
@@ -858,9 +968,9 @@ const AdminReportManagementPage: React.FC = () => {
             onChange={(value) => handleSystemFilterChange('status', value)}
             style={{ width: 220 }}
           >
-            <Option value="all">Tat ca trang thai</Option>
-            <Option value="Pending">Cho xu ly</Option>
-            <Option value="Solved">Da xu ly</Option>
+            <Option value="all">Tất cả trạng thái</Option>
+            <Option value="Pending">Chờ xử lý</Option>
+            <Option value="Solved">Dã xử lý</Option>
           </Select>
         </Space>
       </Card>
@@ -870,7 +980,7 @@ const AdminReportManagementPage: React.FC = () => {
           rowKey="reportId"
           loading={systemLoading}
           columns={systemColumns}
-          dataSource={systemReports}
+          dataSource={systemDisplayed}
           pagination={systemPagination}
           scroll={{ x: 1100 }}
           onChange={handleSystemTableChange}
@@ -892,13 +1002,13 @@ const AdminReportManagementPage: React.FC = () => {
 
   const handleReload = () => {
     if (activeSection === 'system') {
-      void fetchSystemReports();
+      void fetchSystemReports(systemPagination.current ?? 1, systemPagination.pageSize ?? 10);
       return;
     }
     if (postTab === 'pending') {
-      void fetchPendingReports();
+      void fetchPendingReports(pendingPagination.current ?? 1, pendingPagination.pageSize ?? 10);
     } else {
-      void fetchSolvedReports();
+      void fetchSolvedReports(solvedPagination.current ?? 1, solvedPagination.pageSize ?? 10);
     }
   };
 
@@ -1033,7 +1143,10 @@ const AdminReportManagementPage: React.FC = () => {
       <Modal
         title="Xử lý report"
         open={resolveModalOpen}
-        onCancel={() => setResolveModalOpen(false)}
+        onCancel={() => {
+          setResolvingReport(null);
+          setResolveModalOpen(false);
+        }}
         onOk={() => resolveForm.submit()}
         confirmLoading={resolveSubmitting}
         okText="Xác nhận"
@@ -1046,11 +1159,11 @@ const AdminReportManagementPage: React.FC = () => {
             rules={[{ required: true, message: 'Vui lòng chọn hành động' }]}
           >
             <Select placeholder="Chọn cách xử lý">
-              <Option value="BanUser">Cấm người dùng</Option>
-              <Option value="UnbanUser">Bỏ cấm người dùng</Option>
-              <Option value="DeletePost">Xóa bài đăng</Option>
-              <Option value="Warn">Cảnh báo</Option>
-              <Option value="Ignore">Bỏ qua</Option>
+              {resolveActionOptions.map((action) => (
+                <Option key={action} value={action}>
+                  {resolveActionLabel(action)}
+                </Option>
+              ))}
             </Select>
           </Form.Item>
 

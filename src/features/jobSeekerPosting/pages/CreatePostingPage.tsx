@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+﻿import React, { useState, useEffect, useCallback } from "react";
 import {
   Form,
   Input,
@@ -46,6 +46,30 @@ import { ReloadOutlined } from "@ant-design/icons";
 const { Title } = Typography;
 const { TextArea } = Input;
 const timeFormat = "HH:mm";
+
+type FormValues = (CreateJobSeekerPostPayload | UpdateJobSeekerPostPayload) & {
+  locationDetail?: string;
+  preferredWorkHourStart?: Dayjs | string;
+  preferredWorkHourEnd?: Dayjs | string;
+};
+
+const genderValueMap: Record<string, "Male" | "Female" | "Other"> = {
+  nam: "Male",
+  male: "Male",
+  m: "Male",
+  nu: "Female",
+  female: "Female",
+  f: "Female",
+  khac: "Other",
+  other: "Other",
+};
+
+const normalizeGenderValue = (value?: string | null): "Male" | "Female" | "Other" | undefined => {
+  if (!value) return undefined;
+  const trimmed = value.trim().toLowerCase();
+  const asciiKey = trimmed.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  return genderValueMap[asciiKey] ?? genderValueMap[trimmed];
+};
 
 const parseTimeValue = (value?: string | null): Dayjs | null => {
   if (!value) return null;
@@ -101,7 +125,7 @@ const CreatePostingPage: React.FC = () => {
   const [isResettingSuggestions, setIsResettingSuggestions] = useState(false);
 
   const pageTitle = isCreateMode
-    ? "Tạo bài đăng tìm việc Part-time"
+    ? "Tạo bài đăng tìm việc part-time"
     : isEditMode
     ? "Chỉnh sửa bài đăng tìm việc"
     : "Chi tiết bài đăng tìm việc";
@@ -183,16 +207,23 @@ const CreatePostingPage: React.FC = () => {
     if (!id) return;
     setIsResettingSuggestions(true);
     try {
-      const res: any = await refreshJobSeekerSuggestions(Number(id));
+      const res = (await refreshJobSeekerSuggestions(Number(id))) as {
+        success?: boolean;
+        message?: string;
+      };
       if (res?.success) {
         message.success("Đã làm mới gợi ý AI cho bài đăng này.");
       } else {
         message.info(res?.message || "Đã làm mới gợi ý.");
       }
       await dispatch(fetchPostSuggestions(Number(id)));
-    } catch (error: any) {
+    } catch (error) {
       message.error(
-        error?.response?.data?.message || "Không thể làm mới gợi ý AI."
+        (typeof error === "object" &&
+        error !== null &&
+        "response" in error &&
+        (error as { response?: { data?: { message?: string } } }).response?.data?.message) ||
+          "Không thể làm mới gợi ý AI."
       );
     } finally {
       setIsResettingSuggestions(false);
@@ -228,6 +259,7 @@ const CreatePostingPage: React.FC = () => {
         preferredWorkHourEnd: endTime || undefined,
         locationDetail: postDetail.preferredLocation,
         selectedCvId: postDetail.selectedCvId ?? postDetail.cvId ?? undefined,
+        gender: normalizeGenderValue(postDetail.gender),
       });
 
       (async () => {
@@ -284,7 +316,7 @@ const CreatePostingPage: React.FC = () => {
     wards: wardsLoading,
   } = locationLoading;
 
-  const buildPreferredLocation = (values: any) => {
+  const buildPreferredLocation = (values: FormValues) => {
     const provinceName = provinces.find(
       (p) => p.code === values.provinceId
     )?.name;
@@ -302,7 +334,7 @@ const CreatePostingPage: React.FC = () => {
       .join(", ");
   };
 
-  const onFinish = (values: any) => {
+  const onFinish = (values: FormValues) => {
     if (!user) {
       message.error("Vui lòng đăng nhập để thực hiện chức năng này");
       return;
@@ -319,11 +351,16 @@ const CreatePostingPage: React.FC = () => {
       ...rest
     } = values;
 
-    const preferredLocation =
-      buildPreferredLocation({ ...values, locationDetail }) || "";
+    const preferredLocation = buildPreferredLocation({ ...values, locationDetail }) || "";
 
-    const startTime = (preferredWorkHourStart as Dayjs).format(timeFormat);
-    const endTime = (preferredWorkHourEnd as Dayjs).format(timeFormat);
+    const formatTimeValue = (val?: Dayjs | string): string => {
+      if (dayjs.isDayjs(val)) return val.format(timeFormat);
+      if (typeof val === "string") return val;
+      return "";
+    };
+
+    const startTime = formatTimeValue(preferredWorkHourStart);
+    const endTime = formatTimeValue(preferredWorkHourEnd);
 
     const normalizeText = (text?: string | null) => (text ?? "").trim();
     const payload: CreateJobSeekerPostPayload = {
@@ -333,11 +370,11 @@ const CreatePostingPage: React.FC = () => {
       phoneContact: normalizeText(rest.phoneContact),
       preferredLocation,
       userID: user.id,
-      age: Number(rest.age),
-      categoryID: Number(rest.categoryID),
-      provinceId: Number(provinceId),
-      districtId: Number(districtId),
-      wardId: Number(wardId),
+      age: Number(rest.age ?? 0),
+      categoryID: Number(rest.categoryID ?? 0),
+      provinceId: Number(provinceId ?? 0),
+      districtId: Number(districtId ?? 0),
+      wardId: Number(wardId ?? 0),
       preferredWorkHourStart: startTime,
       preferredWorkHourEnd: endTime,
       selectedCvId: selectedCvId ? Number(selectedCvId) : undefined,
@@ -382,7 +419,7 @@ const CreatePostingPage: React.FC = () => {
             ]}
           >
             <Input
-              placeholder="Ví dụ: Sinh viên nam năm 2 tìm việc làm phục vụ"
+              placeholder="Ví dụ: Sinh viên năm 2 tìm việc làm phục vụ"
               readOnly={isReadOnly}
             />
           </Form.Item>
@@ -603,7 +640,7 @@ const CreatePostingPage: React.FC = () => {
             />
           </Form.Item>
 
-          <Form.Item
+                    <Form.Item
             name="gender"
             label="Giới tính"
             rules={[
@@ -614,9 +651,9 @@ const CreatePostingPage: React.FC = () => {
             ]}
           >
             <Radio.Group disabled={isReadOnly}>
-              <Radio value="Nam">Nam</Radio>
-              <Radio value="Nữ">Nữ</Radio>
-              <Radio value="Khác">Khác</Radio>
+              <Radio value="Male">Nam</Radio>
+              <Radio value="Female">Nữ</Radio>
+              <Radio value="Other">Khác</Radio>
             </Radio.Group>
           </Form.Item>
 
@@ -689,7 +726,8 @@ const CreatePostingPage: React.FC = () => {
     postDetail?.preferredLocation || form.getFieldValue("locationDetail") || "Chưa cập nhật địa điểm";
   const summaryCategory = postDetail?.categoryName || "Chưa có ngành";
   const summaryPhone = postDetail?.phoneContact || "Chưa cập nhật";
-  const summaryAge = postDetail?.age ? `${postDetail.age}+ tuổi` : "Chưa cập nhật";
+  const summaryAge =
+    postDetail?.age ? `${postDetail.age}+ tuổi` : "Chưa cập nhật";
   const summaryWorkHour =
     postDetail?.preferredWorkHourStart && postDetail?.preferredWorkHourEnd
       ? `${postDetail.preferredWorkHourStart} - ${postDetail.preferredWorkHourEnd}`
@@ -774,7 +812,7 @@ const CreatePostingPage: React.FC = () => {
                   <div className="flex items-center justify-between gap-3 mb-4">
                     <Title level={4} className="!mb-0 text-indigo-700">
                       <i className="fas fa-bolt mr-2"></i>
-                      Công việc phù hợp
+                      Mức độ phù hợp theo đánh giá PTJ dành cho bạn
                     </Title>
                     <Button
                       size="small"
@@ -799,7 +837,7 @@ const CreatePostingPage: React.FC = () => {
                         ))
                       ) : (
                         <Empty
-                          description="Chưa tìm thấy công việc phù hợp"
+                          description="Chưa tìm thấy công việc phù hợp dành cho bạn"
                           image={Empty.PRESENTED_IMAGE_SIMPLE}
                         />
                       )}
@@ -833,3 +871,5 @@ const CreatePostingPage: React.FC = () => {
 };
 
 export default CreatePostingPage;
+
+

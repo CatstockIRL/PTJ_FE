@@ -20,6 +20,9 @@ export interface AdminSolvedReport {
   adminEmail: string;
   targetUserEmail?: string | null;
   reportType?: string | null;
+  postId?: number | null;
+  postType?: 'EmployerPost' | 'JobSeekerPost' | string | null;
+  postTitle?: string | null;
   reportReason?: string | null;
   reason?: string | null;
   solvedAt: string;
@@ -44,10 +47,7 @@ export interface AdminReportDetail {
 }
 
 export interface AdminResolveReportPayload {
-  affectedUserId?: number | null;
-  affectedPostId?: number | null;
-  affectedPostType?: 'EmployerPost' | 'JobSeekerPost';
-  actionTaken: 'BanUser' | 'UnbanUser' | 'DeletePost' | 'Warn' | 'Ignore';
+  actionTaken: 'BlockPost' | 'HidePost' | 'Warn' | 'Ignore';
   reason?: string;
 }
 
@@ -92,4 +92,5 @@ export interface AdminSystemReportFilters {
 export interface AdminResolveSystemReportPayload {
   action: 'MarkSolved' | 'Ignore';
   note?: string;
+  // FE will map to { status: 'Solved' } when calling API
 }

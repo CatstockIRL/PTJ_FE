@@ -51,7 +51,7 @@ const adminReportService = {
   },
 
   async resolveReport(reportId: number, payload: AdminResolveReportPayload) {
-    return await baseService.post(`/admin/reports/resolve/${reportId}`, payload);
+    return await baseService.post(`/admin/reports/${reportId}/resolve`, payload);
   }
 };
 

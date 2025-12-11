@@ -1,3 +1,4 @@
+import type { AxiosRequestHeaders } from 'axios';
 import baseService from '../../../services/baseService';
 import type { Profile, ProfileUpdateRequest } from '../../../types/profile';
 
@@ -49,13 +50,13 @@ const profileService = {
   },
 
   async getEmployerProfileByUserId(userId: number): Promise<Profile> {
-    return await baseService.get<Profile>(`/EmployerProfile/public/${userId}`);
+    return await baseService.get<Profile>(`/EmployerProfile/${userId}`);
   },
 
   async updateEmployerProfile(payload: ProfileUpdateRequest): Promise<Profile> {
     const formData = buildFormData(payload);
     await baseService.put('/EmployerProfile/update', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
+      headers: { 'Content-Type': 'multipart/form-data' } as AxiosRequestHeaders
     });
     return await profileService.getEmployerProfile();
   },

@@ -7,13 +7,26 @@ import { useNavigate } from 'react-router-dom';
 
 const phoneRegex = /^0\d{9}$/;
 
+type EmployerRegisterFormValues = {
+  companyName: string;
+  companyDescription?: string;
+  contactPerson?: string;
+  contactPhone: string;
+  contactEmail?: string;
+  address?: string;
+  website?: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+};
+
 const EmployerRegisterForm: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: EmployerRegisterFormValues) => {
     setLoading(true);
     try {
       const payload: RegisterEmployerPayload = {
@@ -29,9 +42,13 @@ const EmployerRegisterForm: React.FC = () => {
       };
       await registerEmployer(payload);
       setSuccess(true);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const apiMessage =
+        typeof error === 'object' && error !== null && 'response' in error
+          ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
+          : undefined;
       message.error(
-        error.response?.data?.message || 'Khong the dang ky nha tuyen dung, vui long thu lai.'
+        apiMessage || 'Không thể đăng ký nhà tuyển dụng, vui lòng thử lại.'
       );
     } finally {
       setLoading(false);
@@ -43,13 +60,13 @@ const EmployerRegisterForm: React.FC = () => {
       <div className="flex h-full w-full flex-col items-center justify-center rounded-3xl border border-blue-100 bg-white/90 p-8 text-center shadow-xl">
         <Alert
           type="success"
-          message="Dang ky nha tuyen dung thanh cong!"
-          description="Kiem tra email de xac minh tai khoan truoc khi dang nhap quan tri."
+          message="Gửi yêu cầu đăng ký thành công."
+          description="Vui lòng chờ quản trị viên phê duyệt. Sau khi được duyệt, email xác thực sẽ được gửi tới bạn."
           showIcon
           className="mb-6 text-left"
         />
         <Button type="primary" size="large" onClick={() => navigate('/login')}>
-          Tro ve dang nhap
+          Trở về đăng nhập
         </Button>
       </div>
     );
@@ -58,8 +75,9 @@ const EmployerRegisterForm: React.FC = () => {
   return (
     <div className="flex h-full w-full flex-col rounded-3xl border border-white/40 bg-gradient-to-br from-cyan-50 via-blue-50 to-emerald-50 p-6 shadow-xl sm:p-8">
       <h3 className="text-center text-2xl font-semibold text-slate-900 mb-6">
-        Dang ky nha tuyen dung
+        Đăng ký nhà tuyển dụng
       </h3>
+
       <Form
         layout="vertical"
         autoComplete="off"
@@ -67,110 +85,110 @@ const EmployerRegisterForm: React.FC = () => {
         name="employer_register_form"
       >
         <Form.Item
-          label="Ten cong ty"
+          label="Tên công ty"
           name="companyName"
-          rules={[{ required: true, message: 'Vui long nhap ten cong ty.' }]}
+rules={[{ required: true, message: 'Vui lòng nhập tên công ty.' }]}
         >
           <Input
             size="large"
-            placeholder="VD: Cong ty TNHH ABC"
+            placeholder="VD: Công ty TNHH ABC"
             prefix={<UserOutlined className="text-slate-400" />}
           />
         </Form.Item>
 
-        <Form.Item label="Mo ta cong ty" name="companyDescription">
+        <Form.Item label="Mô tả công ty" name="companyDescription">
           <Input.TextArea
             rows={3}
             maxLength={2000}
-            placeholder="Gioi thieu ngan gon ve cong ty"
+            placeholder="Giới thiệu ngắn gọn về công ty"
           />
         </Form.Item>
 
         <Form.Item
-          label="Email dang ky"
+          label="Email đăng ký"
           name="email"
           rules={[
-            { required: true, message: 'Vui long nhap email.' },
-            { type: 'email', message: 'Email khong hop le.' },
+            { required: true, message: 'Vui lòng nhập email.' },
+            { type: 'email', message: 'Email không hợp lệ.' },
           ]}
         >
           <Input
             size="large"
-            placeholder="Email su dung dang nhap"
+            placeholder="Email sử dụng đăng nhập"
             prefix={<MailOutlined className="text-slate-400" />}
           />
         </Form.Item>
 
         <Form.Item
-          label="Mat khau"
+          label="Mật khẩu"
           name="password"
           rules={[
-            { required: true, message: 'Vui long nhap mat khau.' },
-            { min: 6, message: 'Mat khau phai it nhat 6 ky tu.' },
+            { required: true, message: 'Vui lòng nhập mật khẩu.' },
+            { min: 6, message: 'Mật khẩu phải ít nhất 6 ký tự.' },
           ]}
         >
           <Input
             size="large"
-            placeholder="Mat khau"
+            placeholder="Mật khẩu"
             type={passwordVisible ? 'text' : 'password'}
             prefix={<LockOutlined className="text-slate-400" />}
           />
         </Form.Item>
 
         <Form.Item
-          label="Xac nhan mat khau"
+          label="Xác nhận mật khẩu"
           name="confirmPassword"
           dependencies={['password']}
           rules={[
-            { required: true, message: 'Vui long xac nhan mat khau.' },
+            { required: true, message: 'Vui lòng xác nhận mật khẩu.' },
             ({ getFieldValue }) => ({
               validator(_, value) {
                 if (!value || getFieldValue('password') === value) {
                   return Promise.resolve();
                 }
-                return Promise.reject(new Error('Mat khau khong khop.'));
+                return Promise.reject(new Error('Mật khẩu không khớp.'));
               },
             }),
           ]}
         >
           <Input
             size="large"
-            placeholder="Nhap lai mat khau"
+            placeholder="Nhập lại mật khẩu"
             type={passwordVisible ? 'text' : 'password'}
             prefix={<LockOutlined className="text-slate-400" />}
           />
         </Form.Item>
 
-        <Form.Item label="Nguoi lien he" name="contactPerson">
+        <Form.Item label="Người liên hệ" name="contactPerson">
           <Input
             size="large"
-            placeholder="VD: Nguyen Van A"
+            placeholder="VD: Nguyễn Văn A"
             prefix={<UserOutlined className="text-slate-400" />}
           />
         </Form.Item>
 
         <Form.Item
-          label="So dien thoai lien he"
+          label="Số điện thoại liên hệ"
           name="contactPhone"
           rules={[
-            { required: true, message: 'Vui long nhap so dien thoai lien he.' },
+            { required: true, message: 'Vui lòng nhập số điện thoại liên hệ.' },
             {
               pattern: phoneRegex,
-              message: 'Nhap so dien thoai Viet Nam hop le (10 so bat dau bang 0).',
+              message: 'Nhập số điện thoại Việt Nam hợp lệ (10 số bắt đầu bằng 0).',
             },
           ]}
         >
           <Input
-            size="large"
+size="large"
             placeholder="VD: 0912345678"
             prefix={<PhoneOutlined className="text-slate-400" />}
           />
         </Form.Item>
 
         <Form.Item
-          label="Email lien he"
+          label="Email liên hệ"
           name="contactEmail"
-          rules={[{ type: 'email', message: 'Vui long nhap email lien he hop le.' }]}
+          rules={[{ type: 'email', message: 'Vui lòng nhập email liên hệ hợp lệ.' }]}
         >
           <Input
             size="large"
@@ -179,18 +197,18 @@ const EmployerRegisterForm: React.FC = () => {
           />
         </Form.Item>
 
-        <Form.Item label="Dia chi" name="address">
+        <Form.Item label="Địa chỉ" name="address">
           <Input
             size="large"
-            placeholder="So nha, duong, phuong/xa, quan/huyen, tinh/thanh"
+            placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố"
             prefix={<HomeOutlined className="text-slate-400" />}
           />
         </Form.Item>
 
         <Form.Item
-          label="Website (khong bat buoc)"
+          label="Website (không bắt buộc)"
           name="website"
-          rules={[{ type: 'url', message: 'Vui long nhap URL hop le.' }]}
+          rules={[{ type: 'url', message: 'Vui lòng nhập URL hợp lệ.' }]}
         >
           <Input
             size="large"
@@ -204,7 +222,7 @@ const EmployerRegisterForm: React.FC = () => {
             checked={passwordVisible}
             onChange={(e) => setPasswordVisible(e.target.checked)}
           >
-            Hien thi mat khau
+            Hiển thị mật khẩu
           </Checkbox>
         </div>
 
@@ -216,7 +234,7 @@ const EmployerRegisterForm: React.FC = () => {
             className="w-full"
             loading={loading}
           >
-            Dang ky
+            Đăng ký
           </Button>
         </Form.Item>
       </Form>
