@@ -9,7 +9,22 @@ import jobPostService from '../jobPostService';
 import type { JobPostData, JobPostView } from '../jobTypes';
 import { transformToEmployerPostDto } from '../utils';
 
+const normalizeTime = (value?: string | null): string | null => {
+  if (!value) return null;
+  const trimmed = value.trim();
+  const match = trimmed.match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return null;
+  const hh = match[1].padStart(2, "0").slice(-2);
+  const mm = match[2].padStart(2, "0").slice(-2);
+  return `${hh}:${mm}`;
+};
+
 const transformDtoToFormData = (dto: JobPostView): JobPostData => {
+  const workHourStart = normalizeTime(dto.workHourStart);
+  const workHourEnd = normalizeTime(dto.workHourEnd);
+  const workHours =
+    workHourStart && workHourEnd ? `${workHourStart} - ${workHourEnd}` : dto.workHours || "";
+
   const normalizedImages =
     dto.images?.map((img) => ({ imageId: img.imageId, url: img.url })) ??
     (dto.imageUrls ?? []).map((url, index) => ({
@@ -25,15 +40,15 @@ const transformDtoToFormData = (dto: JobPostView): JobPostData => {
     salaryType: dto.salaryType ?? null,
     salaryDisplay: dto.salaryDisplay ?? null,
     requirements: dto.requirements || '',
-    workHours: dto.workHours || '',
-    workHourStart: dto.workHourStart || null,
-    workHourEnd: dto.workHourEnd || null,
+    workHours,
+    workHourStart,
+    workHourEnd,
     detailAddress: dto.detailAddress || '',
     provinceId: dto.provinceId ?? null,
     districtId: dto.districtId ?? null,
     wardId: dto.wardId ?? null,
     location: dto.location || '',
-    categoryID: dto.categoryId ?? null,
+    categoryID: dto.categoryId !== undefined && dto.categoryId !== null ? Number(dto.categoryId) : null,
     contactPhone: dto.phoneContact || '',
     images: [],
     imagePreviews: [],
@@ -110,7 +125,12 @@ const EditJobPage: React.FC = () => {
   const handleDataChange = <K extends keyof JobPostData>(field: K, value: JobPostData[K]) => {
     setJobData((prevData) => ({
       ...prevData,
-      [field]: value,
+      [field]:
+        field === "categoryID"
+          ? (value as number | null | string | undefined) === null || value === undefined
+            ? null
+            : Number(value)
+          : value,
     }));
   };
 

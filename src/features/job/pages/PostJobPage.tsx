@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Alert, Button, Card, Typography } from 'antd';
+import { Button, Card, Typography } from 'antd';
 import { toast } from 'sonner';
 import { useAuth } from '../../auth/hooks';
 import { JobPostingForm } from '../components/employer/JobPostingForm';
@@ -13,7 +13,7 @@ const PostJobPage: React.FC = () => {
   const navigate = useNavigate();
   
   const { jobData, status, handleDataChange, submitPost, resetForm } = useEmployerJobPosting();
-  const [errorBanner, setErrorBanner] = React.useState<string | null>(null);
+  const [forceValidateTick, setForceValidateTick] = React.useState<number | null>(null);
 
   const validateJobData = (): string | null => {
     // Tiêu đề: 5-120 ký tự
@@ -94,14 +94,13 @@ const PostJobPage: React.FC = () => {
       return;
     }
 
+    setForceValidateTick((prev) => (prev ?? 0) + 1);
+
     const validationError = validateJobData();
     if (validationError) {
-      setErrorBanner(validationError);
-      toast.error(validationError);
       return;
     }
 
-    setErrorBanner(null);
     const userIdAsNumber = user.id;
     const dto = transformToEmployerPostDto(jobData, userIdAsNumber);
 
@@ -131,21 +130,12 @@ const PostJobPage: React.FC = () => {
         </div>
       </Card>
 
-      {errorBanner && (
-        <Alert
-          message="Vui lòng nhập đúng thông tin"
-          description={errorBanner}
-          type="error"
-          showIcon
-          className="max-w-3xl"
-        />
-      )}
-
       <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
         <main className="md:col-span-3 space-y-6">
           <JobPostingForm 
             data={jobData} 
             onDataChange={handleDataChange} 
+            forceValidateTick={forceValidateTick}
           />
           <div className="flex justify-end p-4 bg-white rounded-lg shadow-sm border border-gray-200">
             <Button 

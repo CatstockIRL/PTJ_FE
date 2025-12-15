@@ -68,6 +68,20 @@ export const createEmployerJobPost = createAsyncThunk<JobPostResponse, EmployerP
       const responseData = response?.data;
       const statusCode = response?.status;
 
+      const extractError = (fallback: string) => {
+        const msg =
+          (responseData as { message?: string; Message?: string } | undefined)?.message ||
+          (responseData as { message?: string; Message?: string } | undefined)?.Message;
+        if (msg) return msg;
+
+        const errors = (responseData as { errors?: Record<string, string[]> } | undefined)?.errors;
+        if (errors) {
+          const first = Object.values(errors).flat().find(Boolean);
+          if (first) return first as string;
+        }
+        return fallback;
+      };
+
       if (responseData?.success) {
         message.success(responseData.message || 'Đăng việc thành công!');
         return responseData;
@@ -83,7 +97,7 @@ export const createEmployerJobPost = createAsyncThunk<JobPostResponse, EmployerP
         return optimisticResponse;
       }
 
-      const errorMessage = responseData?.message || 'Lỗi máy chủ.';
+      const errorMessage = extractError('Lỗi máy chủ.');
       message.error(errorMessage);
       return rejectWithValue(responseData ?? { message: errorMessage });
     }

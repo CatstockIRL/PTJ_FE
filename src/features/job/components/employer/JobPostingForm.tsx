@@ -7,13 +7,14 @@ type OnDataChange = <K extends keyof JobPostData>(field: K, value: JobPostData[K
 interface Props {
   data: JobPostData;
   onDataChange: OnDataChange;
+  forceValidateTick?: number | null;
 }
 
 
-export const JobPostingForm: React.FC<Props> = ({ data, onDataChange }) => {
+export const JobPostingForm: React.FC<Props> = ({ data, onDataChange, forceValidateTick }) => {
   return (
     <div className="space-y-6">
-      <JobInfoFormSection data={data} onDataChange={onDataChange} />
+      <JobInfoFormSection data={data} onDataChange={onDataChange} forceValidateTick={forceValidateTick} />
     </div>
   );
 };

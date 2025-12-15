@@ -50,14 +50,22 @@ const FormField: React.FC<{
 );
 
 const timeRangeRegex = /^(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})$/;
+const hhmmRegex = /^(\d{1,2}):(\d{2})(?::\d{2})?$/;
 const MAX_IMAGE_COUNT = 4;
 const MAX_IMAGE_SIZE_MB = 2;
 const MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * 1024 * 1024;
+const MAX_DESCRIPTION_LENGTH = 5000;
+const MAX_REQUIREMENT_LENGTH = 3000;
+const MAX_TITLE_LENGTH = 120;
+const MAX_ADDRESS_LENGTH = 255;
+const MAX_PHONE_LENGTH = 10;
+const EXPIRED_DATE_REGEX = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/;
 
 export const JobInfoFormSection: React.FC<{
   data: JobPostData;
   onDataChange: OnDataChange;
-}> = ({ data, onDataChange }) => {
+  forceValidateTick?: number | null;
+}> = ({ data, onDataChange, forceValidateTick }) => {
   const editor = useRef(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const { categories, isLoading } = useCategories();
@@ -293,22 +301,40 @@ export const JobInfoFormSection: React.FC<{
     setValidation((prev) => ({ ...prev, workHours: invalid }));
   }, [timeRange, touched.workHours]);
 
+  const parseTimeString = useCallback((value?: string | null): Dayjs | null => {
+    if (!value) return null;
+    const trimmed = value.trim();
+    const match = trimmed.match(hhmmRegex);
+    if (match) {
+      const hh = match[1].padStart(2, "0").slice(-2);
+      const mm = match[2].padStart(2, "0").slice(-2);
+      const normalized = `${hh}:${mm}`;
+      const parsed = dayjs(normalized, "HH:mm", true);
+      return parsed.isValid() ? parsed : null;
+    }
+    return null;
+  }, []);
+
   useEffect(() => {
-    const { workHourStart, workHourEnd, workHours } = data;
-    if (workHourStart && workHourEnd) {
-      setTimeRange([
-        dayjs(workHourStart, "HH:mm"),
-        dayjs(workHourEnd, "HH:mm"),
-      ]);
+    const workHourStart = data.workHourStart;
+    const workHourEnd = data.workHourEnd;
+    const workHours = data.workHours;
+
+    const start = parseTimeString(workHourStart);
+    const end = parseTimeString(workHourEnd);
+    if (start && end) {
+      setTimeRange([start, end]);
       return;
     }
     const match = workHours ? workHours.match(timeRangeRegex) : null;
     if (match) {
-      setTimeRange([dayjs(match[1], "HH:mm"), dayjs(match[2], "HH:mm")]);
+      const parsedStart = parseTimeString(match[1]);
+      const parsedEnd = parseTimeString(match[2]);
+      setTimeRange([parsedStart, parsedEnd]);
     } else {
       setTimeRange([null, null]);
     }
-  }, [data]);
+  }, [data, parseTimeString]);
 
   const config = useMemo(
     () => ({
@@ -348,6 +374,11 @@ export const JobInfoFormSection: React.FC<{
   const handleEditorChange = useMemo(
     () =>
       debounce((content: string) => {
+        const normalized = normalizeEditorText(content);
+        if (normalized.length > MAX_DESCRIPTION_LENGTH) {
+          message.warning(`Mô tả tối đa ${MAX_DESCRIPTION_LENGTH} ký tự.`);
+          return;
+        }
         onDataChange("jobDescription", content);
       }, 400),
     [onDataChange]
@@ -363,9 +394,6 @@ export const JobInfoFormSection: React.FC<{
   );
 
   const handleBlur = <K extends keyof JobPostData>(field: K, value: JobPostData[K]) => {
-    if (field === "expiredAt") {
-      return;
-    }
     setTouched((prev) => ({ ...prev, [field]: true }));
     let isInvalid = false;
 
@@ -378,17 +406,36 @@ export const JobInfoFormSection: React.FC<{
     ) {
       isInvalid = !value || (value as string).trim() === "";
 
+      if (field === "jobTitle" && !isInvalid) {
+        const text = (value as string).trim();
+        isInvalid = text.length < 5 || text.length > MAX_TITLE_LENGTH;
+      }
+
+      if (field === "detailAddress" && !isInvalid) {
+        isInvalid = (value as string).trim().length > MAX_ADDRESS_LENGTH;
+      }
+
       if (field === "contactPhone" && !isInvalid) {
         if (!phoneRegex.test((value as string).trim())) {
           isInvalid = true;
         }
+      }
+
+      if (field === "requirements" && !isInvalid) {
+        const text = (value as string).trim();
+        isInvalid =
+          (text.length > 0 && text.length < 10) ||
+          text.length > MAX_REQUIREMENT_LENGTH;
       }
     }
 
     if (field === "jobDescription") {
       const normalized =
         typeof value === "string" ? normalizeEditorText(value) : "";
-      isInvalid = !normalized || normalized.length < 20;
+      isInvalid =
+        !normalized ||
+        normalized.length < 20 ||
+        normalized.length > MAX_DESCRIPTION_LENGTH;
     }
 
     if (field === "categoryID") {
@@ -396,7 +443,8 @@ export const JobInfoFormSection: React.FC<{
     }
 
     if (field === "expiredAt") {
-      isInvalid = !value;
+      const text = (value as string | null)?.trim() || "";
+      isInvalid = !text || !EXPIRED_DATE_REGEX.test(text);
     }
 
     if (["provinceId", "districtId", "wardId"].includes(field as string)) {
@@ -417,6 +465,64 @@ export const JobInfoFormSection: React.FC<{
       setValidation((prev) => ({ ...prev, [field]: false }));
     }
   };
+
+  const validateAllFields = useCallback(() => {
+    const phoneRegex = /^0[35789][0-9]{8}$/;
+
+    const jobTitleText = (data.jobTitle || "").trim();
+    const detailAddressText = (data.detailAddress || "").trim();
+    const requirementsText = (data.requirements || "").trim();
+    const contactText = (data.contactPhone || "").trim();
+    const expiredText = (data.expiredAt || "").trim();
+    const normalizedDescription = normalizeEditorText(data.jobDescription || "");
+
+    const nextValidation: Record<string, boolean> = {
+      jobTitle: !jobTitleText || jobTitleText.length < 5 || jobTitleText.length > MAX_TITLE_LENGTH,
+      provinceId: !data.provinceId,
+      districtId: !data.districtId,
+      wardId: !data.wardId,
+      detailAddress: !detailAddressText || detailAddressText.length > MAX_ADDRESS_LENGTH,
+      jobDescription:
+        !normalizedDescription ||
+        normalizedDescription.length < 20 ||
+        normalizedDescription.length > MAX_DESCRIPTION_LENGTH,
+      categoryID: data.categoryID === null || data.categoryID === undefined,
+      contactPhone: !contactText || !phoneRegex.test(contactText),
+      expiredAt: !expiredText || !EXPIRED_DATE_REGEX.test(expiredText),
+      requirements:
+        !requirementsText ||
+        requirementsText.length < 10 ||
+        requirementsText.length > MAX_REQUIREMENT_LENGTH,
+      workHours:
+        !timeRange[0] ||
+        !timeRange[1] ||
+        !timeRange[1]?.isAfter(timeRange[0] as Dayjs),
+    };
+
+    setTouched((prev) => ({
+      ...prev,
+      jobTitle: true,
+      provinceId: true,
+      districtId: true,
+      wardId: true,
+      detailAddress: true,
+      jobDescription: true,
+      categoryID: true,
+      contactPhone: true,
+      expiredAt: true,
+      requirements: true,
+      workHours: true,
+    }));
+
+    setValidation((prev) => ({ ...prev, ...nextValidation }));
+
+    return Object.values(nextValidation).some(Boolean);
+  }, [data, timeRange]);
+
+  useEffect(() => {
+    if (forceValidateTick === undefined || forceValidateTick === null) return;
+    validateAllFields();
+  }, [forceValidateTick, validateAllFields]);
 
   const clearSalaryDisplayIfNeeded = () => {
     if (data.salaryDisplay) {
@@ -462,7 +568,8 @@ export const JobInfoFormSection: React.FC<{
     setExpiryDate(value);
     setTouched((prev) => ({ ...prev, expiredAt: true }));
     if (value) {
-      handleChange("expiredAt", value.format("DD/MM/YYYY"));
+      const formatted = value.format("DD/MM/YYYY");
+      handleChange("expiredAt", formatted);
       setValidation((prev) => ({ ...prev, expiredAt: false }));
     } else {
       handleChange("expiredAt", null);
@@ -602,6 +709,7 @@ export const JobInfoFormSection: React.FC<{
           value={data.jobTitle}
           onChange={(e) => handleChange("jobTitle", e.target.value)}
           onBlur={() => handleBlur("jobTitle", data.jobTitle)}
+          maxLength={MAX_TITLE_LENGTH}
           className={validation.jobTitle ? "border-red-500" : ""}
         />
         {validation.jobTitle && (
@@ -680,6 +788,7 @@ export const JobInfoFormSection: React.FC<{
             value={data.detailAddress}
             onChange={(e) => handleChange("detailAddress", e.target.value)}
             onBlur={() => handleBlur("detailAddress", data.detailAddress)}
+            maxLength={MAX_ADDRESS_LENGTH}
             className={validation.detailAddress ? "border-red-500" : ""}
           />
           {validation.detailAddress && (
@@ -754,7 +863,6 @@ export const JobInfoFormSection: React.FC<{
           format="DD/MM/YYYY"
           value={expiryDate}
           onChange={handleExpiredDateChange}
-          onBlur={() => handleBlur("expiredAt", data.expiredAt)}
           disabledDate={disablePastDates}
           size="large"
           placeholder="Chọn ngày hết hạn"
@@ -876,6 +984,8 @@ export const JobInfoFormSection: React.FC<{
           value={data.requirements}
           onChange={(e) => handleChange("requirements", e.target.value)}
           onBlur={() => handleBlur("requirements", data.requirements)}
+          maxLength={MAX_REQUIREMENT_LENGTH}
+          showCount
           className={validation.requirements ? "border-red-500" : ""}
         />
         {validation.requirements && (
@@ -916,12 +1026,17 @@ export const JobInfoFormSection: React.FC<{
           size="large"
           placeholder={isLoading ? "Đang tải danh mục..." : "Chọn ngành nghề"}
           loading={isLoading}
-          value={data.categoryID ?? undefined}
-          onChange={(value) => handleChange("categoryID", value)}
+          value={data.categoryID !== null && data.categoryID !== undefined ? Number(data.categoryID) : undefined}
+          onChange={(value) =>
+            handleChange(
+              "categoryID",
+              value === null || value === undefined ? null : Number(value)
+            )
+          }
           onBlur={() => handleBlur("categoryID", data.categoryID)}
           className={validation.categoryID ? "select-invalid" : ""}
           options={categories.map((cat: Category) => ({
-            value: cat.categoryId,
+            value: Number(cat.categoryId),
             label: cat.name,
           }))}
         />
@@ -938,6 +1053,7 @@ export const JobInfoFormSection: React.FC<{
           value={data.contactPhone}
           onBlur={() => handleBlur("contactPhone", data.contactPhone)}
           onChange={(e) => handleChange("contactPhone", e.target.value)}
+          maxLength={MAX_PHONE_LENGTH}
           className={validation.contactPhone ? "border-red-500" : ""}
         />
         {validation.contactPhone && (
