@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Badge, Dropdown, List, Avatar, Button, Empty } from "antd";
 import { BellOutlined } from "@ant-design/icons";
 import { useAppDispatch, useAppSelector } from "../../../app/hooks";
@@ -8,8 +8,20 @@ import {
   addNotification,
   setConnectionStatus,
 } from "../slice";
-import { signalRService } from "../signalRService";
 import type { Notification } from "../types";
+import { signalRService } from "../signalRService";
+import type { AppDispatch } from "../../../app/store";
+
+let subscriberCount = 0;
+let currentUserKey: string | null = null;
+let listenerAttached = false;
+let globalDispatch: AppDispatch | null = null;
+
+const handleRealtimeNotification = (notification: Notification) => {
+  if (globalDispatch) {
+    globalDispatch(addNotification(notification));
+  }
+};
 
 const NotificationDropdown: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -18,24 +30,50 @@ const NotificationDropdown: React.FC = () => {
   );
   const userId = useAppSelector((state) => state.auth.user?.id);
 
-  useEffect(() => {
-    if (userId) {
+  React.useEffect(() => {
+    if (!userId) return;
+
+    const userKey = String(userId);
+    globalDispatch = dispatch;
+
+    const isNewUser = currentUserKey !== userKey;
+
+    if (isNewUser && subscriberCount > 0) {
+      // User changed while another subscriber was active; reset connection
+      if (listenerAttached) {
+        signalRService.offReceiveNotification(handleRealtimeNotification);
+        listenerAttached = false;
+      }
+      signalRService.stopConnection();
+      subscriberCount = 0;
+    }
+
+    if (subscriberCount === 0 || isNewUser) {
       dispatch(fetchNotifications(undefined));
-      signalRService.startConnection(String(userId));
+      signalRService.startConnection(userKey);
       dispatch(setConnectionStatus("connected"));
+      if (!listenerAttached) {
+        signalRService.onReceiveNotification(handleRealtimeNotification);
+        listenerAttached = true;
+      }
+    }
 
-      const handleNotification = (notification: Notification) => {
-        dispatch(addNotification(notification));
-      };
+    subscriberCount += 1;
+    currentUserKey = userKey;
 
-      signalRService.onReceiveNotification(handleNotification);
-
-      return () => {
-        signalRService.offReceiveNotification(handleNotification);
+    return () => {
+      subscriberCount = Math.max(0, subscriberCount - 1);
+      if (subscriberCount === 0) {
+        if (listenerAttached) {
+          signalRService.offReceiveNotification(handleRealtimeNotification);
+          listenerAttached = false;
+        }
         signalRService.stopConnection();
         dispatch(setConnectionStatus("disconnected"));
-      };
-    }
+        currentUserKey = null;
+        globalDispatch = null;
+      }
+    };
   }, [dispatch, userId]);
 
   const handleItemClick = (item: Notification) => {

@@ -62,24 +62,6 @@ const mainNavLinks: MainNavLink[] = [
   { icon: <BookOutlined />, text: "Tin tức", path: "/news" },
 ];
 
-const GuestDropdown = () => (
-  <div className="p-4 bg-white shadow-md rounded-lg" style={{ minWidth: "450px" }}>
-    <div className="flex justify-end items-center mb-4">
-      <NavLink to="/login" className="mr-3">
-        <Button type="primary" className="w-full">
-          Đăng nhập
-        </Button>
-      </NavLink>
-      <NavLink to="/register" className="mr-3">
-        <Button className="w-full">Đăng ký</Button>
-      </NavLink>
-    </div>
-    <div className="bg-gray-50 border border-dashed border-gray-200 rounded-lg px-4 py-3 text-sm text-gray-600">
-      Vui lòng đăng nhập hoặc đăng ký để sử dụng các tính năng quản lý hồ sơ, ứng tuyển việc làm và nhiều hơn nữa.
-    </div>
-  </div>
-);
-
 interface UserDropdownProps {
   user: User;
   onLogout: () => void;
@@ -211,6 +193,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const [reportModalOpen, setReportModalOpen] = useState(false);
 
   const isLoginPage = location.pathname === "/login";
+  const showNotifications = !!user;
 
   useEffect(() => {
     if (isJobSeeker && !jobSeekerProfile && !jobSeekerProfileLoading) {
@@ -291,9 +274,11 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               onClick={(e) => e.preventDefault()}
               className="flex items-center space-x-3 text-white hover:text-gray-200"
             >
-              <span className="[&_.ant-btn]:text-white [&_.ant-badge-count]:bg-red-500">
-                <NotificationDropdown />
-              </span>
+              {showNotifications && (
+                <span className="[&_.ant-btn]:text-white [&_.ant-badge-count]:bg-red-500">
+                  <NotificationDropdown />
+                </span>
+              )}
               <Avatar
                 size="small"
                 src={avatarSrc}
@@ -368,34 +353,38 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
       </div>
 
       <div className="flex items-center space-x-3">
-        <NotificationDropdown />
-        <Dropdown
-          popupRender={() =>
-            user ? (
+        {showNotifications && <NotificationDropdown />}
+
+        {user ? (
+          <Dropdown
+            popupRender={() => (
               <UserDropdown
                 user={user}
                 onLogout={handleLogout}
                 onReport={() => setReportModalOpen(true)}
               />
-            ) : (
-              <GuestDropdown />
-            )
-          }
-          placement="bottomRight"
-          trigger={["hover"]}
-        >
-          <a onClick={(e) => e.preventDefault()} className="flex items-center space-x-2 text-gray-600">
-            {user ? (
-              <Avatar size="large" src={avatarSrc} icon={!avatarSrc ? <UserOutlined /> : undefined} />
-            ) : (
-              <UserOutlined className="text-2xl" />
             )}
-            <span className="font-medium">{user ? displayName : "Tài khoản"}</span>
-            <DownOutlined style={{ fontSize: "10px" }} />
-          </a>
-        </Dropdown>
+            placement="bottomRight"
+            trigger={["hover"]}
+          >
+            <a onClick={(e) => e.preventDefault()} className="flex items-center space-x-2 text-gray-600">
+              <Avatar size="large" src={avatarSrc} icon={!avatarSrc ? <UserOutlined /> : undefined} />
+              <span className="font-medium">{displayName}</span>
+              <DownOutlined style={{ fontSize: "10px" }} />
+            </a>
+          </Dropdown>
+        ) : (
+          <div className="flex items-center space-x-2">
+            <NavLink to="/login">
+              <Button type="primary">Đăng nhập</Button>
+            </NavLink>
+            <NavLink to="/register">
+              <Button>Đăng ký</Button>
+            </NavLink>
+          </div>
+        )}
 
-        <div className="border-l border-gray-300 h-6" />
+        {user && <div className="border-l border-gray-300 h-6" />}
 
         {user && user.roles.includes(ROLES.EMPLOYER) && (
           <NavLink
@@ -413,4 +402,3 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
 };
 
 export default Header;
-

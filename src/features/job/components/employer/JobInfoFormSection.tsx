@@ -315,26 +315,40 @@ export const JobInfoFormSection: React.FC<{
     return null;
   }, []);
 
+  const prevTimeInputs = useRef<{
+    start?: string | null;
+    end?: string | null;
+    range?: string | null;
+  }>({});
+
   useEffect(() => {
     const workHourStart = data.workHourStart;
     const workHourEnd = data.workHourEnd;
     const workHours = data.workHours;
 
-    const start = parseTimeString(workHourStart);
-    const end = parseTimeString(workHourEnd);
-    if (start && end) {
-      setTimeRange([start, end]);
+    const startStr = workHourStart ?? null;
+    const endStr = workHourEnd ?? null;
+    const rangeStr = workHours ?? null;
+
+    if (
+      prevTimeInputs.current.start === startStr &&
+      prevTimeInputs.current.end === endStr &&
+      prevTimeInputs.current.range === rangeStr
+    ) {
       return;
     }
-    const match = workHours ? workHours.match(timeRangeRegex) : null;
-    if (match) {
-      const parsedStart = parseTimeString(match[1]);
-      const parsedEnd = parseTimeString(match[2]);
-      setTimeRange([parsedStart, parsedEnd]);
-    } else {
-      setTimeRange([null, null]);
-    }
-  }, [data, parseTimeString]);
+
+    prevTimeInputs.current = { start: startStr, end: endStr, range: rangeStr };
+
+    const start = parseTimeString(startStr);
+    const end = parseTimeString(endStr);
+
+    const match = !start || !end ? (rangeStr ? rangeStr.match(timeRangeRegex) : null) : null;
+    const nextStart = start ?? (match ? parseTimeString(match[1]) : null);
+    const nextEnd = end ?? (match ? parseTimeString(match[2]) : null);
+
+    setTimeRange([nextStart, nextEnd]);
+  }, [data.workHourStart, data.workHourEnd, data.workHours, parseTimeString]);
 
   const config = useMemo(
     () => ({
