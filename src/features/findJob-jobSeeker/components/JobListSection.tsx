@@ -59,12 +59,12 @@ const JobListCard: React.FC<{ job: JobPostView }> = ({ job }) => {
   return (
     <Card
       key={job.employerPostId}
-      className="shadow-sm border border-blue-50 hover:shadow-lg transition cursor-pointer rounded-2xl bg-white/95"
+      className="shadow-sm border border-blue-50 hover:shadow-lg transition cursor-pointer rounded-2xl bg-white/95 overflow-hidden"
       onClick={() => navigate(`/viec-lam/chi-tiet/${job.employerPostId}`)}
     >
       <div className="flex flex-col gap-3">
-        <div className="flex items-start gap-4">
-          <div className="h-12 w-12 rounded-full bg-white flex items-center justify-center border border-sky-100 shadow-sm overflow-hidden">
+        <div className="flex items-start gap-4 min-w-0">
+          <div className="h-12 w-12 flex-shrink-0 rounded-full bg-white flex items-center justify-center border border-sky-100 shadow-sm overflow-hidden">
             {job.companyLogo ? (
               <img
                 src={getCompanyLogoSrc(job.companyLogo)}
@@ -77,11 +77,19 @@ const JobListCard: React.FC<{ job: JobPostView }> = ({ job }) => {
               </div>
             )}
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-              <div>
-                <p className="text-sm text-sky-600 font-medium">{job.employerName || "Nhà tuyển dụng"}</p>
-                <h3 className="text-lg font-semibold text-gray-900 leading-tight">
+              <div className="min-w-0">
+                <p
+                  className="text-sm text-sky-600 font-medium break-words [overflow-wrap:anywhere]"
+                  style={{ display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical", overflow: "hidden" }}
+                >
+                  {job.employerName || "Nhà tuyển dụng"}
+                </p>
+                <h3
+                  className="text-lg font-semibold text-gray-900 leading-tight break-words [overflow-wrap:anywhere]"
+                  style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
+                >
                   {job.title}
                 </h3>
               </div>
@@ -102,7 +110,11 @@ const JobListCard: React.FC<{ job: JobPostView }> = ({ job }) => {
             </div>
             <div className="flex flex-wrap items-center gap-2 text-sm text-gray-700 mt-3">
               {job.location && (
-                <Tag color="default" className="px-2 py-1 rounded-full text-gray-700">
+                <Tag
+                  color="default"
+                  className="px-2 py-1 rounded-full text-gray-700 whitespace-normal break-words [overflow-wrap:anywhere] leading-snug max-w-full inline-block"
+                  style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
+                >
                   {job.location}
                 </Tag>
               )}
@@ -115,13 +127,20 @@ const JobListCard: React.FC<{ job: JobPostView }> = ({ job }) => {
                 {salaryText}
               </Tag>
               {job.categoryName && (
-                <Tag color="default" className="px-2 py-1 rounded-full text-gray-700">
+                <Tag
+                  color="default"
+                  className="px-2 py-1 rounded-full text-gray-700 whitespace-normal break-words [overflow-wrap:anywhere] leading-snug max-w-full inline-block"
+                  style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
+                >
                   {job.categoryName}
                 </Tag>
               )}
             </div>
             {descriptionText && (
-              <p className="text-sm text-gray-600 mt-2">
+              <p
+                className="text-sm text-gray-600 mt-2 break-words [overflow-wrap:anywhere]"
+                style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
+              >
                 {descriptionText}
                 {job.description && job.description.length > 180 ? "..." : ""}
               </p>

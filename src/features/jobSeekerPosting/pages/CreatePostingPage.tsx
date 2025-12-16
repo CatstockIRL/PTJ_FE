@@ -346,6 +346,12 @@ const CreatePostingPage: React.FC = () => {
     const endTime = formatTimeValue(preferredWorkHourEnd);
 
     const normalizeText = (text?: string | null) => (text ?? "").trim();
+    const clampAge = (value?: number | null) => {
+      if (typeof value !== "number") return 16;
+      if (value < 16) return 16;
+      if (value > 100) return 100;
+      return value;
+    };
     const payload: CreateJobSeekerPostPayload = {
       ...rest,
       title: normalizeText(rest.title),
@@ -353,7 +359,7 @@ const CreatePostingPage: React.FC = () => {
       phoneContact: normalizeText(rest.phoneContact),
       preferredLocation,
       userID: user.id,
-      age: Number(rest.age ?? 0),
+      age: clampAge(rest.age),
       categoryID: Number(rest.categoryID ?? 0),
       provinceId: Number(provinceId ?? 0),
       districtId: Number(districtId ?? 0),
@@ -597,11 +603,22 @@ const CreatePostingPage: React.FC = () => {
                 required: true,
                 message: "Vui lòng nhập tuổi của bạn!",
               },
+              {
+                validator: (_, value) => {
+                  if (value === undefined || value === null) {
+                    return Promise.resolve();
+                  }
+                  const num = Number(value);
+                  return num >= 16 && num <= 100
+                    ? Promise.resolve()
+                    : Promise.reject(new Error("Tuổi phải từ 16 đến 100"));
+                },
+              },
             ]}
           >
             <InputNumber
               min={16}
-              max={60}
+              max={100}
               style={{ width: "100%" }}
               disabled={isReadOnly}
             />

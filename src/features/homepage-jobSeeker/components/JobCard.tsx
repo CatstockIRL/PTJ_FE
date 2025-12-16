@@ -71,9 +71,9 @@ const JobCard: React.FC<JobCardProps> = ({ job, tone = 'white' }) => {
       className={`${tone === 'gray' ? 'bg-gray-100 border-gray-200' : 'bg-white border-gray-100'} px-3 py-3 rounded-2xl shadow-sm flex items-start relative w-full border cursor-pointer transition duration-200 hover:-translate-y-1 hover:border-blue-500/50 hover:shadow-[0_10px_30px_rgba(59,130,246,0.12)] hover:bg-blue-50/20 group`}
       onClick={handleClick}
     >
-      <div className="flex items-start space-x-4 flex-1">
+      <div className="flex items-start space-x-4 flex-1 min-w-0">
         <img src={job.companyLogo || defaultLogo} alt="company logo" className="w-16 h-16 object-contain rounded-xl border border-blue-50 p-1 bg-white" />
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden min-w-0">
           <div className="flex items-start mb-1 pr-10">
             <h3
               className="text-base font-semibold text-slate-900 leading-snug"
@@ -99,13 +99,18 @@ const JobCard: React.FC<JobCardProps> = ({ job, tone = 'white' }) => {
             {job.company}
           </p>
           
-          <div className="flex items-center text-blue-600 text-xs mt-2">
-            <i className="fas fa-map-marker-alt mr-1"></i>
-            <span>{job.location}</span>
+          <div className="flex min-w-0 items-center text-blue-600 text-xs mt-2 gap-1">
+            <i className="fas fa-map-marker-alt"></i>
+            <span
+              className="leading-snug break-words [overflow-wrap:anywhere]"
+              style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
+            >
+              {job.location}
+            </span>
           </div>
           
-          <div className="flex items-center text-emerald-600 text-xs mt-2">
-            <i className="fas fa-money-bill-wave mr-1"></i>
+          <div className="flex items-center text-emerald-600 text-xs mt-2 gap-1">
+            <i className="fas fa-money-bill-wave"></i>
             <span>{job.salary}</span>
           </div>
         </div>

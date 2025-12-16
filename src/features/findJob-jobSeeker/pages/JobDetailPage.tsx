@@ -645,15 +645,15 @@ const JobDetailPage: React.FC = () => {
             <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-r from-blue-50/40 via-white to-indigo-50/40" />
             <div className="relative flex flex-col gap-6 md:flex-row md:items-center">
               <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-lg ring-1 ring-blue-100 md:h-20 md:w-20">
+                <div className="flex h-24 w-24 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-lg ring-2 ring-blue-100 md:h-28 md:w-28 aspect-square p-1.5">
                   <img
                     src={job.companyLogo || "/src/assets/no-logo.png"}
                     alt={job.employerName || "Logo"}
                     className="h-full w-full object-contain"
                   />
                 </div>
-                <div>
-                  <h1 className="text-2xl font-bold leading-tight text-slate-900 md:text-3xl">
+                <div className="min-w-0">
+                  <h1 className="text-2xl font-bold leading-tight text-slate-900 md:text-3xl break-words [overflow-wrap:anywhere]">
                     {job.title}
                   </h1>
                 </div>
@@ -756,7 +756,9 @@ const JobDetailPage: React.FC = () => {
               {job.categoryName && (
                 <div className="flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-blue-700">
                   <i className="fas fa-layer-group" />
-                  <span>{job.categoryName}</span>
+                  <span className="break-words [overflow-wrap:anywhere]">
+                    {job.categoryName}
+                  </span>
                 </div>
               )}
             </div>
@@ -772,11 +774,11 @@ const JobDetailPage: React.FC = () => {
                   >
                     <i className={`${stat.icon} text-lg ${stat.accent}`} />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-xs uppercase tracking-wide text-slate-500">
                       {stat.label}
                     </p>
-                    <p className="text-base font-semibold text-slate-900">
+                    <p className="text-base font-semibold text-slate-900 break-words [overflow-wrap:anywhere]">
                       {stat.value}
                     </p>
                   </div>
@@ -830,7 +832,7 @@ const JobDetailPage: React.FC = () => {
               <h3 className="mb-2 text-lg font-semibold text-slate-900">
                 Mô tả công việc
               </h3>
-              <div className="prose max-w-none rounded-xl border border-slate-100 bg-slate-50 p-4 text-slate-700">
+              <div className="prose max-w-none break-words [overflow-wrap:anywhere] rounded-xl border border-slate-100 bg-slate-50 p-4 text-slate-700">
                 {job.description ? (
                   <div
                     dangerouslySetInnerHTML={{
@@ -884,7 +886,7 @@ const JobDetailPage: React.FC = () => {
                       <span className="mt-1 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
                         <i className="fas fa-check" />
                       </span>
-                      <p className="text-slate-700">
+                      <p className="flex-1 text-slate-700 break-words [overflow-wrap:anywhere]">
                         {line.replace(/^- /, "")}
                       </p>
                     </div>
@@ -911,15 +913,17 @@ const JobDetailPage: React.FC = () => {
                     <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-sm">
                       <i className={`${item.icon} text-blue-600`} />
                     </span>
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-sm font-semibold text-slate-600">
                         {item.label}
                       </p>
-                      <p className="text-base font-semibold text-slate-900">
+                      <p className="text-base font-semibold text-slate-900 break-words [overflow-wrap:anywhere]">
                         {item.value}
                       </p>
                       {item.helper && (
-                        <p className="text-sm text-slate-600">{item.helper}</p>
+                        <p className="text-sm text-slate-600 break-words [overflow-wrap:anywhere]">
+                          {item.helper}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -931,18 +935,18 @@ const JobDetailPage: React.FC = () => {
           <aside className="space-y-5">
             <Card className="rounded-2xl border border-slate-100 shadow-sm">
               <div className="flex items-start gap-4">
-                <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl bg-slate-50">
+                <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-slate-50 ring-1 ring-slate-100 md:h-24 md:w-24 aspect-square p-1.5">
                   <img
                     src={job.companyLogo || "/src/assets/no-logo.png"}
                     alt={job.employerName}
                     className="h-full w-full object-contain"
                   />
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold uppercase text-slate-500">
                     Nhà tuyển dụng
                   </p>
-                  <h3 className="text-lg font-bold text-slate-900">
+                  <h3 className="text-lg font-bold text-slate-900 break-words [overflow-wrap:anywhere]">
                     {job.employerName}
                   </h3>
                   <div className="mt-1 flex items-center gap-2 text-xs text-emerald-600">
@@ -955,12 +959,16 @@ const JobDetailPage: React.FC = () => {
               <div className="mt-4 space-y-3 text-sm text-slate-700">
                 <div className="flex items-start gap-3">
                   <i className="fas fa-map-marker-alt mt-1 text-slate-400" />
-                  <span className="flex-1">{job.location}</span>
+                  <span className="flex-1 break-words [overflow-wrap:anywhere]">
+                    {job.location}
+                  </span>
                 </div>
                 {job.phoneContact && (
                   <div className="flex items-start gap-3">
                     <i className="fas fa-phone mt-1 text-slate-400" />
-                    <span className="flex-1">{job.phoneContact}</span>
+                    <span className="flex-1 break-words [overflow-wrap:anywhere]">
+                      {job.phoneContact}
+                    </span>
                   </div>
                 )}
               </div>
@@ -1003,9 +1011,13 @@ const JobDetailPage: React.FC = () => {
       {isSticky && job && (
         <div className="fixed bottom-4 left-1/2 z-40 w-[calc(100%-2rem)] max-w-4xl -translate-x-1/2">
           <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-2xl md:flex-row md:items-center md:justify-between">
-            <div>
-              <h3 className="text-lg font-bold text-slate-900">{job.title}</h3>
-              <p className="text-sm text-slate-600">{job.employerName}</p>
+            <div className="min-w-0">
+              <h3 className="text-lg font-bold text-slate-900 break-words [overflow-wrap:anywhere]">
+                {job.title}
+              </h3>
+              <p className="text-sm text-slate-600 break-words [overflow-wrap:anywhere]">
+                {job.employerName}
+              </p>
             </div>
             <div className="flex flex-wrap gap-2">
               <Button
